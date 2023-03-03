@@ -1,12 +1,9 @@
    Sail
 
-Sail and the Sail architecture models here, comprising all files and
-directories except the ASL-derived Sail code in the aarch64 directory,
-and the logo in the etc/logo/ directory (by Jean Pichon, under CC0),
-are subject to the BSD two-clause licence below.
+This is the Coq support library for Sail instruction set architecture
+models.
 
-The ASL derived parts of the ARMv8.3 specification in
-aarch64/no_vector and aarch64/full are copyright ARM Ltd.
+Sail is subject to the BSD two-clause licence below.
 
 Copyright (c) 2013-2021
   Kathyrn Gray
