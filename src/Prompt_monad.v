@@ -128,6 +128,16 @@ Arguments Print [_ _ _].
 Arguments Fail [_ _ _].
 Arguments Exception [_ _ _].
 
+(* The injectivity tactic can be confused by dependent types when some of the types
+   involved don't quite match syntactically.  Sometimes it's easier to apply a lemma
+   to a hypothesis instead. *)
+Lemma Choose_injective {rv A E} s ty (x y : choose_type ty -> monad rv A E) :
+  Choose s ty x = Choose s ty y ->
+  x = y.
+intros [=].
+assumption.
+Qed.
+
 Inductive event {regval} :=
   | E_read_mem : read_kind -> N -> nat -> list memory_byte -> event
   | E_read_memt : read_kind -> N -> nat -> (list memory_byte * bitU) -> event
