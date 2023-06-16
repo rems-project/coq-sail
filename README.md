@@ -33,6 +33,13 @@ It's also possible to build the library locally without opam using the
 Makefile in the `src` directory.  You can also change the bitvector
 library used by changing the `src/MachineWord.v` symbolic link.
 
+An opam package is also available using the stdpp-unstable bitvector
+library.  It changes the Coq library name so that it can be installed
+alongside the BBV version, so references to `Sail` in the models
+should be replaced by `SailStdpp`.  Sail can do this when generating
+Coq output using the arguments `-coq_alt_modules SailStdpp.Base
+-coq_alt_modules SailStdpp.Real`.
+
 Licensing
 =========
 

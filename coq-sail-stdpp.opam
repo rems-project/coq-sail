@@ -1,5 +1,8 @@
+# Note that the bitvector library is in the unpublished unstable stdpp package,
+# so we shouldn't try to publish this in the coq opam repository yet.
+
 opam-version: "2.0"
-name: "coq-sail"
+name: "coq-sail-stdpp"
 version: "0.15"
 maintainer: "Sail Devs <cl-sail-dev@lists.cam.ac.uk>"
 authors: [
@@ -18,17 +21,20 @@ homepage: "http://www.cl.cam.ac.uk/~pes20/sail/"
 bug-reports: "https://github.com/rems-project/coq-sail/issues"
 license: "BSD-3-clause"
 dev-repo: "git+https://github.com/rems-project/coq-sail.git"
-build: [make "-C" "src" "HAVE_OPAM_BBV=yes"]
-install: [make "-C" "src" "install"]
+build: [
+  ["sh" "-exc" "./prepare-stdpp-src.sh"]
+  [make "-C" "src-stdpp"]
+]
+install: [make "-C" "src-stdpp" "install"]
 depends: [
   "coq" {>= "8.9.0"}
-  "coq-bbv" {>= "1.1"}
+  "coq-stdpp-unstable"
   # The sail package isn't strictly required, but this is the easiest way for
   # models' opam files to ensure that the version matches
   "sail" {= version}
 ]
 synopsis:
-  "Support library for Sail, a language for describing the instruction semantics of processors"
+  "Support library for Sail, a language for describing the instruction semantics of processors, using stdpp bitvectors"
 description:
   """The support library for instruction-set semantics generated from Sail.
 Sail is a language for describing the instruction-set
