@@ -267,6 +267,18 @@ Notation "x <=? y <? z" := ((x <=? y) && (y <? z)) (at level 70, y at next level
 Notation "x <? y <? z" := ((x <? y) && (y <? z)) (at level 70, y at next level) : Z_scope.
 Notation "x <? y <=? z" := ((x <? y) && (y <=? z)) (at level 70, y at next level) : Z_scope.
 
+Inductive result {a : Type} {b : Type} :=
+| Ok : a -> result
+| Err : b -> result.
+Arguments result : clear implicits.
+
+#[export]
+Instance dummy_result {a : Type} {b : Type} `{Inhabited a} `{Inhabited b} :
+  Inhabited (result a b) :=
+{
+  inhabitant := Ok inhabitant
+}.
+
 Definition ii := Z.
 Definition nn := nat.
 
