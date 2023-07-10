@@ -88,12 +88,15 @@ Qed.
 Lemma nth_error_lookup {A} (l : list A) (i : nat) :
   base.lookup i l = List.nth_error l i.
 destruct (List.nth_error l i) eqn:H.
-* specialize (List.nth_error_Some l i) as LEN.
-  rewrite H in LEN.
-  destruct (list.nth_lookup_or_length l i a).
-  - rewrite (List.nth_error_nth l i a H) in e.
+* assert (i < Datatypes.length l) as LEN. {
+    apply List.nth_error_Some.
+    congruence.
+  }
+  destruct (list.nth_lookup_or_length l i a) as [E|E].
+  - rewrite (List.nth_error_nth l i a H) in E.
     assumption.
-  - intuition.
+  - contradict E.
+    Lia.lia.
 * apply list.lookup_ge_None.
   apply List.nth_error_None.
   assumption.
@@ -125,8 +128,10 @@ intro H.
 rewrite nth_error_rev.
 rewrite List.rev_involutive, List.rev_length.
 rewrite bitvector.bv_to_bits_length.
-rewrite Nnat.Nat2N.id.
-intuition.
+rewrite Nnat.Nat2N.id in *.
+rewrite H.
+firstorder.
+Lia.lia.
 Qed.
 
 Lemma word_to_bools_nth_Some : forall [n] (w : word n) (i : nat) x, n > 0 ->
@@ -156,9 +161,11 @@ Local Lemma nth_error_N_of_digits l i b :
   List.nth_error l i = Some b <-> N.testbit (Ascii.N_of_digits l) (N.of_nat i) = b /\ i < List.length l.
 revert i.
 induction l.
-* destruct i; simpl; intuition.
+* intros. simpl. split.
+  - intro H. apply List.nth_error_In in H. inversion H.
+  - intros [_ H]. inversion H.
 * destruct i.
-  - destruct a; simpl; destruct (Ascii.N_of_digits l); simpl; intuition.
+  - destruct a; simpl; destruct (Ascii.N_of_digits l); simpl; intuition; auto using Nat.lt_0_succ; congruence.
   - rewrite Nnat.Nat2N.inj_succ.
     replace (Ascii.N_of_digits (a::l)) with (2 * Ascii.N_of_digits l + N.b2n a)%N. 2: {
       simpl Ascii.N_of_digits at 2.
@@ -168,8 +175,9 @@ induction l.
     }
     rewrite N.testbit_succ_r.
     specialize (IHl i).
-    intuition.
-    simpl; Lia.lia.
+    simpl.
+    rewrite IHl.
+    intuition; Lia.lia.
 Qed.
 
 Lemma bools_to_word_get_bit : forall l i b,
@@ -189,6 +197,7 @@ rewrite Z.testbit_of_N.
 rewrite nth_error_rev.
 specialize (nth_error_N_of_digits (List.rev l) (List.length l - i - 1) b).
 rewrite List.rev_length.
+assert (i < Datatypes.length l -> Datatypes.length l - i - 1 < Datatypes.length l) by Lia.lia.
 intuition.
 Qed.
 
@@ -241,7 +250,7 @@ Definition eq_dec [n] (w v : word n) : {w = v} + {w <> v} := base.decide (w = v)
 Definition eqb [n] (w v : word n) := if eq_dec w v then true else false.
 Lemma eqb_true_iff {n} (w v : word n) : eqb w v = true <-> w = v.
 unfold eqb.
-destruct (eq_dec w v); intuition.
+destruct (eq_dec w v); split; congruence.
 Qed.
 
 Definition reverse_endian [n] (w : word n) : word n :=

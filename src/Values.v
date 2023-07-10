@@ -243,9 +243,10 @@ destruct x as [x'|]; destruct y as [y'|].
 Defined.
 
 Definition generic_dec {T:Type} (x y:T) `{Decidable (x = y)} : {x = y} + {x <> y}.
-refine ((if Decidable_witness as b return (b = true <-> x = y -> _) then fun H' => _ else fun H' => _) Decidable_spec).
-* left. tauto.
-* right. intuition.
+refine ((if Decidable_witness as b return (b = true <-> x = y -> _) then fun H' => left _ else fun H' => right _) Decidable_spec).
+* tauto.
+* rewrite <- H'.
+  congruence.
 Defined.
 
 #[export] Instance Decidable_eq_list {A : Type} `(D : forall x y : A, Decidable (x = y)) : forall (x y : list A), Decidable (x = y) :=
@@ -1380,10 +1381,10 @@ Ltac destruct_exists :=
    The filter_disjunctions tactic simplifies hypotheses by obtaining p. *)
 
 Lemma truefalse : true = false <-> False.
-intuition.
+intuition auto using Bool.diff_false_true.
 Qed.
 Lemma falsetrue : false = true <-> False.
-intuition.
+intuition auto using Bool.diff_false_true.
 Qed.
 Lemma or_False_l P : False \/ P <-> P.
 intuition.
@@ -1838,7 +1839,7 @@ Ltac ex_iff_solve :=
 
 
 Lemma iff_false_left {P Q R : Prop} : (false = true) <-> Q -> (false = true) /\ P <-> Q /\ R.
-intuition.
+intuition congruence.
 Qed.
 
 (* Very simple proofs for trivial arithmetic.  Preferable to running omega/lia because

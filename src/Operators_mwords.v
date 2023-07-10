@@ -247,7 +247,7 @@ Qed.
 Lemma eq_vec_false_iff {n} (v w : mword n) :
   eq_vec v w = false <-> v <> w.
 specialize (eq_vec_true_iff v w).
-destruct (eq_vec v w); intuition.
+destruct (eq_vec v w); intuition congruence.
 Qed.
 
 Definition eq_vec_dec {n} : forall (x y : mword n), {x = y} + {x <> y} :=
