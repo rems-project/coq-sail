@@ -16,6 +16,9 @@ else
 COQ_LIBS = -Q . "$(PACKAGE_NAME)"
 endif
 
+# TODO: only include these for the stdpp version
+SRC += ConcurrencyInterfaceTypes.v ConcurrencyInterface.v ConcurrencyInterfaceBuiltins.v
+
 TARGETS=$(SRC:.v=.vo)
 
 .PHONY: all clean install
