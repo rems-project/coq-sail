@@ -28,19 +28,20 @@ Definition fail {A E} (msg : string) : monad A E :=
 
 Definition exit {A E} (_ : unit) : monad A E := fail "exit".
 
-Definition choose_bool {E} (_descr : string) : monad bool E := I.Next (I.Choose 1) (fun bv => if decide (bv = bv_0 1) then mret false else mret true).
-Definition choose_bit {E} (_descr : string) : monad bitU E := I.Next (I.Choose 1) (fun bv => if decide (bv = bv_0 1) then mret B0 else mret B1).
-Axiom choose_int : forall {E}, string -> monad Z E.
-Axiom choose_nat : forall {E}, string -> monad Z E.
-Axiom choose_real : forall {E}, string -> monad R E.
-Axiom choose_string : forall {E}, string -> monad string E.
-Axiom choose_range : forall {E}, string -> Z -> Z -> monad Z E.
+Definition choose_bool {E} (_descr : string) : monad bool E := I.Next (I.Choose ChooseBool) mret.
+Definition choose_bit {E} (_descr : string) : monad bitU E := I.Next (I.Choose ChooseBit) mret.
+Definition choose_int {E} (_descr : string) : monad Z E := I.Next (I.Choose ChooseInt) mret.
+Definition choose_nat {E} (_descr : string) : monad Z E := I.Next (I.Choose ChooseNat) mret.
+Definition choose_real {E} (_descr : string) : monad R E := I.Next (I.Choose ChooseReal) mret.
+Definition choose_string {E} (_descr : string) : monad string E := I.Next (I.Choose ChooseString) mret.
+Definition choose_range {E} (_descr : string) (lo hi : Z) : monad Z E := I.Next (I.Choose (ChooseRange lo hi)) mret.
 Definition choose_bitvector {E} (_descr : string) (n : Z) : monad (mword n) E :=
- match n return monad (mword n) E with
+  I.Next (I.Choose (ChooseBitvector n)) mret.
+(* match n return monad (mword n) E with
  | Zneg _ => returnm (bv_0 0)
  | Z0 => returnm (bv_0 0)
  | Zpos p => I.Next (I.Choose (N.of_nat (Pos.to_nat p))) (fun bv => returnm bv)
- end.
+ end.*)
 
 Definition assert_exp {E} (exp :bool) msg : monad unit E :=
  if exp then returnm tt else fail msg.
