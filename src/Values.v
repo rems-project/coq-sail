@@ -2524,9 +2524,23 @@ Definition choose_type ty :=
   | ChooseRange _ _ => Z | ChooseBitvector n => mword n
   end.
 
+(* The property that is expected to hold of the chosen value. *)
+Definition choose_prop ty : choose_type ty -> Prop :=
+  match ty with
+  | ChooseBool
+  | ChooseBit
+  | ChooseInt
+  | ChooseNat
+  | ChooseReal
+  | ChooseString => fun _ => True
+  | ChooseBitvector _n => fun _ => True
+  | ChooseRange lo hi => fun z => (lo <= z <= hi)%Z
+  end.
+
 (* TODO: try and split out Reals again *)
 #[export] Instance R_inhabited : Inhabited R := { inhabitant := R0 }.
 
+(* NB: this only works because we don't enforce choose_prop here. *)
 #[export] Instance choose_type_inhabited {ty} : Inhabited (choose_type ty).
 destruct ty; simpl; constructor; apply inhabitant.
 Defined.
