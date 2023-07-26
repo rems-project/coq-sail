@@ -16,8 +16,9 @@ else
 COQ_LIBS = -Q . "$(PACKAGE_NAME)"
 endif
 
-# TODO: only include these for the stdpp version
+ifeq ($(PACKAGE_NAME),SailStdpp)
 SRC += ConcurrencyInterfaceTypes.v ConcurrencyInterface.v ConcurrencyInterfaceBuiltins.v
+endif
 
 TARGETS=$(SRC:.v=.vo)
 
