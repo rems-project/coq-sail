@@ -19,6 +19,7 @@ authors: [
 ]
 homepage: "http://www.cl.cam.ac.uk/~pes20/sail/"
 bug-reports: "https://github.com/rems-project/coq-sail/issues"
+doc: "https://github.com/rems-project/sail/blob/sail2/README.md"
 license: "BSD-3-clause"
 dev-repo: "git+https://github.com/rems-project/coq-sail.git"
 build: [
