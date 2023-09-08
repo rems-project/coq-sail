@@ -30,9 +30,10 @@ install: [make "-C" "src-stdpp" "install"]
 depends: [
   "coq" {>= "8.9.0"}
   "coq-stdpp-unstable"
-  # The sail package isn't strictly required, but this is the easiest way for
-  # models' opam files to ensure that the version matches
-  "sail" {= version}
+]
+# Ensure that if we're building from Sail then the version is compatible
+conflicts: [
+  "sail" { != version }
 ]
 synopsis:
   "Support library for Sail, a language for describing the instruction semantics of processors, using stdpp bitvectors"
@@ -49,5 +50,5 @@ http://www.cl.cam.ac.uk/~pes20/sail/.
 The Sail tool can be found in main opam repository."""
 tags: [
   "logpath:Sail"
-  "category:CS/Semantics and Compilation/Semantics"
+  "category:Computer Science/Semantics and Compilation/Semantics"
 ]
