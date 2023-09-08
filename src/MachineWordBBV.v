@@ -411,17 +411,21 @@ Definition update_slice [m] [n] (w : word m) (i : nat) (v : word n) : word m :=
   | right _ => dummy (zeros _)
   end.
 
+Local Lemma extend_ok {m n : nat} : m <= n -> m + (n - m) = n.
+auto with arith.
+Qed.
+
 Definition zero_extend [m] n (w : word m) : word n :=
   match Compare_dec.le_lt_dec m n with
   | left H =>
-      cast_nat (Word.zext w (n - m)) (Arith_prebase.le_plus_minus_r_stt _ _ H)
+      cast_nat (Word.zext w (n - m)) (extend_ok H)
   | right _ => dummy (zeros _)
   end.
 
 Definition sign_extend [m] n (w : word m) : word n :=
   match Compare_dec.le_lt_dec m n with
   | left H =>
-      cast_nat (Word.sext w (n - m)) (Arith_prebase.le_plus_minus_r_stt _ _ H)
+      cast_nat (Word.sext w (n - m)) (extend_ok H)
   | right _ => dummy (zeros _)
   end.
 
