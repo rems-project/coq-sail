@@ -82,6 +82,11 @@ Definition undefined_real (_:unit) : monad rv _ E := choose_real "undefined_real
 Definition undefined_range i j : monad rv Z E := choose_range "undefined_range" i j.
 Definition undefined_bitvector n : monad rv (mword n) E := choose_bitvector "undefined_bitvector" n.
 
+(* TODO: use a distinct undef value for each element *)
+Definition undefined_list {T} `{Inhabited T} (a:T) : monad rv (list T) E :=
+  undefined_nat tt >>= fun n =>
+  returnm (repeat (List.cons a List.nil) n).
+  
 Definition undefined_vector {T} n `{Inhabited T} (a:T) : monad rv (vec T n) E := returnm (vec_init a n).
 
 End Undef.
