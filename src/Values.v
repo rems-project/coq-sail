@@ -2741,12 +2741,8 @@ rewrite skipn_length;
 lia.
 Qed.
 
-Definition vec_update_dec {T n} `{Inhabited T} (v : vec T n) (m : Z) (t : T) : vec T n.
-refine (
-  if sumbool_of_bool (0 <=? m <? n) then
-    @existT _ _ (update_list_dec (projT1 v) m t) _
-  else dummy_value
-).
+Lemma vec_update_dec_lemma {T n} {v : vec T n} {m t} : 0 <=? m <? n = true -> length (update_list_dec (projT1 v) m t) = Z.to_nat n.
+intro.
 unfold update_list_dec.
 destruct v as [v' L].
 rewrite update_list_inc_length.
@@ -2758,12 +2754,14 @@ rewrite update_list_inc_length.
   lia.
 Qed.
 
-Definition vec_update_inc {T n} `{Inhabited T} (v : vec T n) (m : Z) (t : T) : vec T n.
-refine (
-  if sumbool_of_bool (0 <=? m <? n) then
-    @existT _ _ (update_list_inc (projT1 v) m t) _
-  else dummy_value
-).
+Definition vec_update_dec {T n} `{Inhabited T} (v : vec T n) (m : Z) (t : T) : vec T n :=
+  match sumbool_of_bool (0 <=? m <? n) with
+  | left e => @existT _ _ (update_list_dec (projT1 v) m t) (vec_update_dec_lemma e)
+  | right _ => dummy_value
+  end.
+
+Lemma vec_update_inc_lemma {T n} {v : vec T n} {m t} : 0 <=? m <? n = true -> length (update_list_inc (projT1 v) m t) = Z.to_nat n.
+intro e.
 destruct v as [v' L].
 rewrite update_list_inc_length.
 + apply L.
@@ -2774,6 +2772,12 @@ rewrite update_list_inc_length.
   lia.
 Qed.
 
+Definition vec_update_inc {T n} `{Inhabited T} (v : vec T n) (m : Z) (t : T) : vec T n :=
+  match sumbool_of_bool (0 <=? m <? n) with
+  | left e => @existT _ _ (update_list_inc (projT1 v) m t) (vec_update_inc_lemma e)
+  | right _ => dummy_value
+  end.
+
 Definition vec_map {S T} (f : S -> T) {n} (v : vec S n) : vec T n.
 refine (@existT _ _ (List.map f (projT1 v)) _).
 destruct v as [l H].
@@ -2781,7 +2785,7 @@ cbn.
 unfold length_list.
 rewrite map_length.
 apply H.
-Qed.
+Defined.
 
 Program Definition just_vec {A n} (v : vec (option A) n) : option (vec A n) :=
   match just_list (projT1 v) with
@@ -2792,7 +2796,7 @@ Next Obligation.
 rewrite <- (just_list_length _ _ Heq_anonymous).
 destruct v.
 assumption.
-Qed.
+Defined.
 
 Definition list_of_vec {A n} (v : vec A n) : list A := projT1 v.
 
