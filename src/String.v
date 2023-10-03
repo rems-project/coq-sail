@@ -273,4 +273,5 @@ Definition string_of_bits {n} (w : mword n) : string := string_of_word (get_word
 (* Some aliases for compatibility. *)
 Definition dec_str := string_of_int.
 Definition hex_str := hex_string_of_int.
+Definition hex_str_upper := hex_string_of_int.
 Definition concat_str := String.append.
