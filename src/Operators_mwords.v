@@ -266,8 +266,8 @@ Definition bools_of_int len n :=
   let w := MachineWord.Z_to_word (Z.to_nat len) n in
   MachineWord.word_to_bools w.
 
-Definition get_slice_int {a} (len : Z) (n : Z) (lo : Z) : mword a :=
-  if sumbool_of_bool (a >=? 0) then
+Definition get_slice_int (len : Z) (n : Z) (lo : Z) : mword len :=
+  if sumbool_of_bool (len >=? 0) then
     let hi := lo + len - 1 in
     let bs := bools_of_int (hi + 1) n in
     of_bools (subrange_list false bs hi lo)
