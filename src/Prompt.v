@@ -165,7 +165,7 @@ Definition and_bool_left_proof {P Q R:bool -> Prop} :
   ArithFactP (P false) ->
   (forall l r, ArithFactP (P l -> ((l = true -> (Q r)) -> (R (andb l r))))) ->
   ArithFactP (R false).
-intros [p] [h].
+intros [p] h.
 constructor.
 change false with (andb false false).
 apply h; auto.
@@ -177,7 +177,7 @@ Definition and_bool_full_proof {P Q R:bool -> Prop} {r} :
   ArithFactP (Q r) ->
   (forall l r, ArithFactP ((P l) -> ((l = true -> (Q r)) -> (R (andb l r))))) ->
   ArithFactP (R r).
-intros [p] [q] [h].
+intros [p] [q] h.
 constructor.
 change r with (andb true r).
 apply h; auto.
@@ -199,7 +199,7 @@ Definition or_bool_left_proof {P Q R:bool -> Prop} :
   ArithFactP (P true) ->
   (forall l r, ArithFactP ((P l) -> (((l = false) -> (Q r)) -> (R (orb l r))))) ->
   ArithFactP (R true).
-intros [p] [h].
+intros [p] h.
 constructor.
 change true with (orb true false).
 apply h; auto.
@@ -211,7 +211,7 @@ Definition or_bool_full_proof {P Q R:bool -> Prop} {r} :
   ArithFactP (Q r) ->
   (forall l r, ArithFactP ((P l) -> (((l = false) -> (Q r)) -> (R (orb l r))))) ->
   ArithFactP (R r).
-intros [p] [q] [h].
+intros [p] [q] h.
 constructor.
 change r with (orb false r).
 apply h; auto.
