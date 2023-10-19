@@ -267,9 +267,9 @@ induction l.
 * destruct i; intros; split; simpl; intro; solve [congruence|Lia.lia].
 * intros.
   destruct i.
-  - simpl. intuition; solve [ congruence | Lia.lia ].
+  - simpl. intuition auto; solve [ congruence | Lia.lia ].
   - simpl. rewrite IHl.
-    intuition.
+    intuition auto with arith.
 Qed.
 
 Lemma nth_error_rev A (l : list A) i x :
@@ -285,7 +285,7 @@ destruct (lt_dec i (length l)) as [H|H].
   tauto.
 * apply not_lt in H.
   specialize (List.nth_error_None l i) as H'.
-  intuition; solve [congruence | Lia.lia].
+  intuition auto; solve [congruence | Lia.lia].
 Qed.
 
 Lemma bools_to_word_get_bit : forall l i b,
@@ -295,7 +295,7 @@ unfold bools_to_word.
 rewrite get_bit_cast_word.
 rewrite nth_error_rev.
 rewrite bools_to_word_rev_get_bit.
-intuition.
+intuition auto.
 rewrite List.rev_length.
 Lia.lia.
 Qed.
@@ -372,7 +372,7 @@ Lemma word_to_bools_nth_Some : forall [n] (w : word n) (i : nat) x, n > 0 ->
 intros.
 rewrite word_to_bools_get_bit.
 rewrite word_to_N_get_bit.
-intuition.
+intuition auto.
 Lia.lia.
 Qed.
 
@@ -380,10 +380,10 @@ Lemma bools_to_word_nth_Some : forall (l : list bool) i b,
   List.nth_error l i = Some b <-> b = N.testbit (word_to_N (bools_to_word l)) (N.of_nat (length l - i - 1)) /\ i < length l.
 intros.
 destruct l.
-* destruct i; simpl; intuition; congruence.
+* destruct i; simpl; split; try congruence; Lia.lia.
 * rewrite bools_to_word_get_bit.
   rewrite word_to_N_get_bit.
-  intuition.
+  intuition auto.
   simpl (length _).
   Lia.lia.
 Qed.

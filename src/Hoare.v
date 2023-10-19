@@ -1049,7 +1049,7 @@ revert n. induction l.
 * simpl. intros. apply PeanoNat.Nat.nlt_0_r in H. destruct H.
 * intros. destruct n.
   + exists a. auto with datatypes.
-  + simpl in H. apply Lt.lt_S_n in H.
+  + simpl in H. apply Nat.succ_lt_mono in H.
     destruct (IHl n H) as [x H1].
     intuition eauto with datatypes.
 Qed.
