@@ -1,6 +1,15 @@
 Changelog
 =========
 
+0.17
+----
+
+* Fixes for Coq 8.18.0 support
+* Add a few minor missing built-in functions
+* Make more vector functions transparent
+
+Corresponds to the 0.17 Sail release.
+
 0.16
 ----
 
