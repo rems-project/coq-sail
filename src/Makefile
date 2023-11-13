@@ -16,6 +16,10 @@ else
 COQ_LIBS = -Q . "$(PACKAGE_NAME)"
 endif
 
+ifeq ($(PACKAGE_NAME),SailStdpp)
+SRC += ConcurrencyInterfaceTypes.v ConcurrencyInterface.v ConcurrencyInterfaceBuiltins.v
+endif
+
 TARGETS=$(SRC:.v=.vo)
 
 .PHONY: all clean install
