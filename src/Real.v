@@ -65,12 +65,14 @@
 (*  SUCH DAMAGE.                                                            *)
 (*==========================================================================*)
 
-Require Export Rbase.
+Require Import Rbase.
 Require Import Reals.
 Require Export ROrderedType.
 Require Import Sail.Values.
 Require Import Lia.
 Local Open Scope Z.
+
+Export Rdefinitions(R).
 
 (* "Decidable" in a classical sense... *)
 #[export] Instance Decidable_eq_real : forall (x y : R), Decidable (x = y) :=
