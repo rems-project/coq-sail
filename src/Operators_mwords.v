@@ -75,7 +75,8 @@ Require Import Lia.
 Require Import Eqdep_dec.
 Local Open Scope Z.
 
-Definition autocast_m {rv e m n} (x : monad rv (mword m) e) : monad rv (mword n) e := x >>= fun x => returnm (autocast x).
+Definition autocast_m {rv e m n} {T : Z -> Type} `{H : Inhabited (T n)} (x : monad rv (T m) e) : monad rv (T n) e :=
+  x >>= fun x => returnm (autocast x).
 
 (*
 (* Specialisation of operators to machine words *)
