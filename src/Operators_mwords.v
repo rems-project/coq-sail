@@ -270,8 +270,8 @@ Definition bools_of_int len n :=
 Definition get_slice_int (len : Z) (n : Z) (lo : Z) : mword len :=
   if sumbool_of_bool (len >=? 0) then
     let hi := lo + len - 1 in
-    let bs := bools_of_int (hi + 1) n in
-    of_bools (subrange_list false bs hi lo)
+    let v : mword (hi + 1) := mword_of_int n in
+    autocast (subrange_vec_dec v hi lo)
   else dummy_value.
 
 Definition set_slice n m (v : mword n) x (w : mword m) : mword n :=
