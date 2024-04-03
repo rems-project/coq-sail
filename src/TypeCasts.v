@@ -30,6 +30,9 @@ Global Opaque dummy_value.
 }.
 #[export] Instance list_inhabited {X} : Inhabited (list X) := { inhabitant := List.nil }.
 #[export] Instance option_inhabited {X} : Inhabited (option X) := { inhabitant := None }.
+#[export] Instance function_inhabited {S T} `{Inhabited T} : Inhabited (S -> T) := {
+  inhabitant := fun _ => inhabitant
+}.
 
 (* For the indexed machine words we sometimes need to change to an
    equivalent index.  These provide nat and Z casts that compute. *)
