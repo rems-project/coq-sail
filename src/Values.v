@@ -1679,29 +1679,29 @@ Definition vec_access_dec {T n} (v : vec T n) m `{Inhabited T} : T :=
 Definition vec_access_inc {T n} (v : vec T n) m `{Inhabited T} : T :=
   access_list_inc (projT1 v) m.
 
-#[export] Instance dummy_vec {T:Type} `{Inhabited T} n : Inhabited (vec T n).
-refine (Build_Inhabited _
-  (if sumbool_of_bool (n >=? 0) then @existT _ _ (repeat [dummy_value] n) _ else @existT _ _ [] _)
-).
-* rewrite repeat_length.
-  - simpl.
-    apply Nat.mul_1_r.
-  - auto with zarith.
-* destruct n; try reflexivity.
-  compute in e. congruence.
+(* "Negative" length vectors are treated as empty, but would normally be a mistake,
+   so define an opaque default value for them so that it's obvious when one appears. *)
+Definition dodgy_vec {T:Type} n (NEG: n >=? 0 = false) : vec T n.
+refine (@existT _ _ [] _).
+destruct n; try discriminate.
+reflexivity.
 Qed.
 
-Definition vec_init {T} (t : T) `{Inhabited T} (n : Z) : vec T n.
-refine (
-  if sumbool_of_bool (n >=? 0) then
-    @existT _ _ (repeat [t] n) _
-  else dummy_value
-).
+Lemma vec_init_ok {T} {n} {t : T} : n >=? 0 = true -> Datatypes.length (repeat [t] n) = Z.to_nat n.
+intro GE.
 rewrite repeat_length.
 - simpl.
   apply Nat.mul_1_r.
 - auto with zarith.
-Defined.
+Qed.
+
+Definition vec_init {T} (t : T) `{Inhabited T} (n : Z) : vec T n :=
+  match sumbool_of_bool (n >=? 0) with
+  | left GE => @existT _ _ (repeat [t] n) (vec_init_ok GE)
+  | right NGE => dodgy_vec n NGE
+  end.
+
+#[export] Instance dummy_vec {T:Type} `{Inhabited T} n : Inhabited (vec T n) := {| inhabitant := vec_init inhabitant n |}.
 
 Definition vec_concat {T m n} `{Inhabited T} (v : vec T m) (w : vec T n) : vec T (m + n).
 refine (
