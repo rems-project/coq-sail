@@ -355,82 +355,30 @@ Definition write_tag_boolS {Regs E A} (addr : mword A) (tag : bool) : monadS Reg
 Definition write_memS {Regs E A} wk (addr : mword A) sz (v : mword (8 * sz)) : monadS Regs bool E :=
  write_memtS wk addr sz v B0.
 
-(*val read_regS : forall 'regs 'rv 'a 'e. register_ref 'regs 'rv 'a -> monadS 'regs 'a 'e*)
-Definition read_regS {Regs RV A E} (reg : register_ref Regs RV A) : monadS Regs A E :=
- readS (fun s => reg.(read_from) s.(ss_regstate)).
+Definition read_regS {Regs rt} {register_lookup : forall {T}, Regs -> rt T -> T} {A E} (reg : rt A) : monadS Regs A E :=
+ readS (fun s => register_lookup s.(ss_regstate) reg).
 
-(* TODO
-let read_reg_range reg i j state =
-  let v = slice (get_reg state (name_of_reg reg)) i j in
-  [(Value (vec_to_bvec v),state)]
-let read_reg_bit reg i state =
-  let v = access (get_reg state (name_of_reg reg)) i in
-  [(Value v,state)]
-let read_reg_field reg regfield =
-  let (i,j) = register_field_indices reg regfield in
-  read_reg_range reg i j
-let read_reg_bitfield reg regfield =
-  let (i,_) = register_field_indices reg regfield in
-  read_reg_bit reg i *)
+Definition read_reg_refS {Regs rt} {register_lookup : forall {T}, Regs -> rt T -> T} {A E} (ref : register_ref rt A) : monadS Regs A E :=
+ readS (fun s => register_lookup s.(ss_regstate) ref.(reg)).
 
 (*val read_regvalS : forall 'regs 'rv 'e.
   register_accessors 'regs 'rv -> string -> monadS 'regs 'rv 'e*)
-Definition read_regvalS {Regs RV E} (acc : register_accessors Regs RV) reg : monadS Regs RV E :=
+Definition read_regvalS {Regs reg_type A E} (acc : register_accessors Regs reg_type) (reg : reg_type A) : monadS Regs A E :=
   let '(read, _) := acc in
-  readS (fun s => read reg s.(ss_regstate)) >>$= (fun v => match v with
-      | Some v =>  returnS v
-      | None => failS ("read_regvalS " ++ reg)
-    end).
+  readS (fun s => read _ reg s.(ss_regstate)).
 
 (*val write_regvalS : forall 'regs 'rv 'e.
   register_accessors 'regs 'rv -> string -> 'rv -> monadS 'regs unit 'e*)
-Definition write_regvalS {Regs RV E} (acc : register_accessors Regs RV) reg (v : RV) : monadS Regs unit E :=
+Definition write_regvalS {Regs reg_type A E} (acc : register_accessors Regs reg_type) (reg : reg_type A) (v : A) : monadS Regs unit E :=
   let '(_, write) := acc in
-  readS (fun s => write reg v s.(ss_regstate)) >>$= (fun x => match x with
-      | Some rs' => updateS (fun s => {| ss_regstate := rs'; ss_memstate := s.(ss_memstate); ss_tagstate := s.(ss_tagstate) |})
-      | None =>  failS ("write_regvalS " ++ reg)
-    end).
+  readS (fun s => write _ reg v s.(ss_regstate)) >>$= (fun rs' =>
+      updateS (fun s => {| ss_regstate := rs'; ss_memstate := s.(ss_memstate); ss_tagstate := s.(ss_tagstate) |})).
 
-(*val write_regS : forall 'regs 'rv 'a 'e. register_ref 'regs 'rv 'a -> 'a -> monadS 'regs unit 'e*)
-Definition write_regS {Regs RV A E} (reg : register_ref Regs RV A) (v:A) : monadS Regs unit E :=
-  updateS (fun s => {| ss_regstate := reg.(write_to) v s.(ss_regstate); ss_memstate := s.(ss_memstate); ss_tagstate := s.(ss_tagstate) |}).
+Definition write_regS {Regs rt} {register_set : forall {T}, Regs -> rt T -> T -> Regs} {A E} (reg : rt A) (v:A) : monadS Regs unit E :=
+  updateS (fun s => {| ss_regstate := register_set s.(ss_regstate) reg v; ss_memstate := s.(ss_memstate); ss_tagstate := s.(ss_tagstate) |}).
 
-(* TODO
-val update_reg : forall 'regs 'rv 'a 'b 'e. register_ref 'regs 'rv 'a -> ('a -> 'b -> 'a) -> 'b -> monadS 'regs unit 'e
-let update_reg reg f v state =
-  let current_value = get_reg state reg in
-  let new_value = f current_value v in
-  [(Value (), set_reg state reg new_value)]
-
-let write_reg_field reg regfield = update_reg reg regfield.set_field
-
-val update_reg_range : forall 'regs 'rv 'a 'b. Bitvector 'a, Bitvector 'b => register_ref 'regs 'rv 'a -> integer -> integer -> 'a -> 'b -> 'a
-let update_reg_range reg i j reg_val new_val = set_bits (reg.is_inc) reg_val i j (bits_of new_val)
-let write_reg_range reg i j = update_reg reg (update_reg_range reg i j)
-
-let update_reg_pos reg i reg_val x = update_list reg.is_inc reg_val i x
-let write_reg_pos reg i = update_reg reg (update_reg_pos reg i)
-
-let update_reg_bit reg i reg_val bit = set_bit (reg.is_inc) reg_val i (to_bitU bit)
-let write_reg_bit reg i = update_reg reg (update_reg_bit reg i)
-
-let update_reg_field_range regfield i j reg_val new_val =
-  let current_field_value = regfield.get_field reg_val in
-  let new_field_value = set_bits (regfield.field_is_inc) current_field_value i j (bits_of new_val) in
-  regfield.set_field reg_val new_field_value
-let write_reg_field_range reg regfield i j = update_reg reg (update_reg_field_range regfield i j)
-
-let update_reg_field_pos regfield i reg_val x =
-  let current_field_value = regfield.get_field reg_val in
-  let new_field_value = update_list regfield.field_is_inc current_field_value i x in
-  regfield.set_field reg_val new_field_value
-let write_reg_field_pos reg regfield i = update_reg reg (update_reg_field_pos regfield i)
-
-let update_reg_field_bit regfield i reg_val bit =
-  let current_field_value = regfield.get_field reg_val in
-  let new_field_value = set_bit (regfield.field_is_inc) current_field_value i (to_bitU bit) in
-  regfield.set_field reg_val new_field_value
-let write_reg_field_bit reg regfield i = update_reg reg (update_reg_field_bit regfield i)*)
+Definition write_reg_refS {Regs rt} {register_set : forall {T}, Regs -> rt T -> T -> Regs} {A E} (ref : register_ref rt A) (v:A) : monadS Regs unit E :=
+  updateS (fun s => {| ss_regstate := register_set s.(ss_regstate) ref.(reg) v; ss_memstate := s.(ss_memstate); ss_tagstate := s.(ss_tagstate) |}).
 
 (* TODO Add Show typeclass for value and exception type *)
 (*val show_result : forall 'a 'e. result 'a 'e -> string*)

@@ -16,8 +16,8 @@ Inductive empOutcome (R : Type) :=.
 (** The architecture parameters that must be provided to the interface *)
 Module Type Arch.
 
-  (** The type of registers, most likely string, but may be more fancy *)
-  Parameter reg : Type.
+  (** The type of registers, parametrised by the type of values for that register *)
+  Parameter reg : Type -> Type.
 
   (** We need to implement a gmap indexed by registers *)
 (* Not yet, or maybe not here...  (only needed by downstream libraries)
@@ -26,9 +26,6 @@ Module Type Arch.
   Parameter reg_countable : @Countable reg reg_eq.
   #[export] Existing Instance reg_countable.
 *)
-  (** The type of registers. This needs to be a type generic enough to contain
-      the value of any register *)
-  Parameter reg_type : Type.
 
   (** Virtual address size *)
   Parameter va_size : N.
@@ -156,7 +153,7 @@ Module Interface (A : Arch).
   Inductive outcome : Type -> Type :=
     (** The direct or indirect flag is to specify how much coherence is required
         for relaxed registers *)
-  | RegRead (reg : reg) (direct : bool) : outcome reg_type
+  | RegRead {T : Type} (reg : reg T) (direct : bool) : outcome T
 
     (** The direct or indirect flag is to specify how much coherence is required
         for relaxed registers.
@@ -165,8 +162,8 @@ Module Interface (A : Arch).
 
         Generally, writing the PC introduces no dependency because control
         dependencies are specified by the branch announce *)
-  | RegWrite (reg : reg) (direct : bool) (deps : deps)
-             (regval: reg_type) : outcome unit
+  | RegWrite {T : Type} (reg : reg T) (direct : bool) (deps : deps)
+             (regval: T) : outcome unit
   | MemRead (n : N) : ReadReq.t deps n ->
                       outcome (bv (8 * n) * option bool + abort)
   | MemWrite (n : N) : WriteReq.t deps n -> outcome (option bool + abort)
