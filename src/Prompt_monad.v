@@ -73,44 +73,43 @@ Require Import Sail.Instances.
 Import ListNotations.
 Local Open Scope Z.
 
-Definition register_name := string.
 Definition address := N.
 
-Inductive monad regval a e :=
-  | Done : a -> monad regval a e
+Inductive monad reg_type a e :=
+  | Done : a -> monad reg_type a e
   (* Read a number of bytes from memory, returned in little endian order,
      with or without a tag.  The first nat specifies the address, the second
      the number of bytes. *)
-  | Read_mem : read_kind -> N -> nat -> (list memory_byte -> monad regval a e) -> monad regval a e
-  | Read_memt : read_kind -> N -> nat -> ((list memory_byte * bitU) -> monad regval a e) -> monad regval a e
+  | Read_mem : read_kind -> N -> nat -> (list memory_byte -> monad reg_type a e) -> monad reg_type a e
+  | Read_memt : read_kind -> N -> nat -> ((list memory_byte * bitU) -> monad reg_type a e) -> monad reg_type a e
   (* Tell the system a write is imminent, at the given address and with the
      given size. *)
-  | Write_ea : write_kind -> N -> nat -> monad regval a e -> monad regval a e
+  | Write_ea : write_kind -> N -> nat -> monad reg_type a e -> monad reg_type a e
   (* Request the result : store-exclusive *)
-  | Excl_res : (bool -> monad regval a e) -> monad regval a e
+  | Excl_res : (bool -> monad reg_type a e) -> monad reg_type a e
   (* Request to write a memory value of the given size at the given address,
      with or without a tag. *)
-  | Write_mem : write_kind -> N -> nat -> list memory_byte -> (bool -> monad regval a e) -> monad regval a e
-  | Write_memt : write_kind -> N -> nat -> list memory_byte -> bitU -> (bool -> monad regval a e) -> monad regval a e
-  | Write_tag : write_kind -> N -> bitU -> (bool -> monad regval a e) -> monad regval a e
+  | Write_mem : write_kind -> N -> nat -> list memory_byte -> (bool -> monad reg_type a e) -> monad reg_type a e
+  | Write_memt : write_kind -> N -> nat -> list memory_byte -> bitU -> (bool -> monad reg_type a e) -> monad reg_type a e
+  | Write_tag : write_kind -> N -> bitU -> (bool -> monad reg_type a e) -> monad reg_type a e
   (* Tell the system to dynamically recalculate dependency footprint *)
-  | Footprint : monad regval a e -> monad regval a e
+  | Footprint : monad reg_type a e -> monad reg_type a e
   (* Request a memory barrier *)
-  | Barrier : barrier_kind -> monad regval a e -> monad regval a e
+  | Barrier : barrier_kind -> monad reg_type a e -> monad reg_type a e
   (* Request to read register, will track dependency when mode.track_values *)
-  | Read_reg : register_name -> (regval -> monad regval a e) -> monad regval a e
+  | Read_reg : forall T, reg_type T -> (T -> monad reg_type a e) -> monad reg_type a e
   (* Request to write register *)
-  | Write_reg : register_name -> regval -> monad regval a e -> monad regval a e
+  | Write_reg : forall T, reg_type T -> T -> monad reg_type a e -> monad reg_type a e
   (* Request to choose a Boolean, e.g. to resolve an undefined bit. The string
      argument may be used to provide information to the system about what the
      Boolean is going to be used for. *)
-  | Choose : string -> forall ty, (choose_type ty -> monad regval a e) -> monad regval a e
+  | Choose : string -> forall ty, (choose_type ty -> monad reg_type a e) -> monad reg_type a e
   (* Print debugging or tracing information *)
-  | Print : string -> monad regval a e -> monad regval a e
+  | Print : string -> monad reg_type a e -> monad reg_type a e
   (*Result of a failed assert with possible error message to report*)
-  | Fail : string -> monad regval a e
+  | Fail : string -> monad reg_type a e
   (* Exception of type e *)
-  | Exception : e -> monad regval a e.
+  | Exception : e -> monad reg_type a e.
 
 Arguments Done [_ _ _].
 Arguments Read_mem [_ _ _].
@@ -122,8 +121,8 @@ Arguments Write_memt [_ _ _].
 Arguments Write_tag [_ _ _].
 Arguments Footprint [_ _ _].
 Arguments Barrier [_ _ _].
-Arguments Read_reg [_ _ _].
-Arguments Write_reg [_ _ _].
+Arguments Read_reg [_ _ _ _].
+Arguments Write_reg [_ _ _ _].
 Arguments Choose [_ _ _].
 Arguments Print [_ _ _].
 Arguments Fail [_ _ _].
@@ -139,7 +138,7 @@ intros [=].
 assumption.
 Qed.
 
-Inductive event {regval} :=
+Inductive event {reg_type} :=
   | E_read_mem : read_kind -> N -> nat -> list memory_byte -> event
   | E_read_memt : read_kind -> N -> nat -> (list memory_byte * bitU) -> event
   | E_write_mem : write_kind -> N -> nat -> list memory_byte -> bool -> event
@@ -149,8 +148,8 @@ Inductive event {regval} :=
   | E_excl_res : bool -> event
   | E_barrier : barrier_kind -> event
   | E_footprint : event
-  | E_read_reg : register_name -> regval -> event
-  | E_write_reg : register_name -> regval -> event
+  | E_read_reg : forall {T}, reg_type T -> T -> event
+  | E_write_reg : forall {T}, reg_type T -> T -> event
   | E_choose : string -> forall ty, choose_type ty -> event
   | E_print : string -> event.
 Arguments event : clear implicits.
@@ -197,20 +196,19 @@ match x with
 end.
 
 Section Choose.
-Context {rv E : Type}.
+Context {rt : Type -> Type} {E : Type}.
 
-(*val choose_bool : forall 'rv 'e. string -> monad 'rv bool 'e*)
-Definition choose_bool descr : monad rv bool E := Choose descr ChooseBool returnm.
-Definition choose_bit descr : monad rv bitU E := Choose descr ChooseBit returnm.
-Definition choose_int descr : monad rv Z E := Choose descr ChooseInt returnm.
-Definition choose_nat descr : monad rv Z E := Choose descr ChooseNat returnm.
-Definition choose_real descr : monad rv _ E := Choose descr ChooseReal returnm.
-Definition choose_string descr : monad rv string E := Choose descr ChooseString returnm.
-Definition choose_range descr lo hi : monad rv Z E :=
+Definition choose_bool descr : monad rt bool E := Choose descr ChooseBool returnm.
+Definition choose_bit descr : monad rt bitU E := Choose descr ChooseBit returnm.
+Definition choose_int descr : monad rt Z E := Choose descr ChooseInt returnm.
+Definition choose_nat descr : monad rt Z E := Choose descr ChooseNat returnm.
+Definition choose_real descr : monad rt _ E := Choose descr ChooseReal returnm.
+Definition choose_string descr : monad rt string E := Choose descr ChooseString returnm.
+Definition choose_range descr lo hi : monad rt Z E :=
   if lo <=? hi
   then Choose descr (ChooseRange lo hi) (fun v => if sumbool_of_bool ((lo <=? v) && (v <=? hi)) then returnm v else Fail "choose_range: Bad value")
   else Fail "choose_range: Bad range".
-Definition choose_bitvector descr n : monad rv (mword n) E := Choose descr (ChooseBitvector n) returnm.
+Definition choose_bitvector descr n : monad rt (mword n) E := Choose descr (ChooseBitvector n) returnm.
 
 End Choose.
 
@@ -354,56 +352,21 @@ Definition write_tag_bool {rv a E} (addr : mword a) tag : monad rv bool E :=
   let addr := mword_to_N addr in
        Write_tag Write_plain addr (bitU_of_bool tag) returnm.
 
-Definition read_reg {s rv a e} (reg : register_ref s rv a) : monad rv a e :=
-  let k v :=
-    match reg.(of_regval) v with
-      | Some v => Done v
-      | None => Fail "read_reg: unrecognised value"
-    end
-  in
-  Read_reg reg.(name) k.
+Definition read_reg {rt a e} (reg : rt a) : monad rt a e :=
+  let k v := Done v in
+  Read_reg reg k.
 
-(* TODO
-val read_reg_range : forall 's 'r 'rv 'a 'e. Bitvector 'a => register_ref 's 'rv 'r -> integer -> integer -> monad 'rv 'a 'e
-let read_reg_range reg i j =
-  read_reg_aux of_bits (external_reg_slice reg (nat_of_int i,nat_of_int j))
+Definition read_reg_ref {rt a e} (ref : register_ref rt a) : monad rt a e :=
+  let k v := Done v in
+  Read_reg ref.(reg) k.
 
-let read_reg_bit reg i =
-  read_reg_aux (fun v -> v) (external_reg_slice reg (nat_of_int i,nat_of_int i)) >>= fun v ->
-  return (extract_only_element v)
+Definition reg_deref {rt a e} := @read_reg_ref rt a e.
 
-let read_reg_field reg regfield =
-  read_reg_aux (external_reg_field_whole reg regfield)
+Definition write_reg {rt a e} (reg : rt a) (v : a) : monad rt unit e :=
+ Write_reg reg v (Done tt).
 
-let read_reg_bitfield reg regfield =
-  read_reg_aux (external_reg_field_whole reg regfield) >>= fun v ->
-  return (extract_only_element v)*)
-
-Definition reg_deref {s rv a e} := @read_reg s rv a e.
-
-(*Parameter write_reg : forall {s rv a e}, register_ref s rv a -> a -> monad rv unit e.*)
-Definition write_reg {s rv a e} (reg : register_ref s rv a) (v : a) : monad rv unit e :=
- Write_reg reg.(name) (reg.(regval_of) v) (Done tt).
-
-(* TODO
-let write_reg reg v =
-  write_reg_aux (external_reg_whole reg) v
-let write_reg_range reg i j v =
-  write_reg_aux (external_reg_slice reg (nat_of_int i,nat_of_int j)) v
-let write_reg_pos reg i v =
-  let iN = nat_of_int i in
-  write_reg_aux (external_reg_slice reg (iN,iN)) [v]
-let write_reg_bit = write_reg_pos
-let write_reg_field reg regfield v =
-  write_reg_aux (external_reg_field_whole reg regfield.field_name) v
-let write_reg_field_bit reg regfield bit =
-  write_reg_aux (external_reg_field_whole reg regfield.field_name)
-                (Vector [bit] 0 (is_inc_of_reg reg))
-let write_reg_field_range reg regfield i j v =
-  write_reg_aux (external_reg_field_slice reg regfield.field_name (nat_of_int i,nat_of_int j)) v
-let write_reg_field_pos reg regfield i v =
-  write_reg_field_range reg regfield i i [v]
-let write_reg_field_bit = write_reg_field_pos*)
+Definition write_reg_ref {rt a e} (ref : register_ref rt a) (v : a) : monad rt unit e :=
+ Write_reg ref.(reg) v (Done tt).
 
 (*val barrier : forall rv e. barrier_kind -> monad rv unit e*)
 Definition barrier {rv e} bk : monad rv unit e := Barrier bk (Done tt).
@@ -413,6 +376,9 @@ Definition footprint {rv e} (_ : unit) : monad rv unit e := Footprint (Done tt).
 
 (* Event traces *)
 
+(* TODO: To make this work, we'd need decidable equality on the
+   register type, and to be able to use that equality to make value
+   and continuation types match.
 Section EventTraces.
 
 Local Open Scope bool_scope.
@@ -489,3 +455,4 @@ match runTrace t m with
 end.
 
 End EventTraces.
+*)

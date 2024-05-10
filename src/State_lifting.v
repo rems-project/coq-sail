@@ -74,7 +74,7 @@ Import ListNotations.
 
 (* Lifting from prompt monad to state monad *)
 (*val liftState : forall 'regval 'regs 'a 'e. register_accessors 'regs 'regval -> monad 'regval 'a 'e -> monadS 'regs 'a 'e*)
-Fixpoint liftState {Regval Regs A E} (ra : register_accessors Regs Regval) (m : monad Regval A E) : monadS Regs A E :=
+Fixpoint liftState {Regs reg_type A E} (ra : register_accessors Regs reg_type) (m : monad reg_type A E) : monadS Regs A E :=
  match m with
   | (Done a)                   => returnS a
   | (Read_mem rk a sz k)       => bindS (read_mem_bytesS rk a sz)       (fun v => liftState ra (k v))
@@ -94,6 +94,7 @@ Fixpoint liftState {Regval Regs A E} (ra : register_accessors Regs Regval) (m : 
   | (Exception e)              => throwS e
 end.
 
+(* TODO: either update using some hypothesis that register types always have decidable equality, or remove
 Section EventTraces.
 
 Local Open Scope bool_scope.
@@ -135,3 +136,4 @@ match t with
 end.
 
 End EventTraces.
+*)

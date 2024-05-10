@@ -70,23 +70,23 @@ Require Import String ZArith.
 Local Open Scope Z.
 
 Section Undef.
-Context {rv E : Type}.
+Context {rt : Type -> Type} {E : Type}.
 
-Definition undefined_unit (_:unit) : monad rv unit E := returnm tt.
-Definition undefined_bool (_:unit) : monad rv bool E := choose_bool "undefined_bool".
-Definition undefined_bit (_:unit) : monad rv bitU E := choose_bool "undefined_bit" >>= fun b => returnm (bitU_of_bool b).
-Definition undefined_string (_:unit) : monad rv string E := choose_string "undefined_string".
-Definition undefined_int (_:unit) : monad rv Z E := choose_int "undefined_int".
-Definition undefined_nat (_:unit) : monad rv Z E := choose_nat "undefined_nat".
-Definition undefined_real (_:unit) : monad rv _ E := choose_real "undefined_real".
-Definition undefined_range i j : monad rv Z E := choose_range "undefined_range" i j.
-Definition undefined_bitvector n : monad rv (mword n) E := choose_bitvector "undefined_bitvector" n.
+Definition undefined_unit (_:unit) : monad rt unit E := returnm tt.
+Definition undefined_bool (_:unit) : monad rt bool E := choose_bool "undefined_bool".
+Definition undefined_bit (_:unit) : monad rt bitU E := choose_bool "undefined_bit" >>= fun b => returnm (bitU_of_bool b).
+Definition undefined_string (_:unit) : monad rt string E := choose_string "undefined_string".
+Definition undefined_int (_:unit) : monad rt Z E := choose_int "undefined_int".
+Definition undefined_nat (_:unit) : monad rt Z E := choose_nat "undefined_nat".
+Definition undefined_real (_:unit) : monad rt _ E := choose_real "undefined_real".
+Definition undefined_range i j : monad rt Z E := choose_range "undefined_range" i j.
+Definition undefined_bitvector n : monad rt (mword n) E := choose_bitvector "undefined_bitvector" n.
 
 (* TODO: use a distinct undef value for each element *)
-Definition undefined_list {T} `{Inhabited T} (a:T) : monad rv (list T) E :=
+Definition undefined_list {T} `{Inhabited T} (a:T) : monad rt (list T) E :=
   undefined_nat tt >>= fun n =>
   returnm (repeat (List.cons a List.nil) n).
   
-Definition undefined_vector {T} n `{Inhabited T} (a:T) : monad rv (vec T n) E := returnm (vector_init n a).
+Definition undefined_vector {T} n `{Inhabited T} (a:T) : monad rt (vec T n) E := returnm (vector_init n a).
 
 End Undef.

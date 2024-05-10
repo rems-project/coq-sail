@@ -622,22 +622,18 @@ Lemma bindS_rw_left Regs A B E m1 m2 (f : A -> monadS Regs B E) s cs :
 intro H. unfold bindS. rewrite H. reflexivity.
 Qed. 
 
-Lemma liftState_read_reg_readS Regs Regval A E reg get_regval' set_regval' :
-  (forall s, map_bind reg.(of_regval) (get_regval' reg.(name) s) = Some (reg.(read_from) s)) ->
-  liftState (Regs := Regs) (get_regval', set_regval') (@read_reg _ Regval A E reg) === readS (fun x => reg.(read_from) (ss_regstate x)).
+Lemma liftState_read_reg_readS Regs reg_type A E reg get_regval' set_regval' :
+  liftState (Regs := Regs) (get_regval', set_regval') (@read_reg reg_type A E reg) === readS (fun x => get_regval' _ reg (ss_regstate x)).
 intros.
-unfold read_reg. simpl. unfold readS. intros s cs.
-erewrite bindS_rw_left. 2: {
-  apply bindS_returnS_left.
-}
-specialize (H (ss_regstate s)).
-destruct (get_regval' _ _) as [v | ]; only 2: discriminate H.
-rewrite bindS_returnS_left.
-simpl in *.
-rewrite H.
+unfold read_reg. simpl. unfold readS.
+rewrite bindS_returnS_right.
 reflexivity.
 Qed.
 
+#[export] Hint Rewrite liftState_read_reg_readS : liftState.
+#[export] Hint Resolve liftState_read_reg_readS : liftState.
+
+(* TODO: remove?
 (* Generic tactic to apply liftState to register reads, so that we don't have to
    generate lots of model-specific lemmas.  This takes advantage of the fact that
    if you fix the register then the lemma above is trivial by convertability. *)
@@ -650,20 +646,10 @@ Ltac lift_read_reg :=
   end.
 
 #[export] Hint Extern 1 (liftState _ (read_reg _) === _) => lift_read_reg; reflexivity : liftState.
+*)
 
-Lemma liftState_write_reg_updateS Regs Regval A E get_regval' set_regval' reg (v : A) :
-  (forall s, set_regval' (name reg) (regval_of reg v) s = Some (write_to reg v s)) ->
-  liftState (Regs := Regs) (Regval := Regval) (E := E) (get_regval', set_regval') (write_reg reg v) === updateS (fun s => {| ss_regstate := (write_to reg v s.(ss_regstate)); ss_memstate := s.(ss_memstate); ss_tagstate := s.(ss_tagstate) |}).
-intros. intros s cs.
-unfold write_reg. simpl. unfold readS, seqS.
-erewrite bindS_rw_left. 2: {
-  apply bindS_returnS_left.
-}
-specialize (H (ss_regstate s)).
-destruct (set_regval' _ _) as [v' | ]; only 2: discriminate H.
-injection H as H1.
-unfold updateS.
-rewrite <- H1.
+Lemma liftState_write_reg_updateS Regs reg_type A E get_regval' set_regval' (reg : reg_type A) (v : A) :
+  liftState (Regs := Regs) (E := E) (get_regval', set_regval') (write_reg reg v) === updateS (fun s => {| ss_regstate := (set_regval' _ reg v s.(ss_regstate)); ss_memstate := s.(ss_memstate); ss_tagstate := s.(ss_tagstate) |}).
 reflexivity.
 Qed.
 (*
@@ -857,8 +843,8 @@ qed
 *)
 
 
-Lemma liftState_whileM RV Vars E r measure vars cond (body : Vars -> monad RV Vars E) :
-  liftState (Regs := RV) r (whileMT vars measure cond body) === whileST vars measure (fun vars => liftState r (cond vars)) (fun vars => liftState r (body vars)).
+Lemma liftState_whileM Regs reg_type Vars E r measure vars cond (body : Vars -> monad reg_type Vars E) :
+  liftState (Regs := Regs) r (whileMT vars measure cond body) === whileST vars measure (fun vars => liftState r (cond vars)) (fun vars => liftState r (body vars)).
 unfold whileMT, whileST.
 generalize (measure vars) as limit. intro.
 revert vars.
@@ -931,8 +917,8 @@ proof (use assms in \<open>induction vars "liftState r \<circ> cond" "liftState 
   qed auto
 qed*)
 
-Lemma liftState_untilM RV Vars E r measure vars cond (body : Vars -> monad RV Vars E) :
-  liftState (Regs := RV) r (untilMT vars measure cond body) === untilST vars measure (fun vars => liftState r (cond vars)) (fun vars => liftState r (body vars)).
+Lemma liftState_untilM Regs reg_type Vars E r measure vars cond (body : Vars -> monad reg_type Vars E) :
+  liftState (Regs := Regs) r (untilMT vars measure cond body) === untilST vars measure (fun vars => liftState r (cond vars)) (fun vars => liftState r (body vars)).
 unfold untilMT, untilST.
 generalize (measure vars) as limit. intro.
 revert vars.

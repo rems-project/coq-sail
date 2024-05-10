@@ -9,7 +9,7 @@ Open Scope string.
 Open Scope bool.
 Open Scope Z.
 
-Module Defs (A : Arch with Definition reg := string) (I : InterfaceT A).
+Module Defs (A : Arch) (I : InterfaceT A).
 
 Definition monad A E := I.iMon unit (fun _ => E) A.
 Definition returnm {A E} : A -> monad A E := I.Ret.
@@ -127,19 +127,21 @@ End Undef.
 
 (* ---- Prompt_monad *)
 
-Definition read_reg {s a e} (reg : register_ref s A.reg_type a) : monad a e :=
-  let k v :=
-    match reg.(of_regval) v with
-      | Some v => I.Ret v
-      | None =>   I.Next (I.GenericFail "read_reg: unrecognised value") (fun f => match f with end)
-    end
-  in
-  I.Next (I.RegRead reg.(name) (*???*) true) k.
+Definition read_reg {a e} (reg : A.reg a) : monad a e :=
+  let k v := I.Ret v in
+  I.Next (I.RegRead reg (*???*) true) k.
+
+Definition read_reg_ref {a e} (ref : register_ref A.reg a) : monad a e :=
+  let k v := I.Ret v in
+  I.Next (I.RegRead ref.(Values.reg) (*???*) true) k.
 
 Definition reg_deref {s a e} := @read_reg s a e.
 
-Definition write_reg {s a e} (reg : register_ref s A.reg_type a) (v : a) : monad unit e :=
- I.Next (I.RegWrite reg.(name) (* ??? *) true tt (reg.(regval_of) v)) I.Ret.
+Definition write_reg {a e} (reg : A.reg a) (v : a) : monad unit e :=
+ I.Next (I.RegWrite reg (* ??? *) true tt v) I.Ret.
+
+Definition write_reg_ref {a e} (ref : register_ref A.reg a) (v : a) : monad unit e :=
+ I.Next (I.RegWrite ref.(Values.reg) (* ??? *) true tt v) I.Ret.
 
 (* ---- Prompt *)
 

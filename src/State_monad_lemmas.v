@@ -633,20 +633,18 @@ reflexivity. Qed.
 #[export] Hint Rewrite no_throw_mem_builtins_11 : ignore_throw.
 #[export] Hint Resolve no_throw_mem_builtins_11 : ignore_throw.
 *)
-Lemma no_throw_read_regvalS Regs RV E1 E2 r reg_name :
-  ignore_throw (E2 := E2) (@read_regvalS Regs RV E1 r reg_name) === read_regvalS r reg_name.
+Lemma no_throw_read_regvalS Regs reg_type A E1 E2 r reg_name :
+  ignore_throw (E2 := E2) (@read_regvalS Regs reg_type A E1 r reg_name) === read_regvalS r reg_name.
 destruct r; simpl. autorewrite with ignore_throw.
-apply bindS_cong; intros; auto. rewrite ignore_throw_option_case_distrib_2.
-autorewrite with ignore_throw. reflexivity.
+reflexivity.
 Qed.
 #[export] Hint Rewrite no_throw_read_regvalS : ignore_throw.
 #[export] Hint Resolve no_throw_read_regvalS : ignore_throw.
 
-Lemma no_throw_write_regvalS Regs RV E1 E2 r reg_name v :
-  ignore_throw (E2 := E2) (@write_regvalS Regs RV E1 r reg_name v) === write_regvalS r reg_name v.
+Lemma no_throw_write_regvalS Regs reg_type A E1 E2 r reg_name v :
+  ignore_throw (E2 := E2) (@write_regvalS Regs reg_type A E1 r reg_name v) === write_regvalS r reg_name v.
 destruct r; simpl. autorewrite with ignore_throw.
-apply bindS_cong; intros; auto. rewrite ignore_throw_option_case_distrib_2.
-autorewrite with ignore_throw. reflexivity.
+reflexivity.
 Qed.
 #[export] Hint Rewrite no_throw_write_regvalS : ignore_throw.
 #[export] Hint Resolve no_throw_write_regvalS : ignore_throw.

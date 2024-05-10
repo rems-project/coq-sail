@@ -280,9 +280,9 @@ Definition untilMT {RV Vars E} (vars : Vars) (measure : Vars -> Z) (cond : Vars 
   write_reg r1 r1_v >> write_reg r2 r2_v*)
 
 Section Choose.
-Context {rv E : Type}.
+Context {rt : Type -> Type} {E : Type}.
 
-Definition choose_from_list {A} (descr : string) (xs : list A) : monad rv A E :=
+Definition choose_from_list {A} (descr : string) (xs : list A) : monad rt A E :=
   (* Use sufficiently many nondeterministically chosen bits and convert into an
      index into the list *)
   choose_range descr 0 (Z.of_nat (List.length xs) - 1) >>= fun idx =>
@@ -291,7 +291,7 @@ Definition choose_from_list {A} (descr : string) (xs : list A) : monad rv A E :=
     | None => Fail ("choose " ++ descr)
   end.
 
-Definition internal_pick {a} (xs : list a) : monad rv a E :=
+Definition internal_pick {a} (xs : list a) : monad rt a E :=
   choose_from_list "internal_pick" xs.
 
 End Choose.

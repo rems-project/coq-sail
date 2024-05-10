@@ -1130,183 +1130,26 @@ Fixpoint reverse_endianness_list (bits : list bitU) :=
 
 (*** Registers *)
 
-Definition register_field := string.
-Definition register_field_index : Type := string * (Z * Z). (* name, start and end *)
-
-Inductive register :=
-  | Register : string * (* name *)
-               Z * (* length *)
-               Z * (* start index *)
-               bool * (* is increasing *)
-               list register_field_index
-               -> register
-  | UndefinedRegister : Z -> register (* length *)
-  | RegisterPair : register * register -> register.
-
-Record register_ref regstate regval a :=
-   { name : string;
-     (*is_inc : bool;*)
-     read_from : regstate -> a;
-     write_to : a -> regstate -> regstate;
-     of_regval : regval -> option a;
-     regval_of : a -> regval }.
-Notation "{[ r 'with' 'name' := e ]}" := ({| name := e; read_from := read_from r; write_to := write_to r; of_regval := of_regval r; regval_of := regval_of r |}).
-Notation "{[ r 'with' 'read_from' := e ]}" := ({| read_from := e; name := name r; write_to := write_to r; of_regval := of_regval r; regval_of := regval_of r |}).
-Notation "{[ r 'with' 'write_to' := e ]}" := ({| write_to := e; name := name r; read_from := read_from r; of_regval := of_regval r; regval_of := regval_of r |}).
-Notation "{[ r 'with' 'of_regval' := e ]}" := ({| of_regval := e; name := name r; read_from := read_from r; write_to := write_to r; regval_of := regval_of r |}).
-Notation "{[ r 'with' 'regval_of' := e ]}" := ({| regval_of := e; name := name r; read_from := read_from r; write_to := write_to r; of_regval := of_regval r |}).
-Arguments name [_ _ _].
-Arguments read_from [_ _ _].
-Arguments write_to [_ _ _].
-Arguments of_regval [_ _ _].
-Arguments regval_of [_ _ _].
+Record register_ref (reg_type : Type -> Type) a := {
+  name : string;
+  reg : reg_type a;
+}.
+Notation "{[ r 'with' 'name' := e ]}" := ({| name := e; reg := reg r |}).
+Notation "{[ r 'with' 'reg' := e ]}" := ({| name := name r; reg := e |}).
+Arguments name [_ _].
+Arguments reg [_ _].
 
 (* Remember that these inhabitants are not used by well typed Sail
 code, so it doesn't matter that it's not useful. *)
-#[export] Instance dummy_register_ref {T regstate regval} `{Inhabited T} `{Inhabited regval} : Inhabited (register_ref regstate regval T) := {
-  inhabitant := {| name := ""; read_from := fun _ => dummy_value; write_to := fun _ s => s; of_regval := fun _ => None; regval_of := fun _ => dummy_value |}
+#[export] Instance dummy_register_ref {T reg_type} `{Inhabited T} `{Inhabited (reg_type T)} : Inhabited (register_ref reg_type T) := {
+  inhabitant := {| name := ""; reg := dummy_value |}
 }.
 
 (* Register accessors: pair of functions for reading and writing register values *)
-Definition register_accessors regstate regval : Type :=
-  ((string -> regstate -> option regval) *
-   (string -> regval -> regstate -> option regstate)).
+Definition register_accessors regstate reg_type : Type :=
+  ((forall {T}, reg_type T -> regstate -> T) *
+   (forall {T}, reg_type T -> T -> regstate -> regstate)).
 
-Record field_ref regtype a :=
-   { field_name : string;
-     field_start : Z;
-     field_is_inc : bool;
-     get_field : regtype -> a;
-     set_field : regtype -> a -> regtype }.
-Arguments field_name [_ _].
-Arguments field_start [_ _].
-Arguments field_is_inc [_ _].
-Arguments get_field [_ _].
-Arguments set_field [_ _].
-
-(*
-(*let name_of_reg := function
-  | Register name _ _ _ _ => name
-  | UndefinedRegister _ => failwith "name_of_reg UndefinedRegister"
-  | RegisterPair _ _ => failwith "name_of_reg RegisterPair"
-end
-
-Definition size_of_reg := function
-  | Register _ size _ _ _ => size
-  | UndefinedRegister size => size
-  | RegisterPair _ _ => failwith "size_of_reg RegisterPair"
-end
-
-Definition start_of_reg := function
-  | Register _ _ start _ _ => start
-  | UndefinedRegister _ => failwith "start_of_reg UndefinedRegister"
-  | RegisterPair _ _ => failwith "start_of_reg RegisterPair"
-end
-
-Definition is_inc_of_reg := function
-  | Register _ _ _ is_inc _ => is_inc
-  | UndefinedRegister _ => failwith "is_inc_of_reg UndefinedRegister"
-  | RegisterPair _ _ => failwith "in_inc_of_reg RegisterPair"
-end
-
-Definition dir_of_reg := function
-  | Register _ _ _ is_inc _ => dir_of_bool is_inc
-  | UndefinedRegister _ => failwith "dir_of_reg UndefinedRegister"
-  | RegisterPair _ _ => failwith "dir_of_reg RegisterPair"
-end
-
-Definition size_of_reg_nat reg := Z.to_nat (size_of_reg reg)
-Definition start_of_reg_nat reg := Z.to_nat (start_of_reg reg)
-
-val register_field_indices_aux : register -> register_field -> option (Z * Z)
-Fixpoint register_field_indices_aux register rfield :=
-  match register with
-  | Register _ _ _ _ rfields => List.lookup rfield rfields
-  | RegisterPair r1 r2 =>
-      let m_indices := register_field_indices_aux r1 rfield in
-      if isSome m_indices then m_indices else register_field_indices_aux r2 rfield
-  | UndefinedRegister _ => None
-  end
-
-val register_field_indices : register -> register_field -> Z * Z
-Definition register_field_indices register rfield :=
-  match register_field_indices_aux register rfield with
-  | Some indices => indices
-  | None => failwith "Invalid register/register-field combination"
-  end
-
-Definition register_field_indices_nat reg regfield=
-  let (i,j) := register_field_indices reg regfield in
-  (Z.to_nat i,Z.to_nat j)*)
-
-(*let rec external_reg_value reg_name v :=
-  let (internal_start, external_start, direction) :=
-    match reg_name with
-     | Reg _ start size dir =>
-        (start, (if dir = D_increasing then start else (start - (size +1))), dir)
-     | Reg_slice _ reg_start dir (slice_start, _) =>
-        ((if dir = D_increasing then slice_start else (reg_start - slice_start)),
-         slice_start, dir)
-     | Reg_field _ reg_start dir _ (slice_start, _) =>
-        ((if dir = D_increasing then slice_start else (reg_start - slice_start)),
-         slice_start, dir)
-     | Reg_f_slice _ reg_start dir _ _ (slice_start, _) =>
-        ((if dir = D_increasing then slice_start else (reg_start - slice_start)),
-         slice_start, dir)
-     end in
-  let bits := bit_lifteds_of_bitv v in
-  <| rv_bits           := bits;
-     rv_dir            := direction;
-     rv_start          := external_start;
-     rv_start_internal := internal_start |>
-
-val internal_reg_value : register_value -> list bitU
-Definition internal_reg_value v :=
-  List.map bitU_of_bit_lifted v.rv_bits
-         (*(Z.of_nat v.rv_start_internal)
-         (v.rv_dir = D_increasing)*)
-
-
-Definition external_slice (d:direction) (start:nat) ((i,j):(nat*nat)) :=
-  match d with
-  (*This is the case the thread/concurrecny model expects, so no change needed*)
-  | D_increasing => (i,j)
-  | D_decreasing => let slice_i = start - i in
-                    let slice_j = (i - j) + slice_i in
-                    (slice_i,slice_j)
-  end *)
-
-(* TODO
-Definition external_reg_whole r :=
-  Reg (r.name) (Z.to_nat r.start) (Z.to_nat r.size) (dir_of_bool r.is_inc)
-
-Definition external_reg_slice r (i,j) :=
-  let start := Z.to_nat r.start in
-  let dir := dir_of_bool r.is_inc in
-  Reg_slice (r.name) start dir (external_slice dir start (i,j))
-
-Definition external_reg_field_whole reg rfield :=
-  let (m,n) := register_field_indices_nat reg rfield in
-  let start := start_of_reg_nat reg in
-  let dir := dir_of_reg reg in
-  Reg_field (name_of_reg reg) start dir rfield (external_slice dir start (m,n))
-
-Definition external_reg_field_slice reg rfield (i,j) :=
-  let (m,n) := register_field_indices_nat reg rfield in
-  let start := start_of_reg_nat reg in
-  let dir := dir_of_reg reg in
-  Reg_f_slice (name_of_reg reg) start dir rfield
-              (external_slice dir start (m,n))
-              (external_slice dir start (i,j))*)
-
-(*val external_mem_value : list bitU -> memory_value
-Definition external_mem_value v :=
-  byte_lifteds_of_bitv v $> List.reverse
-
-val internal_mem_value : memory_value -> list bitU
-Definition internal_mem_value bytes :=
-  List.reverse bytes $> bitv_of_byte_lifteds*)
-*)
 
 (* The choice operations in the monads operate on a small selection of base
    types.  Normally, -undefined_gen is used to construct functions for more
