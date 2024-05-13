@@ -376,17 +376,16 @@ Definition footprint {rv e} (_ : unit) : monad rv unit e := Footprint (Done tt).
 
 (* Event traces *)
 
-(* TODO: To make this work, we'd need decidable equality on the
-   register type, and to be able to use that equality to make value
-   and continuation types match.
 Section EventTraces.
+
+Context (register : Type -> Type).
+Context (register_eq_cast : forall {T T'} (P : Type -> Type) (r : register T) (r' : register T'), P T -> option (P T')).
+Context (regval_eqb : forall {T} (r : register T), T -> T -> bool).
 
 Local Open Scope bool_scope.
 
-Context {Regval : Type}.
-Context (regval_eqb : Regval -> Regval -> bool).
-
-Definition emitEvent {A E} (m : monad Regval A E) (e : event Regval) : option (monad Regval A E) :=
+(*val emitEvent : forall 'regval 'a 'e. Eq 'regval => monad 'regval 'a 'e -> event 'regval -> maybe (monad 'regval 'a 'e)*)
+Definition emitEvent {A E}  (m : monad register A E) (e : event register) : option (monad register A E) :=
  match (e, m) with
   | (E_read_mem rk a sz v, Read_mem rk' a' sz' k) =>
      if read_kind_beq rk' rk && N.eqb a' a && Nat.eqb sz' sz then Some (k v) else None
@@ -397,9 +396,15 @@ Definition emitEvent {A E} (m : monad Regval A E) (e : event Regval) : option (m
   | (E_write_memt wk a sz v tag r, Write_memt wk' a' sz' v' tag' k) =>
      if write_kind_beq wk' wk && N.eqb a' a && Nat.eqb sz' sz && generic_eq v' v && generic_eq tag' tag then Some (k r) else None
   | (E_read_reg r v, Read_reg r' k) =>
-     if generic_eq r' r then Some (k v) else None
-  | (E_write_reg r v, Write_reg r' v' k) =>
-     if generic_eq r' r && regval_eqb v' v then Some k else None
+     match register_eq_cast _ _ _ r r' v with
+     | Some v1 => Some (k v1)
+     | None => None
+     end
+  | (E_write_reg r v, @Write_reg _ _ _ T r' v' k) =>
+     match register_eq_cast _ _ _ r r' v with
+     | Some v1 => if regval_eqb _ r' v' v1 then Some k else None
+     | None => None
+     end
   | (E_write_ea wk a sz, Write_ea wk' a' sz' k) =>
      if write_kind_beq wk' wk && N.eqb a' a && Nat.eqb sz' sz then Some k else None
   | (E_barrier bk, Barrier bk' k) =>
@@ -422,13 +427,13 @@ match a with
 | None => None
 end.
 
-Fixpoint runTrace {A E} (t : trace Regval) (m : monad Regval A E) : option (monad Regval A E) :=
+Fixpoint runTrace {A E} (t : trace register) (m : monad register A E) : option (monad register A E) :=
 match t with
   | [] => Some m
   | e :: t' => option_bind (emitEvent m e) (runTrace t')
 end.
 
-Definition final {A E} (m : monad Regval A E) : bool :=
+Definition final {A E} (m : monad register A E) : bool :=
 match m with
   | Done _ => true
   | Fail _ => true
@@ -436,23 +441,22 @@ match m with
   | _ => false
 end.
 
-Definition hasTrace {A E} `{forall (x y : Regval), Decidable (x = y)} (t : trace Regval) (m : monad Regval A E) : bool :=
+Definition hasTrace {A E} (t : trace register) (m : monad register A E) : bool :=
 match runTrace t m with
   | Some m => final m
   | None => false
 end.
 
-Definition hasException {A E} (t : trace Regval) (m : monad Regval A E) :=
+Definition hasException {A E} (t : trace register) (m : monad register A E) :=
 match runTrace t m with
   | Some (Exception _) => true
   | _ => false
 end.
 
-Definition hasFailure {A E} (t : trace Regval) (m : monad Regval A E) :=
+Definition hasFailure {A E} (t : trace register) (m : monad register A E) :=
 match runTrace t m with
   | Some (Fail _) => true
   | _ => false
 end.
 
 End EventTraces.
-*)
