@@ -267,12 +267,25 @@ Definition bools_of_int len n :=
   let w := MachineWord.Z_to_word (Z.to_nat len) n in
   MachineWord.word_to_bools w.
 
-Definition get_slice_int (len : Z) (n : Z) (lo : Z) : mword len :=
+(* We hide this behind an eta expansion of n to prevent tactics that
+   do too much computation (e.g., injection) from unfolding messily. *)
+Definition get_slice_int' (len : Z) (n : Z) (lo : Z) : mword len :=
   if sumbool_of_bool (len >=? 0) then
     let hi := lo + len - 1 in
     let v : mword (hi + 1) := mword_of_int n in
     autocast (subrange_vec_dec v hi lo)
   else dummy_value.
+
+Definition get_slice_int len n lo : mword len :=
+  match n with
+  | Zneg p => get_slice_int' len (Zneg p) lo
+  | Z0 => get_slice_int' len Z0 lo
+  | Zpos p => get_slice_int' len (Zpos p) lo
+  end.
+
+Lemma get_slice_int_eta len n lo : get_slice_int len n lo = get_slice_int' len n lo.
+destruct n; reflexivity.
+Qed.
 
 Definition set_slice n m (v : mword n) x (w : mword m) : mword n :=
   update_subrange_vec_dec v (x + m - 1) x (autocast w).
