@@ -182,6 +182,24 @@ Definition spc_matches_prefix s : option (unit * Z) :=
   | S n => Some (tt, Z.of_nat (S n))
   end.
 
+Definition parse_hex_bits_opt sz s : option (mword sz) :=
+  match s with
+  | String "0" (String "x" t) =>
+    match int_of t 16 2 with
+    | None => None
+    | Some (i, _) => Some (mword_of_int i)
+    end
+  | _ => None
+  end.
+
+Definition valid_hex_bits sz s := match parse_hex_bits_opt sz s with None => false | Some _ => true end.
+(* Keep the type flexible.  The hex_bits mapping currently desugars to a pair containing the size and
+   string, and Sail's Coq backend only merges type variables with whole arguments. *)
+Definition parse_hex_bits {n} sz s : mword n :=
+  if n =? sz then
+    match parse_hex_bits_opt sz s with None => TypeCasts.dummy_value | Some v => TypeCasts.autocast v end
+  else TypeCasts.dummy_value.
+
 Definition hex_bits_n_matches_prefix sz s : option (mword sz * Z) :=
   match maybe_int_of_prefix s with
   | None => None
