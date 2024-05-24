@@ -135,7 +135,7 @@ Definition read_reg_ref {a e} (ref : register_ref A.reg a) : monad a e :=
   let k v := I.Ret v in
   I.Next (I.RegRead ref.(Values.reg) (*???*) true) k.
 
-Definition reg_deref {s a e} := @read_reg s a e.
+Definition reg_deref {a e} := @read_reg_ref a e.
 
 Definition write_reg {a e} (reg : A.reg a) (v : a) : monad unit e :=
  I.Next (I.RegWrite reg (* ??? *) true tt v) I.Ret.
