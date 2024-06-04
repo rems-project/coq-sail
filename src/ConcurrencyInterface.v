@@ -174,7 +174,10 @@ Module Interface (A : Arch).
         dependency computation *)
   | InstrAnnounce (opcode : bvn) : outcome unit
     (** The deps here specify the control dependency *)
+  (* TODO: resolve this: The SSC definition is
   | BranchAnnounce (pa : pa) (deps : deps) : outcome unit
+     but the Sail library is *)
+  | BranchAnnounce sz (pa : mword sz) (deps : deps) : outcome unit
   | Barrier : barrier -> outcome unit
   | CacheOp (deps : deps) : cache_op -> outcome unit
   | TlbOp (deps : deps) : tlb_op -> outcome unit
@@ -316,7 +319,7 @@ Module Interface (A : Arch).
         | MemRead n readreq => Next (MemRead n readreq)
         | MemWrite n writereq => Next (MemWrite n writereq)
         | InstrAnnounce opcode => Next (InstrAnnounce opcode)
-        | BranchAnnounce pa deps => Next (BranchAnnounce pa deps)
+        | BranchAnnounce sz pa deps => Next (BranchAnnounce sz pa deps)
         | Barrier barrier => Next (Barrier barrier)
         | CacheOp deps cache_op => Next (CacheOp deps cache_op)
         | TlbOp deps tlb_op => Next (TlbOp deps tlb_op)

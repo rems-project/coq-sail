@@ -9,7 +9,7 @@ Open Scope string.
 Open Scope bool.
 Open Scope Z.
 
-Module Defs (A : Arch with Definition reg := string with Definition pa := mword 56) (I : InterfaceT A).
+Module Defs (A : Arch with Definition reg := string) (I : InterfaceT A).
 
 Definition monad A E := I.iMon unit (fun _ => E) A.
 Definition returnm {A E} : A -> monad A E := I.Ret.
@@ -59,7 +59,7 @@ Fixpoint try_catch {A E1 E2} (m : monad A E1) (h : E1 -> monad A E2) : monad A E
   | I.Next (I.MemRead n req)                   f => I.Next (I.MemRead n req) (fun t => try_catch (f t) h)
   | I.Next (I.MemWrite n req)                  f => I.Next (I.MemWrite n req) (fun t => try_catch (f t) h)
   | I.Next (I.InstrAnnounce opcode)            f => I.Next (I.InstrAnnounce opcode) (fun t => try_catch (f t) h)
-  | I.Next (I.BranchAnnounce pa deps)          f => I.Next (I.BranchAnnounce pa deps) (fun t => try_catch (f t) h)
+  | I.Next (I.BranchAnnounce sz pa deps)       f => I.Next (I.BranchAnnounce sz pa deps) (fun t => try_catch (f t) h)
   | I.Next (I.Barrier barrier)                 f => I.Next (I.Barrier barrier) (fun t => try_catch (f t) h)
   | I.Next (I.CacheOp deps op)                 f => I.Next (I.CacheOp deps op) (fun t => try_catch (f t) h)
   | I.Next (I.TlbOp deps op)                   f => I.Next (I.TlbOp deps op) (fun t => try_catch (f t) h)
@@ -309,8 +309,7 @@ Definition sail_tlbi {e} (op : A.tlb_op) : monad unit e :=
 
 Definition branch_announce {e} sz (addr : mword sz) : monad unit e :=
   (* TODO: branch_announce seems rather odd *)
-  let addr : A.pa := vector_truncate addr _ in
-  I.Next (I.BranchAnnounce addr tt) I.Ret.
+  I.Next (I.BranchAnnounce sz addr tt) I.Ret.
 
 Definition instr_announce {e sz} (opcode : mword sz) : monad unit e :=
   I.Next (I.InstrAnnounce (bitvector.bv_to_bvn (get_word opcode))) I.Ret.
