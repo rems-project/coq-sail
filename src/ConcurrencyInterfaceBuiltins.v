@@ -288,7 +288,8 @@ End Choose.
 
 (* --- Operators_mwords.v *)
 
-Definition autocast_m {e m n} (x : monad (mword m) e) : monad (mword n) e := x >>= fun x => returnm (autocast x).
+Definition autocast_m {e m n} {T : Z -> Type} `{H : TypeCasts.Inhabited (T n)} (x : monad (T m) e) : monad (T n) e :=
+  x >>= fun x => returnm (autocast x).
 
 (* --- should probably define generic versions of these, parametrised by Arch *)
 
