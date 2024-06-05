@@ -29,7 +29,7 @@ build: [
 install: [make "-C" "src-stdpp" "install"]
 depends: [
   "coq" {>= "8.14.0"}
-  "coq-stdpp-unstable"
+  "coq-stdpp-bitvector"
 ]
 # Ensure that if we're building from Sail then the version is compatible
 conflicts: [
