@@ -193,6 +193,9 @@ Module Interface (A : Arch).
       This is an ISA model triggered failure *)
   | GenericFail (msg : string) : outcome False
 
+  | CycleCount : outcome unit
+  | GetCycleCount : outcome Z
+
   (** The next two outcomes are for handling non-determinism. Choose will branch
       the possible executions non-deterministically for every value of the
       type given by the code *)
@@ -327,6 +330,8 @@ Module Interface (A : Arch).
         | ReturnException pa => Next (ReturnException pa)
         | ExtraOutcome aout => iMon_bind (f _ aout)
         | GenericFail msg => Next (GenericFail msg)
+        | CycleCount => Next CycleCount
+        | GetCycleCount => Next GetCycleCount
         | Choose n => Next (Choose n)
         | Discard => Next (Discard)
         end k

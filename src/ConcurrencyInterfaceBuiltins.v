@@ -66,6 +66,8 @@ Fixpoint try_catch {A E1 E2} (m : monad A E1) (h : E1 -> monad A E2) : monad A E
   | I.Next (I.TakeException fault)             f => I.Next (I.TakeException fault) (fun t => try_catch (f t) h)
   | I.Next (I.ReturnException pa)              f => I.Next (I.ReturnException pa) (fun t => try_catch (f t) h)
   | I.Next (I.GenericFail msg)                 f => I.Next (I.GenericFail msg) (fun t => try_catch (f t) h)
+  | I.Next  I.CycleCount                       f => I.Next  I.CycleCount (fun t => try_catch (f t) h)
+  | I.Next  I.GetCycleCount                    f => I.Next  I.GetCycleCount (fun t => try_catch (f t) h)
   | I.Next (I.Choose n)                        f => I.Next (I.Choose n) (fun t => try_catch (f t) h)
   | I.Next (I.Discard)                         f => I.Next (I.Discard) (fun t => try_catch (f t) h)
   end.
@@ -314,6 +316,9 @@ Definition branch_announce {e} sz (addr : mword sz) : monad unit e :=
 
 Definition instr_announce {e sz} (opcode : mword sz) : monad unit e :=
   I.Next (I.InstrAnnounce (bitvector.bv_to_bvn (get_word opcode))) I.Ret.
+
+Definition cycle_count {e} (_ : unit) : monad unit e := I.Next I.CycleCount I.Ret.
+Definition get_cycle_count {e} (_ : unit) : monad Z e := I.Next I.GetCycleCount I.Ret.
 
 Definition cast_N  {T : N -> Type} {m n} : forall (x : T m) (eq : m = n), T n.
 refine (match m,n with
