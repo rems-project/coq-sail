@@ -193,12 +193,8 @@ Definition parse_hex_bits_opt sz s : option (mword sz) :=
   end.
 
 Definition valid_hex_bits sz s := match parse_hex_bits_opt sz s with None => false | Some _ => true end.
-(* Keep the type flexible.  The hex_bits mapping currently desugars to a pair containing the size and
-   string, and Sail's Coq backend only merges type variables with whole arguments. *)
-Definition parse_hex_bits {n} sz s : mword n :=
-  if n =? sz then
-    match parse_hex_bits_opt sz s with None => TypeCasts.dummy_value | Some v => TypeCasts.autocast v end
-  else TypeCasts.dummy_value.
+Definition parse_hex_bits sz s : mword sz :=
+  match parse_hex_bits_opt sz s with None => TypeCasts.dummy_value | Some v => v end.
 
 Definition hex_bits_n_matches_prefix sz s : option (mword sz * Z) :=
   match maybe_int_of_prefix s with
