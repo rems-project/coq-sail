@@ -1,6 +1,6 @@
 
 Require Import Strings.String.
-Require Import stdpp.unstable.bitvector.
+Require Import stdpp.bitvector.definitions.
 Require Import stdpp.countable.
 
 (* For choice outcomes *)

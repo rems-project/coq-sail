@@ -2,7 +2,7 @@ Require Import Sail.Real.
 Require Import Sail.Base.
 Require Import Sail.ConcurrencyInterfaceTypes.
 Require Import Sail.ConcurrencyInterface.
-Require Import stdpp.unstable.bitvector.
+Require Import stdpp.bitvector.definitions.
 
 Import ListNotations.
 Open Scope string.
@@ -315,7 +315,7 @@ Definition branch_announce {e} sz (addr : mword sz) : monad unit e :=
   I.Next (I.BranchAnnounce sz addr tt) I.Ret.
 
 Definition instr_announce {e sz} (opcode : mword sz) : monad unit e :=
-  I.Next (I.InstrAnnounce (bitvector.bv_to_bvn (get_word opcode))) I.Ret.
+  I.Next (I.InstrAnnounce (bv_to_bvn (get_word opcode))) I.Ret.
 
 Definition cycle_count {e} (_ : unit) : monad unit e := I.Next I.CycleCount I.Ret.
 Definition get_cycle_count {e} (_ : unit) : monad Z e := I.Next I.GetCycleCount I.Ret.
@@ -347,7 +347,7 @@ refine (
     | inl (x,y) =>
         let x' := cast_N (m := 8 * Z.to_N n) (n := N.of_nat (Z.to_nat (8 * n))) x _ in
         let x'' : mword (8 * n) :=
-          match n return bitvector.bv (N.of_nat (Z.to_nat (8 * n))) -> mword (8 * n) with
+          match n return bv (N.of_nat (Z.to_nat (8 * n))) -> mword (8 * n) with
           | Zneg _ => fun x => x
           | Z0 => fun x => x
           | Zpos _ => fun x => x
@@ -381,7 +381,7 @@ refine (
         end
       in
       let value :=
-        match n return mword (8 * n) -> bitvector.bv (N.of_nat (Z.to_nat (8 * n))) with
+        match n return mword (8 * n) -> bv (N.of_nat (Z.to_nat (8 * n))) with
         | Zneg _ => fun x => x
         | Z0 => fun x => x
         | Zpos _ => fun x => x
