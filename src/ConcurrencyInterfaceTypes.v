@@ -110,6 +110,7 @@ Record Mem_write_request {n : Z} {vasize : Z} {pa : Type} {ts : Type} {arch_ak :
   Mem_write_request_tag : option bool;
 }.
 Arguments Mem_write_request : clear implicits.
+Arguments Build_Mem_write_request &.
 Notation "{[ r 'with' 'Mem_write_request_access_kind' := e ]}" :=
   match r with Build_Mem_write_request _ _ _ _ _ _ f1 f2 f3 f4 f5 f6 =>
     Build_Mem_write_request _ _ _ _ _ e f1 f2 f3 f4 f5 f6 end.
