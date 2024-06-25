@@ -93,75 +93,6 @@ Local Open Scope bool.
    can be added to, and a typeclass to wrap constraint arguments in to
    trigger automatic solving. *)
 Create HintDb sail.
-(* Facts translated from Sail's type system are wrapped in ArithFactP or
-   ArithFact so that the solver can be invoked automatically by Coq's
-   typeclass mechanism.  Most properties are boolean, which enjoys proof
-   irrelevance by UIP. *)
-Class ArithFactP (P : Prop) := { fact : P }.
-Class ArithFact (P : bool) := ArithFactClass : ArithFactP (P = true).
-Lemma use_ArithFact {P} `(ArithFact P) : P = true.
-unfold ArithFact in *.
-apply fact.
-Defined.
-
-Lemma ArithFact_irrelevant (P : bool) (p q : ArithFact P) : p = q.
-destruct p,q.
-f_equal.
-apply Eqdep_dec.UIP_dec.
-apply Bool.bool_dec.
-Qed.
-
-Ltac replace_ArithFact_proof :=
-  match goal with |- context[?x] =>
-    match tt with
-    | _ => is_var x; fail 1
-    | _ =>
-      match type of x with ArithFact ?P =>
-        let pf := fresh "pf" in
-        generalize x as pf; intro pf;
-        repeat multimatch goal with |- context[?y] =>
-          match type of y with ArithFact P =>
-            match y with
-            | pf => idtac
-            | _ => rewrite <- (ArithFact_irrelevant P pf y)
-            end
-          end
-        end
-      end
-    end
-  end.
-
-Ltac generalize_ArithFact_proof_in H :=
-  match type of H with context f [?x] =>
-    match type of x with ArithFactP (?P = true) =>
-      let pf := fresh "pf" in
-      cut (forall (pf : ArithFact P), ltac:(let t := context f[pf] in exact t));
-      [ clear H; intro H
-      | intro pf; rewrite <- (ArithFact_irrelevant P x pf); apply H ]
-    | ArithFact ?P =>
-      let pf := fresh "pf" in
-      cut (forall (pf : ArithFact P), ltac:(let t := context f[pf] in exact t));
-      [ clear H; intro H
-      | intro pf; rewrite <- (ArithFact_irrelevant P x pf); apply H ]
-    end
-  end.
-
-(* Allow setoid rewriting through ArithFact *)
-Require Import Coq.Classes.Morphisms.
-Require Import Coq.Program.Basics.
-Require Import Coq.Program.Tactics.
-
-Section Morphism.
-Local Obligation Tactic := try solve [simpl_relation | firstorder auto].
-#[export] Program Instance ArithFactP_iff_morphism :
-  Proper (iff ==> iff) ArithFactP.
-End Morphism.
-
-Definition build_ex {T:Type} (n:T) {P:T -> Prop} `{H:ArithFactP (P n)} : {x : T & ArithFactP (P x)} :=
-  @existT _ _ n H.
-
-Definition build_ex2 {T:Type} {T':T -> Type} (n:T) (m:T' n) {P:T -> Prop} `{H:ArithFactP (P n)} : {x : T & T' x & ArithFactP (P x)} :=
-  existT2 _ _ n m H.
 
 Definition generic_eq {T:Type} (x y:T) `{Decidable (x = y)} := Decidable_witness.
 Definition generic_neq {T:Type} (x y:T) `{Decidable (x = y)} := negb Decidable_witness.
@@ -1194,25 +1125,6 @@ destruct (Bool.bool_dec l r) as [e | ne].
 * exists true; tauto.
 Qed.
 
-(* Remove constructor from ArithFact(P)s and if they're used elsewhere
-   in the context create a copy that rewrites will work on. *)
-Ltac unwrap_ArithFacts :=
-  let gen X :=
-    let Y := fresh "Y" in pose X as Y; generalize Y
-  in
-  let unwrap H :=
-      let H' := fresh H in case H as [H']; clear H;
-      match goal with
-      | _ :  context[H'] |- _ => gen H'
-      | _ := context[H'] |- _ => gen H'
-      |   |- context[H']      => gen H'
-      | _ => idtac
-      end
-  in
-  repeat match goal with
-  | H:(ArithFact _) |- _ => unwrap H
-  | H:(ArithFactP _) |- _ => unwrap H
-  end.
 Ltac unbool_comparisons :=
   repeat match goal with
   | H:@eq bool _ _ -> @ex bool _ |- _ => apply lift_bool_exists in H; destruct H
@@ -1515,16 +1427,6 @@ end;
 (* We may have uncovered more conjunctions *)
 repeat match goal with H:and _ _ |- _ => destruct H end.
 
-(* Remove details of embedded proofs. *)
-Ltac generalize_embedded_proofs :=
-  repeat match goal with H:context [?X] |- _ =>
-    match type of X with
-    | ArithFact  _ => generalize dependent X
-    | ArithFactP _ => generalize dependent X
-    end
-  end;
-  intros.
-
 Lemma iff_equal_l {T:Type} {P:Prop} {x:T} : (x = x <-> P) -> P.
 tauto.
 Qed.
@@ -1555,50 +1457,6 @@ Ltac clean_up_props :=
   end;
   remove_unnecessary_casesplit.
 
-Ltac prepare_for_solver :=
-(*dump_context;*)
- generalize_embedded_proofs;
- clear_non_Z_bool_defns;
- autounfold with sail in * |- *; (* You can add Hint Unfold ... : sail to let lia see through fns *)
- split_cases;
- extract_properties;
- unwrap_ArithFacts;
- destruct_exists;
- unbool_comparisons;
- unbool_comparisons_goal;
- repeat match goal with H:and _ _ |- _ => destruct H end;
- remove_unnecessary_casesplit;
- reduce_list_lengths;
- reduce_pow;
- filter_disjunctions;
- Z_if_to_or;
- clear_irrelevant_bindings;
- subst;
- clean_up_props.
-
-Lemma trivial_range {x : Z} : ArithFact ((x <=? x <=? x)).
-constructor.
-auto using Z.leb_refl with bool.
-Qed.
-
-Lemma ArithFact_self_proof {P} : forall x : {y : Z & ArithFact (P y)}, ArithFact (P (projT1 x)).
-intros [x H].
-exact H.
-Qed.
-
-Lemma ArithFactP_self_proof {P} : forall x : {y : Z & ArithFactP (P y)}, ArithFactP (P (projT1 x)).
-intros [x H].
-exact H.
-Qed.
-
-Ltac fill_in_evar_eq :=
- match goal with |- ArithFact (?x =? ?y) =>
-   (is_evar x || is_evar y);
-   (* compute to allow projections to remove proofs that might not be allowed in the evar *)
-(* Disabled because cbn may reduce definitions, even after clearbody
-   let x := eval cbn in x in
-   let y := eval cbn in y in*)
-   idtac "Warning: unknown equality constraint"; constructor; exact (Z.eqb_refl _ : x =? y = true) end.
 
 Ltac bruteforce_bool_exists :=
 match goal with
@@ -2031,22 +1889,6 @@ Ltac simple_omega :=
   H := projT1 _ |- _ => clearbody H
   end; lia.
 
-Ltac solve_unknown :=
-  match goal with
-  | |- (ArithFact (?x ?y)) =>
-    is_evar x;
-    idtac "Warning: unknown constraint";
-    let t := type of y in
-    unify x (fun (_ : t) => true);
-    exact (Build_ArithFactP _ eq_refl : ArithFact true)
-  | |- (ArithFactP (?x ?y)) =>
-    is_evar x;
-    idtac "Warning: unknown constraint";
-    let t := type of y in
-    unify x (fun (_ : t) => True);
-    exact (Build_ArithFactP _ I : ArithFactP True)
-  end.
-
 (* Solving straightforward and_boolMP / or_boolMP goals *)
 
 Lemma default_and_proof l r r' :
@@ -2098,86 +1940,6 @@ Ltac default_andor :=
   | H:?v = false -> _ |- _ = ?v || _ => solve [rewrite Bool.orb_comm; eapply default_or_proof2; eauto 2]
   end.
 
-(* Solving simple and_boolMP / or_boolMP goals where unknown booleans
-   have been merged together. *)
-
-Ltac squashed_andor_solver :=
-  clear;
-  match goal with |- forall l r : bool, ArithFactP (_ -> _ -> _) => idtac end;
-  intros l r; constructor; intros;
-  let func := match goal with |- context[?f l r] => f end in
-  match goal with
-  | H1 : @ex _ _, H2 : l = _ -> @ex _ _ |- _ =>
-    let x1 := fresh "x1" in
-    let x2 := fresh "x2" in
-    let H1' := fresh "H1" in
-    let H2' := fresh "H2" in
-    apply lift_bool_exists in H2;
-    destruct H1 as [x1 H1']; destruct H2 as [x2 H2'];
-    exists x1, x2
-  | H : l = _ -> @ex _ _ |- _ =>
-    let x := fresh "x" in
-    let H' := fresh "H" in
-    apply lift_bool_exists in H;
-    destruct H as [x H'];
-    exists (func x l)
-  | H : @ex _ _ |- _ =>
-    let x := fresh "x" in
-    let H' := fresh "H" in
-    destruct H as [x H'];
-    exists (func x r)
-  end;
-  repeat match goal with
-  | H : l = _ -> @ex _ _ |- _ =>
-    let x := fresh "x" in
-    let H' := fresh "H" in
-    apply lift_bool_exists in H;
-    destruct H as [x H'];
-    exists x
-  | H : @ex _ _ |- _ =>
-    let x := fresh "x" in
-    let H' := fresh "H" in
-    destruct H as [x H'];
-    exists x
-  end;
-  (* Attempt to shrink size of problem.
-     I originally used just one match here with a non-linear pattern, but it
-     appears it matched up to convertability and so definitions could break
-     the generalization. *)
-  try match goal with
-      | _ : l = _ -> ?v = r |- _ => match goal with |- context[v] => generalize dependent v; intros end
-      | _ : l = _ -> Bool.eqb ?v r = true |- _ => match goal with |- context[v] => generalize dependent v; intros end
-      end;
-  unbool_comparisons; unbool_comparisons_goal;
-  repeat match goal with
-  | _ : context[?li =? ?ri] |- _ =>
-    specialize (Z.eqb_eq li ri); generalize dependent (li =? ri); intros
-  | |- context[?li =? ?ri] =>
-    specialize (Z.eqb_eq li ri); generalize (li =? ri); intros
-  end;
-  solve_bool_with_Z.
-
-Ltac run_main_solver_impl :=
-(* Attempt a simple proof first to avoid lengthy preparation steps (especially
-   as the large proof terms can upset subsequent proofs). *)
-try solve [default_andor];
-constructor;
-try simple_omega;
-prepare_for_solver;
-(*dump_context;*)
-unbool_comparisons_goal; (* Applying the ArithFact constructor will reveal an = true, so this might do more than it did in prepare_for_solver *)
-repeat match goal with |- and _ _ => split end;
-(* Break up enumerations *)
-repeat match goal with |- context[match ?x with _ => _ end] => destruct x end;
-main_solver.
-
-(* This can be redefined to remove the abstract. *)
-Ltac run_main_solver :=
-  solve
-    [ abstract run_main_solver_impl
-    | run_main_solver_impl (* for cases where there's an evar in the goal *)
-    ].
-
 Ltac is_fixpoint ty :=
   match ty with
   | forall _reclimit, Acc _ _reclimit -> _ => idtac
@@ -2196,35 +1958,6 @@ Ltac clear_proof_bodies :=
     | Prop => clearbody H
     end
   end.
-
-Ltac solve_arithfact :=
-  clear_proof_bodies;
-  clear_irrelevant_defns;
-  try solve [squashed_andor_solver]; (* Do this first so that it can name the intros *)
-  intros; (* To solve implications for derive_m *)
-  clear_fixpoints; (* Avoid using recursive calls *)
-  cbv beta; (* Goal might be eta-expanded *)
-  solve
-    [ solve_unknown
-    | assumption
-    | match goal with |- ArithFact ((?x <=? ?x <=? ?x)) => exact trivial_range end
-    | eauto 2 with sail (* the low search bound might not be necessary *)
-    | fill_in_evar_eq
-    | match goal with |- context [projT1 ?X] => apply (ArithFact_self_proof X) end
-    | match goal with |- context [projT1 ?X] => apply (ArithFactP_self_proof X) end
-    (* Trying reflexivity will fill in more complex metavariable examples than
-       fill_in_evar_eq above, e.g., 8 * n =? 8 * ?Goal3 *)
-    | constructor; apply Z.eqb_eq; reflexivity
-    | constructor; repeat match goal with |- and _ _ => split end; z_comparisons
-    | run_main_solver
-    ].
-
-(* Add an indirection so that you can redefine run_solver to fail to get
-   slow running constraints into proof mode. *)
-Ltac run_solver := solve_arithfact.
-
-#[export] Hint Extern 0 (ArithFact _) => run_solver : typeclass_instances.
-#[export] Hint Extern 0 (ArithFactP _) => run_solver : typeclass_instances.
 
 #[export] Hint Unfold length_mword : sail.
 
@@ -2814,13 +2547,17 @@ rewrite map_length.
 apply H.
 Defined.
 
+#[local] Obligation Tactic := idtac.
 Program Definition just_vec {A n} (v : vec (option A) n) : option (vec A n) :=
   match just_list (projT1 v) with
   | None => None
   | Some v' => Some (@existT _ _ v' _)
   end.
 Next Obligation.
-rewrite <- (just_list_length _ _ Heq_anonymous).
+intros until v.
+simpl.
+intros v' EQ.
+rewrite <- (just_list_length _ _ EQ).
 destruct v.
 assumption.
 Defined.

@@ -212,11 +212,9 @@ Definition or_boolM {E} (l : monad bool E) (r : monad bool E) : monad bool E :=
  l >>= (fun l => if l then returnm true else r).
 
 
-(* For termination of recursive functions.  We don't name assertions, so use
-   the type class mechanism to find it. *)
-Definition _limit_reduces {_limit} (_acc:Acc (Zwf 0) _limit) `{ArithFact (_limit >=? 0)} : Acc (Zwf 0) (_limit - 1).
+(* For termination of recursive functions. *)
+Definition _limit_reduces {_limit} (_acc:Acc (Zwf 0) _limit) (H : _limit >= 0) : Acc (Zwf 0) (_limit - 1).
 refine (Acc_inv _acc _).
-destruct H.
 unbool_comparisons.
 red.
 Lia.lia.
@@ -250,7 +248,7 @@ exact (
   if Z_ge_dec limit 0 then
     cond vars >>= fun cond_val =>
     if cond_val then
-      body vars >>= fun vars => whileMT' _ _ (limit - 1) vars cond body (_limit_reduces acc)
+      body vars >>= fun vars => whileMT' _ _ (limit - 1) vars cond body (_limit_reduces acc ltac:(assumption))
     else returnm vars
   else fail "Termination limit reached").
 Defined.
@@ -264,7 +262,7 @@ exact (
   if Z_ge_dec limit 0 then
     body vars >>= fun vars =>
     cond vars >>= fun cond_val =>
-    if cond_val then returnm vars else untilMT' _ _ (limit - 1) vars cond body (_limit_reduces acc)
+    if cond_val then returnm vars else untilMT' _ _ (limit - 1) vars cond body (_limit_reduces acc ltac:(assumption))
   else fail "Termination limit reached").
 Defined.
 

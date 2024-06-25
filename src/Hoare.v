@@ -260,34 +260,6 @@ eapply PrePost_bindS.
   apply PrePost_returnS.
 Qed.
 
-Lemma PrePost_and_boolSP (*[PrePost_compositeI]:*) Regs E PP QQ RR H
-  (l : monadS Regs {b : bool & Sail.Values.ArithFactP (PP b)} E)
-  (r : monadS Regs {b : bool & Sail.Values.ArithFactP (QQ b)} E)
-  P (Q : result {b : bool & Sail.Values.ArithFactP (RR b)} E -> predS Regs) R :
-  (forall p,
-      PrePost R r
-              (fun r =>
-                 match r with
-                 | Value (@existT _ _ r q) => Q (Value (@existT _ _ r (and_bool_full_proof p q H)))
-                 | Ex e => Q (Ex e) end)) ->
-  PrePost P l
-          (fun r => match r with
-                    | Value (@existT _ _ true _) => R
-                    | Value (@existT _ _ false p) => Q (Value (@existT _ _ _ (and_bool_left_proof p H)))
-                    | Ex e => Q (Ex e) end) ->
-  PrePost P (@and_boolSP _ _ PP QQ RR l r H) Q.
-intros Hr Hl.
-unfold and_boolSP.
-eapply (PrePost_bindS _ _ _ _ _ _ _ _ _ _ Hl).
-Unshelve.
-intros s cs [[|] p] s' cs' IN.
-* eapply PrePost_bindS. 2: apply Hr.
-  clear s cs s' cs' IN.
-  intros s cs [b q] s' cs' IN.
-  apply PrePost_returnS.
-* apply PrePost_returnS.
-Qed.
-
 Lemma PrePost_or_boolS (*[PrePost_compositeI]:*) Regs E (l r : monadS Regs bool E) P Q R :
   PrePost R r Q ->
   PrePost P l (fun r => match r with Value false => R | _ => Q r end) ->
@@ -302,34 +274,6 @@ eapply PrePost_bindS.
 * eapply PrePost_weaken_post.
   apply Hl.
   intros [[|] | ] s H; auto.
-Qed.
-
-Lemma PrePost_or_boolSP (*[PrePost_compositeI]:*) Regs E PP QQ RR H
-  (l : monadS Regs {b : bool & Sail.Values.ArithFactP (PP b)} E)
-  (r : monadS Regs {b : bool & Sail.Values.ArithFactP (QQ b)} E)
-  P (Q : result {b : bool & Sail.Values.ArithFactP (RR b)} E -> predS Regs) R :
-  (forall p,
-      PrePost R r
-              (fun r =>
-                 match r with
-                 | Value (@existT _ _ r q) => Q (Value (@existT _ _ r (or_bool_full_proof p q H)))
-                 | Ex e => Q (Ex e) end)) ->
-  PrePost P l
-          (fun r => match r with
-                    | Value (@existT _ _ false _) => R
-                    | Value (@existT _ _ true p) => Q (Value (@existT _ _ _ (or_bool_left_proof p H)))
-                    | Ex e => Q (Ex e) end) ->
-  PrePost P (@or_boolSP _ _ PP QQ RR l r H) Q.
-intros Hr Hl.
-unfold or_boolSP.
-eapply (PrePost_bindS _ _ _ _ _ _ _ _ _ _ Hl).
-Unshelve.
-intros s cs [[|] p] s' cs' IN.
-* apply PrePost_returnS.
-* eapply PrePost_bindS. 2: apply Hr.
-  clear s cs s' cs' IN.
-  intros s cs [b q] s' cs' IN.
-  apply PrePost_returnS.
 Qed.
 
 Lemma PrePost_failS (*[intro, PrePost_atomI]:*) Regs A E msg (Q : result A E -> predS Regs) :
@@ -685,29 +629,6 @@ Qed.
      fun r0 => let '(exist _ r _) := r0 in fun s =>
    and prevents the reduction of the function application. *)
 
-Lemma PrePostE_and_boolSP (*[PrePost_compositeI]:*) Regs Ety PP QQ RR H
-  (l : monadS Regs {b : bool & Sail.Values.ArithFactP (PP b)} Ety)
-  (r : monadS Regs {b : bool & Sail.Values.ArithFactP (QQ b)} Ety)
-  P (Q : {b : bool & Sail.Values.ArithFactP (RR b)} -> predS Regs) E R :
-  PrePostE R r (fun r s => forall pf, Q (@existT _ _ (projT1 r) pf) s) E ->
-  PrePostE P l
-          (fun r s => match r with
-                    | @existT _ _ true _ => R s
-                    | @existT _ _ false _ => (forall pf, Q (@existT _ _ false pf) s)
-                    end) E ->
-  PrePostE P (@and_boolSP _ _ PP QQ RR l r H) Q E.
-intros Hr Hl.
-unfold and_boolSP.
-refine (PrePostE_bindS _ _ _ _ _ _ _ _ _ _ _ Hl).
-intros [[|] p].
-* eapply PrePostE_bindS. 2: apply Hr.
-  intros [b q].
-  eapply PrePostE_strengthen_pre. apply PrePostE_returnS.
-  intros s1 HQ. apply HQ.
-* eapply PrePostE_strengthen_pre. apply PrePostE_returnS.
-  intros s1 HQ. apply HQ.
-Qed.
-
 Lemma PrePostE_or_boolS (*[PrePostE_compositeI]:*) Regs Ety (l r : monadS Regs bool Ety) P Q R E :
   PrePostE R r Q E ->
   PrePostE P l (fun r s => if r then Q true s else R s) E ->
@@ -720,29 +641,6 @@ eapply PrePostE_bindS.
   destruct a; eauto.
   apply PrePostE_returnS.
 * assumption.
-Qed.
-
-Lemma PrePostE_or_boolSP (*[PrePost_compositeI]:*) Regs Ety PP QQ RR H
-  (l : monadS Regs {b : bool & Sail.Values.ArithFactP (PP b)} Ety)
-  (r : monadS Regs {b : bool & Sail.Values.ArithFactP (QQ b)} Ety)
-  P (Q : {b : bool & Sail.Values.ArithFactP (RR b)} -> predS Regs) E R :
-  PrePostE R r (fun r s => forall pf, Q (@existT _ _ (projT1 r) pf) s) E ->
-  PrePostE P l
-          (fun r s => match r with
-                    | @existT _ _ false _ => R s
-                    | @existT _ _ true _ => (forall pf, Q (@existT _ _ true pf) s)
-                    end) E ->
-  PrePostE P (@or_boolSP _ _ PP QQ RR l r H) Q E.
-intros Hr Hl.
-unfold or_boolSP.
-refine (PrePostE_bindS _ _ _ _ _ _ _ _ _ _ _ Hl).
-intros [[|] p].
-* eapply PrePostE_strengthen_pre. apply PrePostE_returnS.
-  intros s1 HQ. apply HQ.
-* eapply PrePostE_bindS. 2: apply Hr.
-  intros [b q].
-  eapply PrePostE_strengthen_pre. apply PrePostE_returnS.
-  intros s1 HQ. apply HQ.
 Qed.
 
 Lemma PrePostE_failS (*[PrePostE_atomI, intro]:*) Regs A Ety msg (Q : A -> predS Regs) (E : ex Ety -> predS Regs) :
@@ -1119,22 +1017,13 @@ all: eapply PrePostE_strengthen_pre;
      [ apply PrePostE_returnS | trivial].
 Qed.
 
-Lemma PrePostE_undefined_bitvectorS_ignore Regs Ety n `{Sail.Values.ArithFact (n >=? 0)} (Q : predS Regs) (E : ex Ety -> predS Regs) :
+Lemma PrePostE_undefined_bitvectorS_ignore Regs Ety n (Q : predS Regs) (E : ex Ety -> predS Regs) :
   PrePostE Q (undefined_bitvectorS n) (fun _ => Q) E.
 eapply PrePostE_strengthen_pre.
 apply PrePostE_undefined_bitvectorS_any; auto.
 simpl; auto.
 Qed.
 *)
-Lemma PrePostE_build_trivial_exS Regs (T:Type) Ety (m : monadS Regs T Ety) P (Q : {T & Sail.Values.ArithFact true} -> predS Regs) E :
-  PrePostE P m (fun v => Q (@existT _ _ v (Sail.Values.Build_ArithFactP _ eq_refl))) E ->
-  PrePostE P (build_trivial_exS m) Q E.
-intro H.
-unfold build_trivial_exS.
-eapply PrePostE_bindS; intros.
-* apply (PrePostE_returnS _ _ _ Q).
-* apply H.
-Qed.
 
 (* Setoid rewriting *)
 
@@ -1202,8 +1091,6 @@ Ltac PrePostE_step :=
   | |- PrePostE _ (exitS _) _ ?E => apply (PrePostE_exitS _ _ _ _ _ E)
   | |- PrePostE _ (and_boolS _ _) _ _ => eapply PrePostE_and_boolS
   | |- PrePostE _ (or_boolS _ _) _ _ => eapply PrePostE_or_boolS
-  | |- PrePostE _ (and_boolSP _ _) _ _ => eapply PrePostE_and_boolSP; intros
-  | |- PrePostE _ (or_boolSP _ _) _ _ => eapply PrePostE_or_boolSP; intros
   | |- PrePostE _ (chooseS _) _ _ => eapply PrePostE_chooseS; intros
 (*
   | |- PrePostE _ (choose_boolS _) (fun _ => ?ppeQ) ?ppeE =>
@@ -1223,7 +1110,6 @@ Ltac PrePostE_step :=
   | |- PrePostE _ (undefined_bitvectorS _) ?ppeQ ?ppeE =>
          apply PrePostE_undefined_bitvectorS_any with (Q := ppeQ) (E := ppeE)
 *)
-  | |- PrePostE _ (build_trivial_exS _) _ _ => eapply PrePostE_build_trivial_exS; intros
   | |- PrePostE _ (liftRS _) ?ppeQ ?ppeE =>
          apply PrePostE_liftRS with (Q := ppeQ) (E := ppeE); intros
   | |- PrePostE _ (let '(_,_) := ?x in _) _ _ =>

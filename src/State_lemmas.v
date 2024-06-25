@@ -224,17 +224,6 @@ apply bindS_cong; auto.
 intros [|]; auto.
 Qed.
 
-Lemma and_boolSP_cong {RV E P Q R} H x x' y y' :
-  x === x' ->
-  y === y' ->
-  @and_boolSP RV E P Q R x y H === and_boolSP x' y'.
-intros E1 E2.
-unfold and_boolSP.
-apply bindS_cong; auto.
-intros [[|] [pf]]; auto.
-apply bindS_cong; auto.
-Qed.
-
 Lemma or_boolS_cong {RV E} x x' y y' :
   x === x' ->
   y === y' ->
@@ -243,25 +232,6 @@ intros E1 E2.
 unfold or_boolS.
 apply bindS_cong; auto.
 intros [|]; auto.
-Qed.
-
-Lemma or_boolSP_cong {RV E P Q R} H x x' y y' :
-  x === x' ->
-  y === y' ->
-  @or_boolSP RV E P Q R x y H === or_boolSP x' y'.
-intros E1 E2.
-unfold or_boolSP.
-apply bindS_cong; auto.
-intros [[|] [pf]]; auto.
-apply bindS_cong; auto.
-Qed.
-
-Lemma build_trivial_exS_cong {RV T E} x x' :
-  x === x' ->
-  @build_trivial_exS RV T E x === build_trivial_exS x'.
-intros E1.
-unfold build_trivial_exS.
-apply bindS_cong; auto.
 Qed.
 
 Lemma liftRS_cong {A R Regs E} m m' :
@@ -354,12 +324,6 @@ Ltac statecong db :=
        solve [ eapply and_boolS_cong; intros; statecong db ]
   | |- (or_boolS _ _) === _ =>
        solve [ eapply or_boolS_cong; intros; statecong db ]
-  | |- (and_boolSP _ _) === _ =>
-       solve [ eapply and_boolSP_cong; intros; statecong db ]
-  | |- (or_boolSP _ _) === _ =>
-       solve [ eapply or_boolSP_cong; intros; statecong db ]
-  | |- (build_trivial_exS _) === _ =>
-       solve [ eapply build_trivial_exS_cong; intros; statecong db ]
   | |- (liftRS _) === _ =>
        solve [ eapply liftRS_cong; intros; statecong db ]
   | |- (let '(matchvar1, matchvar2) := ?e1 in _) === _ =>
@@ -533,21 +497,6 @@ unfold and_boolM, and_boolS.
 rewrite_liftState.
 reflexivity.
 Qed.
-Lemma liftState_and_boolMP Regs Regval E P Q R r x y H :
-  @liftState Regs Regval _ E r (@and_boolMP _ _ P Q R x y H) === and_boolSP (liftState r x) (liftState r y).
-unfold and_boolMP, and_boolSP.
-rewrite liftState_bind.
-apply bindS_cong; auto.
-intros [[|] [A]].
-* rewrite liftState_bind.
-  simpl;
-  apply bindS_cong; auto.
-  intros [a' A'].
-  rewrite liftState_return.
-  reflexivity.
-* rewrite liftState_return.
-  reflexivity.
-Qed.
 
 Lemma liftState_or_boolM Regs Regval E r x y :
   @liftState Regs Regval _ E r (or_boolM x y) === or_boolS (liftState r x) (liftState r y).
@@ -557,46 +506,18 @@ apply bindS_cong; auto.
 intros. rewrite liftState_if_distrib.
 reflexivity.
 Qed.
-Lemma liftState_or_boolMP Regs Regval E P Q R r x y H :
-  @liftState Regs Regval _ E r (@or_boolMP _ _ P Q R x y H) === or_boolSP (liftState r x) (liftState r y).
-unfold or_boolMP, or_boolSP.
-rewrite liftState_bind.
-simpl.
-apply bindS_cong; auto.
-intros [[|] [A]].
-* rewrite liftState_return.
-  reflexivity.
-* rewrite liftState_bind;
-  simpl;
-  apply bindS_cong; auto;
-  intros [a' A'];
-  rewrite liftState_return;
-  reflexivity.
-Qed.
-
-Lemma liftState_build_trivial_ex Regs Regval E T r m :
-  @liftState Regs Regval _ E r (@build_trivial_ex _ _ T m) ===
-    build_trivial_exS (liftState r m).
-unfold build_trivial_ex, build_trivial_exS.
-unfold ArithFact.
-intros s cs.
-rewrite liftState_bind.
-reflexivity.
-Qed.
 
 #[export] Hint Rewrite liftState_throw liftState_assert liftState_assert' liftState_exit
              liftState_exclResult liftState_barrier liftState_footprint
              liftState_maybe_fail
-             liftState_and_boolM liftState_and_boolMP
-             liftState_or_boolM liftState_or_boolMP
-             liftState_build_trivial_ex
+             liftState_and_boolM
+             liftState_or_boolM
            : liftState.
 #[export] Hint Resolve liftState_throw liftState_assert liftState_assert' liftState_exit
              liftState_exclResult liftState_barrier liftState_footprint
              liftState_maybe_fail
-             liftState_and_boolM liftState_and_boolMP
-             liftState_or_boolM liftState_or_boolMP
-             liftState_build_trivial_ex
+             liftState_and_boolM
+             liftState_or_boolM
            : liftState.
 
 Lemma liftState_try_catch Regs Regval A E1 E2 r m h :

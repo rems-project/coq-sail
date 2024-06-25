@@ -133,23 +133,6 @@ Definition and_boolS {RV E} (l r : monadS RV bool E) : monadS RV bool E :=
 Definition or_boolS {RV E} (l r : monadS RV bool E) : monadS RV bool E :=
  l >>$= (fun l => if l then returnS true else r).
 
-Definition and_boolSP {rv E} {P Q R:bool->Prop} (x : monadS rv {b:bool & ArithFactP (P b)} E) (y : monadS rv {b:bool & ArithFactP (Q b)} E)
-  `{H:forall l r, ArithFactP ((P l) -> ((l = true -> (Q r)) -> (R (andb l r))))}
-  : monadS rv {b:bool & ArithFactP (R b)} E :=
-  x >>$= fun '(@existT _ _ x p) => (if x return ArithFactP (P x) -> _ then
-    fun p => y >>$= fun '(@existT _ _ y q) => returnS (@existT _ _ y (and_bool_full_proof p q H))
-  else fun p => returnS (@existT _ _ false (and_bool_left_proof p H))) p.
-
-Definition or_boolSP {rv E} {P Q R:bool -> Prop} (l : monadS rv {b : bool & ArithFactP (P b)} E) (r : monadS rv {b : bool & ArithFactP (Q b)} E)
- `{forall l r, ArithFactP ((P l) -> (((l = false) -> (Q r)) -> (R (orb l r))))}
- : monadS rv {b : bool & ArithFactP (R b)} E :=
- l >>$= fun '(@existT _ _ l p) =>
-  (if l return ArithFactP (P l) -> _ then fun p => returnS (@existT _ _ true (or_bool_left_proof p H))
-   else fun p => r >>$= fun '(@existT _ _ r q) => returnS (@existT _ _ r (or_bool_full_proof p q H))) p.
-
-Definition build_trivial_exS {rv E} {T:Type} (x : monadS rv T E) : monadS rv {x : T & ArithFact true} E :=
- x >>$= fun x => returnS (@existT _ _ x (Build_ArithFactP _ eq_refl)).
-
 (*val bool_of_bitU_fail : forall 'rv 'e. bitU -> monadS 'rv bool 'e*)
 Definition bool_of_bitU_fail {RV E} (b : bitU) : monadS RV bool E :=
 match b with
@@ -174,12 +157,12 @@ Definition bools_of_bits_nondetS {RV E} bits : monadS RV (list bool) E :=
       returnS (bools ++ [b]))).
 
 (*val of_bits_nondetS : forall 'rv 'a 'e. Bitvector 'a => list bitU -> monadS 'rv 'a 'e*)
-Definition of_bits_nondetS {RV A E} bits `{ArithFact (A >=? 0)} : monadS RV (mword A) E :=
+Definition of_bits_nondetS {RV A E} bits : monadS RV (mword A) E :=
   bools_of_bits_nondetS bits >>$= (fun bs =>
   returnS (of_bools bs)).
 
 (*val of_bits_failS : forall 'rv 'a 'e. Bitvector 'a => list bitU -> monadS 'rv 'a 'e*)
-Definition of_bits_failS {RV A E} bits `{ArithFact (A >=? 0)} : monadS RV (mword A) E :=
+Definition of_bits_failS {RV A E} bits : monadS RV (mword A) E :=
  maybe_failS "of_bits" (of_bits bits).
 
 (*val mword_nondetS : forall 'rv 'a 'e. Size 'a => unit -> monadS 'rv (mword 'a) 'e
@@ -209,7 +192,7 @@ exact (
   if Z_ge_dec limit 0 then
     cond vars >>$= fun cond_val =>
     if cond_val then
-      body vars >>$= fun vars => whileST' _ _ _ (limit - 1) vars cond body (_limit_reduces acc)
+      body vars >>$= fun vars => whileST' _ _ _ (limit - 1) vars cond body (_limit_reduces acc ltac:(assumption))
     else returnS vars
   else failS "Termination limit reached").
 Defined.
@@ -225,7 +208,7 @@ exact (
   if Z_ge_dec limit 0 then
     body vars >>$= fun vars =>
     cond vars >>$= fun cond_val =>
-    if cond_val then returnS vars else untilST' _ _ _ (limit - 1) vars cond body (_limit_reduces acc)
+    if cond_val then returnS vars else untilST' _ _ _ (limit - 1) vars cond body (_limit_reduces acc ltac:(assumption))
   else failS "Termination limit reached").
 Defined.
 
