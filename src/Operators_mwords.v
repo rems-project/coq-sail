@@ -67,6 +67,7 @@
 
 Require Import Sail.TypeCasts.
 Require Import Sail.Values.
+Require Import Sail.Instances.
 Require Import Sail.Prompt_monad.
 Require Import Sail.Prompt.
 Require Import Sail.MachineWord.
@@ -250,16 +251,6 @@ Lemma eq_vec_false_iff {n} (v w : mword n) :
 specialize (eq_vec_true_iff v w).
 destruct (eq_vec v w); intuition congruence.
 Qed.
-
-Definition eq_vec_dec {n} : forall (x y : mword n), {x = y} + {x <> y} :=
-  match n with
-  | Z0 => @MachineWord.eq_dec _
-  | Zpos m => @MachineWord.eq_dec _
-  | Zneg m => @MachineWord.eq_dec _
-  end.
-
-#[export] Instance Decidable_eq_mword {n} : forall (x y : mword n), Decidable (x = y) :=
-  Decidable_eq_from_dec eq_vec_dec.
 
 Definition reverse_endianness {n} (bits : mword n) := with_word (P := id) (MachineWord.reverse_endian (n:=_)) bits.
 

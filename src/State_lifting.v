@@ -66,6 +66,7 @@
 (*==========================================================================*)
 
 Require Import Sail.Values.
+Require Import Sail.Instances.
 Require Import Sail.Prompt_monad.
 Require Import Sail.Prompt.
 Require Import Sail.State_monad.
@@ -93,10 +94,14 @@ Fixpoint liftState {Regval Regs A E} (ra : register_accessors Regs Regval) (m : 
   | (Exception e)              => throwS e
 end.
 
+Section EventTraces.
+
 Local Open Scope bool_scope.
 
-(*val emitEventS : forall 'regval 'regs 'a 'e. Eq 'regval => register_accessors 'regs 'regval -> event 'regval -> sequential_state 'regs -> maybe (sequential_state 'regs)*)
-Definition emitEventS {Regval Regs} `{forall (x y : Regval), Decidable (x = y)} (ra : register_accessors Regs Regval) (e : event Regval) (s : sequential_state Regs) : option (sequential_state Regs) :=
+Context {Regval : Type}.
+Context (regval_eqb : Regval -> Regval -> bool).
+
+Definition emitEventS {Regs} (ra : register_accessors Regs Regval) (e : event Regval) (s : sequential_state Regs) : option (sequential_state Regs) :=
 match e with
   | E_read_mem _ addr sz v =>
      option_bind (get_mem_bytes addr sz s) (fun '(v', _) =>
@@ -113,7 +118,7 @@ match e with
   | E_read_reg r v =>
      let (read_reg, _) := ra in
      option_bind (read_reg r s.(ss_regstate)) (fun v' =>
-     if generic_eq v' v then Some s else None)
+     if regval_eqb v' v then Some s else None)
   | E_write_reg r v =>
      let (_, write_reg) := ra in
      option_bind (write_reg r v s.(ss_regstate)) (fun rs' =>
@@ -123,9 +128,10 @@ end.
 
 Local Close Scope bool_scope.
 
-(*val runTraceS : forall 'regval 'regs 'a 'e. Eq 'regval => register_accessors 'regs 'regval -> trace 'regval -> sequential_state 'regs -> maybe (sequential_state 'regs)*)
-Fixpoint runTraceS {Regval Regs} `{forall (x y : Regval), Decidable (x = y)} (ra : register_accessors Regs Regval) (t : trace Regval) (s : sequential_state Regs) : option (sequential_state Regs) :=
+Fixpoint runTraceS {Regs} (ra : register_accessors Regs Regval) (t : trace Regval) (s : sequential_state Regs) : option (sequential_state Regs) :=
 match t with
   | [] => Some s
   | e :: t' => option_bind (emitEventS ra e s) (runTraceS ra t')
 end.
+
+End EventTraces.

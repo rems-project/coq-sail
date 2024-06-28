@@ -75,7 +75,7 @@ Definition string_sub (s : string) (start : Z) (len : Z) : string :=
 
 Definition string_startswith s expected :=
   let prefix := String.substring 0 (String.length expected) s in
-  generic_eq prefix expected.
+  String.eqb prefix expected.
 
 Definition string_drop s (n : Z) :=
   let n := Z.to_nat n in

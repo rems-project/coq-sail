@@ -69,6 +69,7 @@ Require Import String.
 (*Require Import Sail_impl_base*)
 Require Import Sail.Instr_kinds.
 Require Import Sail.Values.
+Require Import Sail.Instances.
 Import ListNotations.
 Local Open Scope Z.
 
@@ -412,10 +413,14 @@ Definition footprint {rv e} (_ : unit) : monad rv unit e := Footprint (Done tt).
 
 (* Event traces *)
 
+Section EventTraces.
+
 Local Open Scope bool_scope.
 
-(*val emitEvent : forall 'regval 'a 'e. Eq 'regval => monad 'regval 'a 'e -> event 'regval -> maybe (monad 'regval 'a 'e)*)
-Definition emitEvent {Regval A E} `{forall (x y : Regval), Decidable (x = y)} (m : monad Regval A E) (e : event Regval) : option (monad Regval A E) :=
+Context {Regval : Type}.
+Context (regval_eqb : Regval -> Regval -> bool).
+
+Definition emitEvent {A E} (m : monad Regval A E) (e : event Regval) : option (monad Regval A E) :=
  match (e, m) with
   | (E_read_mem rk a sz v, Read_mem rk' a' sz' k) =>
      if read_kind_beq rk' rk && N.eqb a' a && Nat.eqb sz' sz then Some (k v) else None
@@ -428,7 +433,7 @@ Definition emitEvent {Regval A E} `{forall (x y : Regval), Decidable (x = y)} (m
   | (E_read_reg r v, Read_reg r' k) =>
      if generic_eq r' r then Some (k v) else None
   | (E_write_reg r v, Write_reg r' v' k) =>
-     if generic_eq r' r && generic_eq v' v then Some k else None
+     if generic_eq r' r && regval_eqb v' v then Some k else None
   | (E_write_ea wk a sz, Write_ea wk' a' sz' k) =>
      if write_kind_beq wk' wk && N.eqb a' a && Nat.eqb sz' sz then Some k else None
   | (E_barrier bk, Barrier bk' k) =>
@@ -451,15 +456,13 @@ match a with
 | None => None
 end.
 
-(*val runTrace : forall 'regval 'a 'e. Eq 'regval => trace 'regval -> monad 'regval 'a 'e -> maybe (monad 'regval 'a 'e)*)
-Fixpoint runTrace {Regval A E} `{forall (x y : Regval), Decidable (x = y)} (t : trace Regval) (m : monad Regval A E) : option (monad Regval A E) :=
+Fixpoint runTrace {A E} (t : trace Regval) (m : monad Regval A E) : option (monad Regval A E) :=
 match t with
   | [] => Some m
   | e :: t' => option_bind (emitEvent m e) (runTrace t')
 end.
 
-(*val final : forall 'regval 'a 'e. monad 'regval 'a 'e -> bool*)
-Definition final {Regval A E} (m : monad Regval A E) : bool :=
+Definition final {A E} (m : monad Regval A E) : bool :=
 match m with
   | Done _ => true
   | Fail _ => true
@@ -467,23 +470,22 @@ match m with
   | _ => false
 end.
 
-(*val hasTrace : forall 'regval 'a 'e. Eq 'regval => trace 'regval -> monad 'regval 'a 'e -> bool*)
-Definition hasTrace {Regval A E} `{forall (x y : Regval), Decidable (x = y)} (t : trace Regval) (m : monad Regval A E) : bool :=
+Definition hasTrace {A E} `{forall (x y : Regval), Decidable (x = y)} (t : trace Regval) (m : monad Regval A E) : bool :=
 match runTrace t m with
   | Some m => final m
   | None => false
 end.
 
-(*val hasException : forall 'regval 'a 'e. Eq 'regval => trace 'regval -> monad 'regval 'a 'e -> bool*)
-Definition hasException {Regval A E} `{forall (x y : Regval), Decidable (x = y)} (t : trace Regval) (m : monad Regval A E) :=
+Definition hasException {A E} (t : trace Regval) (m : monad Regval A E) :=
 match runTrace t m with
   | Some (Exception _) => true
   | _ => false
 end.
 
-(*val hasFailure : forall 'regval 'a 'e. Eq 'regval => trace 'regval -> monad 'regval 'a 'e -> bool*)
-Definition hasFailure {Regval A E} `{forall (x y : Regval), Decidable (x = y)} (t : trace Regval) (m : monad Regval A E) :=
+Definition hasFailure {A E} (t : trace Regval) (m : monad Regval A E) :=
 match runTrace t m with
   | Some (Fail _) => true
   | _ => false
 end.
+
+End EventTraces.

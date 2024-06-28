@@ -66,6 +66,7 @@
 (*==========================================================================*)
 
 Require Import Sail.Values.
+Require Import Sail.Instances.
 Require Import Sail.Prompt_monad.
 Require Export ZArith.Zwf.
 Require Import Lia.

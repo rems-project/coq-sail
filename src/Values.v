@@ -75,7 +75,6 @@ Require BinaryString.
 Require HexString.
 Require Export List.
 Require Export Sumbool.
-Require Export DecidableClass.
 Require Import Eqdep_dec.
 Require Export Zeuclid.
 Require Import Lia.
@@ -93,104 +92,6 @@ Local Open Scope bool.
    can be added to, and a typeclass to wrap constraint arguments in to
    trigger automatic solving. *)
 Create HintDb sail.
-
-Definition generic_eq {T:Type} (x y:T) `{Decidable (x = y)} := Decidable_witness.
-Definition generic_neq {T:Type} (x y:T) `{Decidable (x = y)} := negb Decidable_witness.
-Lemma generic_eq_true {T} {x y:T} `{Decidable (x = y)} : generic_eq x y = true -> x = y.
-apply Decidable_spec.
-Qed.
-Lemma generic_eq_false {T} {x y:T} `{Decidable (x = y)} : generic_eq x y = false -> x <> y.
-unfold generic_eq.
-intros H1 H2.
-rewrite <- Decidable_spec in H2.
-congruence.
-Qed.
-Lemma generic_neq_true {T} {x y:T} `{Decidable (x = y)} : generic_neq x y = true -> x <> y.
-unfold generic_neq.
-intros H1 H2.
-rewrite <- Decidable_spec in H2.
-destruct Decidable_witness; simpl in *; 
-congruence.
-Qed.
-Lemma generic_neq_false {T} {x y:T} `{Decidable (x = y)} : generic_neq x y = false -> x = y.
-unfold generic_neq.
-intro H1.
-rewrite <- Decidable_spec.
-destruct Decidable_witness; simpl in *; 
-congruence.
-Qed.
-#[export] Instance Decidable_eq_from_dec {T:Type} (eqdec: forall x y : T, {x = y} + {x <> y}) : 
-  forall (x y : T), Decidable (eq x y).
-refine (fun x y => {|
-  Decidable_witness := proj1_sig (bool_of_sumbool (eqdec x y))
-|}).
-destruct (eqdec x y); simpl; split; congruence.
-Defined.
-
-#[export] Instance Decidable_eq_unit : forall (x y : unit), Decidable (x = y).
-refine (fun x y => {| Decidable_witness := true |}).
-destruct x, y; split; auto.
-Defined.
-
-#[export] Instance Decidable_eq_string : forall (x y : string), Decidable (x = y) :=
-  Decidable_eq_from_dec String.string_dec.
-
-#[export] Instance Decidable_eq_pair {A B : Type} `(DA : forall x y : A, Decidable (x = y), DB : forall x y : B, Decidable (x = y)) : forall x y : A*B, Decidable (x = y).
-refine (fun x y =>
-{| Decidable_witness := andb (@Decidable_witness _ (DA (fst x) (fst y)))
-     (@Decidable_witness _ (DB (snd x) (snd y))) |}).
-destruct x as [x1 x2].
-destruct y as [y1 y2].
-simpl.
-destruct (DA x1 y1) as [b1 H1];
-destruct (DB x2 y2) as [b2 H2];
-simpl.
-split.
-* intro H.
-  apply Bool.andb_true_iff in H.
-  destruct H as [H1b H2b].
-  apply H1 in H1b.
-  apply H2 in H2b.
-  congruence.
-* intro. inversion H.
-  subst.
-  apply Bool.andb_true_iff.
-  tauto.
-Qed.
-
-#[export] Instance Decidable_eq_option {A : Type} `(D: forall x y : A, Decidable (x = y)) : forall x y : option A, Decidable (x = y).
-refine (fun x y => {| Decidable_witness :=
-  match x with
-  | None => match y with None => true | Some _ => false end
-  | Some x' => match y with None => false | Some y' => (@Decidable_witness _ (D x' y')) end
-  end |}).
-destruct x as [x'|]; destruct y as [y'|].
-- destruct (D x' y') as [b H]; simpl.
-  rewrite H.
-  split; congruence.
-- split; congruence.
-- split; congruence.
-- split; congruence.
-Defined.
-
-Definition generic_dec {T:Type} (x y:T) `{Decidable (x = y)} : {x = y} + {x <> y}.
-refine ((if Decidable_witness as b return (b = true <-> x = y -> _) then fun H' => left _ else fun H' => right _) Decidable_spec).
-* tauto.
-* rewrite <- H'.
-  congruence.
-Defined.
-
-#[export] Instance Decidable_eq_list {A : Type} `(D : forall x y : A, Decidable (x = y)) : forall (x y : list A), Decidable (x = y) :=
-  Decidable_eq_from_dec (list_eq_dec (fun x y => generic_dec x y)).
-
-(* Used by generated code that builds Decidable equality instances for records. *)
-Ltac cmp_record_field x y :=
-  let H := fresh "H" in
-  case (generic_dec x y);
-  intro H; [ |
-    refine (Build_Decidable _ false _);
-    split; [congruence | intros Z; destruct H; injection Z; auto]
-  ].
 
 
 Notation "x <=? y <=? z" := ((x <=? y) && (y <=? z)) (at level 70, y at next level) : Z_scope.
@@ -469,8 +370,6 @@ Inductive bitU := B0 | B1 | BU.
 
 Scheme Equality for bitU.
 Definition eq_bit := bitU_beq.
-#[export] Instance Decidable_eq_bit : forall (x y : bitU), Decidable (x = y) :=
-  Decidable_eq_from_dec bitU_eq_dec.
 
 #[export] Instance dummy_bitU : Inhabited bitU := {
   inhabitant := BU
@@ -1100,6 +999,13 @@ Qed.
 Definition mword_to_bools {n} (w : mword n) : list bool := word_to_bools (get_word w).
 Definition bools_to_mword (l : list bool) : mword (length_list l) := to_word_nat (bools_to_word l).
 
+Definition eq_vec_dec {n} : forall (x y : mword n), {x = y} + {x <> y} :=
+  match n with
+  | Z0 => @MachineWord.eq_dec _
+  | Zpos m => @MachineWord.eq_dec _
+  | Zneg m => @MachineWord.eq_dec _
+  end.
+
 End MachineWords.
 
 (* Some useful tactics left over from when we did constraint solving. *)
@@ -1113,92 +1019,11 @@ destruct (Bool.bool_dec l r) as [e | ne].
 * exists true; tauto.
 Qed.
 
-Ltac unbool_comparisons :=
-  repeat match goal with
-  | H:@eq bool _ _ -> @ex bool _ |- _ => apply lift_bool_exists in H; destruct H
-  | H:@ex Z _ |- _ => destruct H
-  (* Omega doesn't know about In, but can handle disjunctions. *)
-  | H:context [member_Z_list _ _ = true] |- _ => rewrite member_Z_list_In in H
-  | H:context [In ?x (?y :: ?t)] |- _ => change (In x (y :: t)) with (y = x \/ In x t) in H
-  | H:context [In ?x []] |- _ => change (In x []) with False in H
-  | H:?v = true |- _ => is_var v; subst v
-  | H:?v = false |- _ => is_var v; subst v
-  | H:true = ?v |- _ => is_var v; subst v
-  | H:false = ?v |- _ => is_var v; subst v
-  | H:_ /\ _ |- _ => destruct H
-  | H:context [Z.geb _ _] |- _ => rewrite Z.geb_leb in H
-  | H:context [Z.gtb _ _] |- _ => rewrite Z.gtb_ltb in H
-  | H:context [Z.leb _ _ = true] |- _ => rewrite Z.leb_le in H
-  | H:context [Z.ltb _ _ = true] |- _ => rewrite Z.ltb_lt in H
-  | H:context [Z.eqb _ _ = true] |- _ => rewrite Z.eqb_eq in H
-  | H:context [Z.leb _ _ = false] |- _ => rewrite Z.leb_gt in H
-  | H:context [Z.ltb _ _ = false] |- _ => rewrite Z.ltb_ge in H
-  | H:context [Z.eqb _ _ = false] |- _ => rewrite Z.eqb_neq in H
-  | H:context [orb _ _ = true] |- _ => rewrite Bool.orb_true_iff in H
-  | H:context [orb _ _ = false] |- _ => rewrite Bool.orb_false_iff in H
-  | H:context [andb _ _ = true] |- _ => rewrite Bool.andb_true_iff in H
-  | H:context [andb _ _ = false] |- _ => rewrite Bool.andb_false_iff in H
-  | H:context [negb _ = true] |- _ => rewrite Bool.negb_true_iff in H
-  | H:context [negb _ = false] |- _ => rewrite Bool.negb_false_iff in H
-  | H:context [Bool.eqb _ ?r = true] |- _ => rewrite Bool.eqb_true_iff in H;
-                                             try (is_var r; subst r)
-  | H:context [Bool.eqb _ _ = false] |- _ => rewrite Bool.eqb_false_iff in H
-  | H:context [generic_eq _ _ = true] |- _ => apply generic_eq_true in H
-  | H:context [generic_eq _ _ = false] |- _ => apply generic_eq_false in H
-  | H:context [generic_neq _ _ = true] |- _ => apply generic_neq_true in H
-  | H:context [generic_neq _ _ = false] |- _ => apply generic_neq_false in H
-  | H:context [_ <> true] |- _ => rewrite Bool.not_true_iff_false in H
-  | H:context [_ <> false] |- _ => rewrite Bool.not_false_iff_true in H
-  | H:context [@eq bool ?l ?r] |- _ =>
-    lazymatch r with
-    | true => fail
-    | false => fail
-    | _ => rewrite (Bool.eq_iff_eq_true l r) in H
-    end
-  end.
-Ltac unbool_comparisons_goal :=
-  repeat match goal with
-  (* Important to have these early in the list - setoid_rewrite can
-     unfold member_Z_list. *)
-  | |- context [member_Z_list _ _ = true] => rewrite member_Z_list_In
-  | |- context [In ?x (?y :: ?t)] => change (In x (y :: t)) with (y = x \/ In x t) 
-  | |- context [In ?x []] => change (In x []) with False
-  | |- context [Z.geb _ _] => setoid_rewrite Z.geb_leb
-  | |- context [Z.gtb _ _] => setoid_rewrite Z.gtb_ltb
-  | |- context [Z.leb _ _ = true] => setoid_rewrite Z.leb_le
-  | |- context [Z.ltb _ _ = true] => setoid_rewrite Z.ltb_lt
-  | |- context [Z.eqb _ _ = true] => setoid_rewrite Z.eqb_eq
-  | |- context [Z.leb _ _ = false] => setoid_rewrite Z.leb_gt
-  | |- context [Z.ltb _ _ = false] => setoid_rewrite Z.ltb_ge
-  | |- context [Z.eqb _ _ = false] => setoid_rewrite Z.eqb_neq
-  | |- context [orb _ _ = true] => setoid_rewrite Bool.orb_true_iff
-  | |- context [orb _ _ = false] => setoid_rewrite Bool.orb_false_iff
-  | |- context [andb _ _ = true] => setoid_rewrite Bool.andb_true_iff
-  | |- context [andb _ _ = false] => setoid_rewrite Bool.andb_false_iff
-  | |- context [negb _ = true] => setoid_rewrite Bool.negb_true_iff
-  | |- context [negb _ = false] => setoid_rewrite Bool.negb_false_iff
-  | |- context [Bool.eqb _ _ = true] => setoid_rewrite Bool.eqb_true_iff
-  | |- context [Bool.eqb _ _ = false] => setoid_rewrite Bool.eqb_false_iff
-  | |- context [generic_eq _ _ = true] => apply generic_eq_true
-  | |- context [generic_eq _ _ = false] => apply generic_eq_false
-  | |- context [generic_neq _ _ = true] => apply generic_neq_true
-  | |- context [generic_neq _ _ = false] => apply generic_neq_false
-  | |- context [_ <> true] => setoid_rewrite Bool.not_true_iff_false
-  | |- context [_ <> false] => setoid_rewrite Bool.not_false_iff_true
-  | |- context [@eq bool _ ?r] =>
-    lazymatch r with
-    | true => fail
-    | false => fail
-    | _ => setoid_rewrite Bool.eq_iff_eq_true
-    end
-  end.
-
 Ltac dump_context :=
   repeat match goal with
   | H:=?X |- _ => idtac H ":=" X; fail
   | H:?X |- _ => idtac H ":" X; fail end;
   match goal with |- ?X => idtac "Goal:" X end.
-
 
 #[export] Hint Unfold length_mword : sail.
 
@@ -1750,8 +1575,6 @@ rewrite update_list_inc_length.
 + apply L.
 + simpl.
   unfold length_list.
-  unbool_comparisons.
-  rewrite L.
   lia.
 Qed.
 
@@ -1768,8 +1591,6 @@ rewrite update_list_inc_length.
 + apply L.
 + unfold length_list.
   simpl.
-  unbool_comparisons.
-  rewrite L.
   lia.
 Qed.
 
@@ -1810,14 +1631,6 @@ Definition vec_eq_dec {T n} (D : forall x y : T, {x = y} + {x <> y}) (x y : vec 
 refine (if List.list_eq_dec D (projT1 x) (projT1 y) then left _ else right _).
 * apply eq_sigT_hprop; auto using UIP_nat.
 * contradict n0. rewrite n0. reflexivity.
-Defined.
-
-#[export] Instance Decidable_eq_vec {T : Type} {n} `(DT : forall x y : T, Decidable (x = y)) :
-  forall x y : vec T n, Decidable (x = y).
-refine (fun x y => {|
-  Decidable_witness := proj1_sig (bool_of_sumbool (vec_eq_dec (fun x y => generic_dec x y) x y))
-|}).
-destruct (vec_eq_dec _ x y); simpl; split; congruence.
 Defined.
 
 Definition vec_of_list {A} n (l : list A) : option (vec A n).
