@@ -1,4 +1,5 @@
-Require Import ZArith Eqdep_dec String List.
+From Coq Require Import ZArith Eqdep_dec.
+From Sail Require Export Inhabited.
 
 Module Z_eq_dec.
 Definition U := Z.
@@ -11,28 +12,9 @@ Definition dummy {T:Type} (t:T) : T.
 exact t.
 Qed.
 
-(* To avoid carrying around proofs that vector sizes are correct everywhere,
-   we extend many operations to cover nonsensical sizes.  To help, we have a
-   typeclass of inhabited types so that we can pick a default value, and an
-   opaque function that returns it - well typed Sail code reduction
-   should never reach this definition. *)
-
-Class Inhabited (T:Type) := { inhabitant : T }.
-Definition dummy_value {T:Type} `{Inhabited T} := inhabitant.
+(* Version that uses a typeclass rather than a default. *)
+Definition dummy_value {T:Type} `{Inhabited T} : T := inhabitant.
 Global Opaque dummy_value.
-
-#[export] Instance unit_inhabited : Inhabited unit := { inhabitant := tt }.
-#[export] Instance z_inhabited : Inhabited Z := { inhabitant := 0 }.
-#[export] Instance string_inhabited : Inhabited string := { inhabitant := "" }.
-#[export] Instance bool_inhabited : Inhabited bool := { inhabitant := false }.
-#[export] Instance pair_inhabited {X Y} `{Inhabited X} `{Inhabited Y} : Inhabited (X * Y) := {
-  inhabitant := (inhabitant, inhabitant)
-}.
-#[export] Instance list_inhabited {X} : Inhabited (list X) := { inhabitant := List.nil }.
-#[export] Instance option_inhabited {X} : Inhabited (option X) := { inhabitant := None }.
-#[export] Instance function_inhabited {S T} `{Inhabited T} : Inhabited (S -> T) := {
-  inhabitant := fun _ => inhabitant
-}.
 
 (* For the indexed machine words we sometimes need to change to an
    equivalent index.  These provide nat and Z casts that compute. *)

@@ -121,7 +121,7 @@ Definition undefined_real {E} (_:unit) : monad _ E := choose_real "undefined_rea
 Definition undefined_range {E} i j : monad Z E := choose_range "undefined_range" i j.
 Definition undefined_bitvector {E} n : monad (mword n) E := choose_bitvector "undefined_bitvector" n.
 
-Definition undefined_vector {E T} n `{TypeCasts.Inhabited T} (a:T) : monad (vec T n) E := returnm (vec_init a n).
+Definition undefined_vector {E T} n `{Inhabited T} (a:T) : monad (vec T n) E := returnm (vec_init a n).
 
 End Undef.
 
@@ -288,7 +288,7 @@ End Choose.
 
 (* --- Operators_mwords.v *)
 
-Definition autocast_m {e m n} {T : Z -> Type} `{H : TypeCasts.Inhabited (T n)} (x : monad (T m) e) : monad (T n) e :=
+Definition autocast_m {e m n} {T : Z -> Type} `{H : Inhabited (T n)} (x : monad (T m) e) : monad (T n) e :=
   x >>= fun x => returnm (autocast x).
 
 (* --- should probably define generic versions of these, parametrised by Arch *)
