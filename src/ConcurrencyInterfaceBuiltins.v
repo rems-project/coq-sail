@@ -121,7 +121,7 @@ Definition undefined_real {E} (_:unit) : monad _ E := choose_real "undefined_rea
 Definition undefined_range {E} i j : monad Z E := choose_range "undefined_range" i j.
 Definition undefined_bitvector {E} n : monad (mword n) E := choose_bitvector "undefined_bitvector" n.
 
-Definition undefined_vector {E T} n `{Inhabited T} (a:T) : monad (vec T n) E := returnm (vec_init a n).
+Definition undefined_vector {E T} n `{Inhabited T} (a:T) : monad (vec T n) E := returnm (vector_init n a).
 
 End Undef.
 

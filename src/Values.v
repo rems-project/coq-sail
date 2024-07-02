@@ -1520,13 +1520,13 @@ rewrite repeat_length.
 - auto with zarith.
 Qed.
 
-Definition vec_init {T} (t : T) `{Inhabited T} (n : Z) : vec T n :=
+Definition vector_init {T} (n : Z) (t : T) : vec T n :=
   match sumbool_of_bool (n >=? 0) with
   | left GE => @existT _ _ (repeat [t] n) (vec_init_ok GE)
   | right NGE => dodgy_vec n NGE
   end.
 
-#[export] Instance dummy_vec {T:Type} `{Inhabited T} n : Inhabited (vec T n) := {| inhabitant := vec_init inhabitant n |}.
+#[export] Instance dummy_vec {T:Type} `{Inhabited T} n : Inhabited (vec T n) := {| inhabitant := vector_init n inhabitant |}.
 
 Definition vec_concat {T m n} `{Inhabited T} (v : vec T m) (w : vec T n) : vec T (m + n).
 refine (
