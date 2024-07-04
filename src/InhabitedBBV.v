@@ -6,7 +6,10 @@ From Coq Require Import ZArith String List.
    opaque function that returns it - well typed Sail code reduction
    should never reach this definition. *)
 
+(* This definition is intended to mirror the one in stdpp. *)
+
 Class Inhabited (T:Type) := populate { inhabitant : T }.
+#[global] Arguments populate {_} _.
 
 #[export] Instance unit_inhabited : Inhabited unit := { inhabitant := tt }.
 #[export] Instance z_inhabited : Inhabited Z := { inhabitant := 0 }.
