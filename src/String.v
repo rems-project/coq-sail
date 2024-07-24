@@ -102,12 +102,12 @@ match c with
 | "7" => Some 7
 | "8" => Some 8
 | "9" => Some 9
-| "a" => Some 10
-| "b" => Some 11
-| "c" => Some 12
-| "d" => Some 13
-| "e" => Some 14
-| "f" => Some 15
+| "a" | "A" => Some 10
+| "b" | "B" => Some 11
+| "c" | "C" => Some 12
+| "d" | "D" => Some 13
+| "e" | "E" => Some 14
+| "f" | "F" => Some 15
 | _ => None
 end.
 Local Close Scope char_scope.
@@ -187,7 +187,11 @@ Definition parse_hex_bits_opt sz s : option (mword sz) :=
   | String "0" (String "x" t) =>
     match int_of t 16 2 with
     | None => None
-    | Some (i, _) => Some (mword_of_int i)
+    | Some (i, consumed) =>
+        if ((i <? 2 ^ sz) && (consumed =? Z.of_nat (String.length s)))%bool then
+          Some (mword_of_int i)
+        else
+          None
     end
   | _ => None
   end.
