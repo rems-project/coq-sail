@@ -1,9 +1,6 @@
-# Note that the bitvector library is in the unpublished unstable stdpp package,
-# so we shouldn't try to publish this in the coq opam repository yet.
-
 opam-version: "2.0"
 name: "coq-sail-stdpp"
-version: "0.17"
+version: "0.18"
 maintainer: "Sail Devs <cl-sail-dev@lists.cam.ac.uk>"
 authors: [
   "Alasdair Armstrong"

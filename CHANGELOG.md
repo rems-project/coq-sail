@@ -1,6 +1,15 @@
 Changelog
 =========
 
+0.18
+----
+
+* Use the release version of the stdpp bitvector package
+* Improved support for stdpp, in particular providing instances for
+  its `EqDecision` and `Inhabited` type classes
+* Simplify some function definitions
+* Remove obsolete solver tactics
+
 0.17
 ----
 

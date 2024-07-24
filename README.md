@@ -26,19 +26,22 @@ Installation
 We suggest using the [opam package manager](https://opam.ocaml.org/)
 if you also used it to install Coq.  See [the instructions on using
 opam with Coq](https://coq.inria.fr/opam-using.html) for more
-information.  The `coq-sail` package depends on the `coq-bbv` package
-for its implementation of bitvectors.
+information.  There are two variants which use different bitvector
+libraries:
+
+* The `coq-sail-stdpp` package uses the [stdpp
+  library's](https://gitlab.mpi-sws.org/iris/stdpp) bitvector
+  package.  Use the `--coq-lib-style stdpp` option with Sail to target
+  this package.
+* The `coq-sail` package depends on the `coq-bbv` package
+  for its implementation of bitvectors.  Use the `--coq-lib-style bbv`
+  option with Sail to target this package.  Note that the new Sail
+  concurrency interface isn't supported when targeting bbv at the
+  moment; please get in touch if you need this.
 
 It's also possible to build the library locally without opam using the
 Makefile in the `src` directory.  You can also change the bitvector
 library used by changing the `src/MachineWord.v` symbolic link.
-
-An opam package is also available using the stdpp-unstable bitvector
-library.  It changes the Coq library name so that it can be installed
-alongside the BBV version, so references to `Sail` in the models
-should be replaced by `SailStdpp`.  Sail can do this when generating
-Coq output using the arguments `-coq_alt_modules SailStdpp.Base
--coq_alt_modules SailStdpp.Real`.
 
 Licensing
 =========
