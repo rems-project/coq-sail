@@ -1478,18 +1478,26 @@ Defined.
 
 Definition vec_of_list {A} n (l : list A) : option (vec A n).
 refine (
-  match sumbool_of_bool (n =? length_list l) with
+  match sumbool_of_bool (List.length l =? Z.to_nat n)%nat with
   | left H => Some (@existT _ _ l _)
   | right _ => None
   end
 ).
-symmetry.
-apply Z.eqb_eq in H.
-rewrite H.
-unfold length_list.
-rewrite Nat2Z.id.
-reflexivity.
+apply Nat.eqb_eq.
+exact H.
 Defined.
+
+Lemma vec_of_list_eq {A n l} pf :
+  @vec_of_list A n l = Some (@existT _ _ l pf).
+simpl in pf.
+unfold vec_of_list.
+destruct (sumbool_of_bool (Datatypes.length l =? Z.to_nat n)%nat) as [e|e].
+* do 2 f_equal.
+  apply UIP_nat.
+* exfalso.
+  apply Nat.eqb_neq in e.
+  congruence.
+Qed.
 
 Definition vec_of_list_len {A} (l : list A) : vec A (length_list l). 
 refine (@existT _ _ l _).

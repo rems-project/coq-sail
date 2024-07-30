@@ -69,7 +69,7 @@
 
 From Coq Require Reals.ROrderedType.
 From SailStdpp Require Import Values.
-From stdpp Require Import base decidable strings.
+From stdpp Require Import base countable decidable strings.
 
 Definition generic_eq {T:Type} (x y:T) `{EqDecision T} : bool := bool_decide (x = y).
 Definition generic_neq {T:Type} (x y:T) `{EqDecision T} := negb (bool_decide (x = y)).
@@ -187,8 +187,28 @@ Ltac unbool_comparisons_goal :=
 #[export] Instance Decidable_eq_vec {n} `{EqDecision T} : EqDecision (vec T n) :=
    vec_eq_dec (fun x y => generic_dec x y).
 
+#[export] Instance Countable_vec {n} `{Countable T} : Countable (vec T n).
+refine {|
+  encode v := encode (projT1 v);
+  decode p := l ← decode p;
+              vec_of_list n l
+|}.
+intros [l pf].
+rewrite decode_encode.
+simpl.
+apply vec_of_list_eq.
+Qed.
+
 (* "Decidable" in a classical sense... *)
 #[export] Instance Decidable_eq_real : EqDecision Reals.Rdefinitions.R :=
   Reals.ROrderedType.Req_dec.
 
 #[export] Instance Decidable_eq_mword {n} : EqDecision (mword n) := eq_vec_dec.
+
+#[export] Instance Countable_mword {n} : Countable (mword n).
+refine {|
+  encode := match n with Zpos _ => encode | _ => encode end;
+  decode p := match n return option (mword n) with Zpos _ => decode p | _ => decode p end;
+|}.
+destruct n; apply decode_encode.
+Qed.
