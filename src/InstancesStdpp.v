@@ -100,7 +100,7 @@ Definition generic_dec {T:Type} (x y:T) `{EqDecision T} : {x = y} + {x <> y} := 
 Ltac cmp_record_field x y :=
   let H := fresh "H" in
   case (generic_dec x y);
-  intro H; [ | right; congruence ].
+  intro H; [ | right; injection; auto ].
 
 #[export] Instance Decidable_eq_bit : EqDecision bitU := bitU_eq_dec.
 
