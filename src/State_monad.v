@@ -119,14 +119,18 @@ Definition default_choice : ChoiceSource := {|
 Record sequential_state {Regs} :=
   { ss_regstate : Regs;
     ss_memstate : Memstate;
-    ss_tagstate : Tagstate }.
+    ss_tagstate : Tagstate;
+    ss_output : string;
+  }.
 Arguments sequential_state : clear implicits.
 
 (*val init_state : forall 'regs. 'regs -> sequential_state 'regs*)
 Definition init_state {Regs} regs : sequential_state Regs :=
   {| ss_regstate := regs;
      ss_memstate := NMap.empty _;
-     ss_tagstate := NMap.empty _ |}.
+     ss_tagstate := NMap.empty _;
+     ss_output := ""%string;
+  |}.
 
 Inductive ex E :=
   | Failure : string -> ex E
@@ -313,13 +317,17 @@ Definition put_mem_bytes {Regs} addr sz (v : list memory_byte) (tag : bitU) (s :
   let write_tag mem addr := NMap.add addr tag mem in
   {| ss_regstate := s.(ss_regstate);
      ss_memstate := List.fold_left write_byte a_v s.(ss_memstate);
-     ss_tagstate := List.fold_left write_tag addrs s.(ss_tagstate) |}.
+     ss_tagstate := List.fold_left write_tag addrs s.(ss_tagstate);
+     ss_output := s.(ss_output);
+  |}.
 
 Definition put_tag {Regs} addr (tag : bitU) (s : sequential_state Regs) : sequential_state Regs :=
   let write_tag mem addr := NMap.add addr tag mem in
   {| ss_regstate := s.(ss_regstate);
      ss_memstate := s.(ss_memstate);
-     ss_tagstate := write_tag s.(ss_tagstate) addr |}.
+     ss_tagstate := write_tag s.(ss_tagstate) addr;
+     ss_output := s.(ss_output);
+  |}.
 
 (*val write_memt_bytesS : forall 'regs 'e. write_kind -> nat -> nat -> list memory_byte -> bitU -> monadS 'regs bool 'e*)
 Definition write_memt_bytesS {Regs E} (_ : write_kind) addr sz (v : list memory_byte) (t : bitU) : monadS Regs bool E :=
@@ -372,13 +380,28 @@ Definition read_regvalS {Regs reg_type A E} (acc : register_accessors Regs reg_t
 Definition write_regvalS {Regs reg_type A E} (acc : register_accessors Regs reg_type) (reg : reg_type A) (v : A) : monadS Regs unit E :=
   let '(_, write) := acc in
   readS (fun s => write _ reg v s.(ss_regstate)) >>$= (fun rs' =>
-      updateS (fun s => {| ss_regstate := rs'; ss_memstate := s.(ss_memstate); ss_tagstate := s.(ss_tagstate) |})).
+      updateS (fun s =>
+                 {| ss_regstate := rs';
+                    ss_memstate := s.(ss_memstate);
+                    ss_tagstate := s.(ss_tagstate);
+                    ss_output := s.(ss_output);
+                 |})).
 
 Definition write_regS {Regs rt} {register_set : forall {T}, Regs -> rt T -> T -> Regs} {A E} (reg : rt A) (v:A) : monadS Regs unit E :=
-  updateS (fun s => {| ss_regstate := register_set s.(ss_regstate) reg v; ss_memstate := s.(ss_memstate); ss_tagstate := s.(ss_tagstate) |}).
+  updateS (fun s =>
+             {| ss_regstate := register_set s.(ss_regstate) reg v;
+                ss_memstate := s.(ss_memstate);
+                ss_tagstate := s.(ss_tagstate);
+                ss_output := s.(ss_output);
+             |}).
 
 Definition write_reg_refS {Regs rt} {register_set : forall {T}, Regs -> rt T -> T -> Regs} {A E} (ref : register_ref rt A) (v:A) : monadS Regs unit E :=
-  updateS (fun s => {| ss_regstate := register_set s.(ss_regstate) ref.(reg) v; ss_memstate := s.(ss_memstate); ss_tagstate := s.(ss_tagstate) |}).
+  updateS (fun s =>
+             {| ss_regstate := register_set s.(ss_regstate) ref.(reg) v;
+                ss_memstate := s.(ss_memstate);
+                ss_tagstate := s.(ss_tagstate);
+                ss_output := s.(ss_output);
+             |}).
 
 (* TODO Add Show typeclass for value and exception type *)
 (*val show_result : forall 'a 'e. result 'a 'e -> string*)
@@ -388,7 +411,10 @@ Definition show_result {A E} (x : result A E) : string := match x with
   | Ex (Throw _) => "Throw"
 end.
 
-(*val prerr_results : forall 'a 'e 's. SetType 's => set (result 'a 'e * 's) -> unit*)
-Definition prerr_results {A E S} (rs : list (result A E * S)) : unit := tt.
-(*  let _ = Set.map (fun (r, _) -> let _ = prerr_endline (show_result r) in ()) rs in
-  ()*)
+Definition print_effectS {Regs E} (str : string) : monadS Regs unit E :=
+  updateS (fun s =>
+             {| ss_regstate := s.(ss_regstate);
+                ss_memstate := s.(ss_memstate);
+                ss_tagstate := s.(ss_tagstate);
+                ss_output := s.(ss_output) ++ str;
+             |}).

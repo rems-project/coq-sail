@@ -286,8 +286,19 @@ end.
 
 Definition decimal_string_of_bits {n} (bv : mword n) : string := string_of_int (int_of_mword false bv).
 
-Definition string_of_word {n} (bv : MachineWord.word n) := String "0" (String "b" (MachineWord.word_to_binary_string bv)).
-Definition string_of_bits {n} (w : mword n) : string := string_of_word (get_word w).
+Local Fixpoint pad0 (n : nat) s :=
+  match n with
+  | O => s
+  | S m => String "0" (pad0 m s)
+  end%string.
+
+Definition binary_string_of_word {n} (bv : MachineWord.word n) := String "0" (String "b" (MachineWord.word_to_binary_string bv)).
+Definition string_of_bits {n} (w : mword n) : string :=
+  if Z.modulo n 4 =? 0 then
+    let s := hex_string_of_int true (int_of_mword false w) in
+    String "0" (String "x" (pad0 (Z.to_nat (Z.div n 4) - String.length s) s))
+  else
+    binary_string_of_word (get_word w).
 
 (* Some aliases for compatibility. *)
 Definition dec_str := string_of_int.

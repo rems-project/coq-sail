@@ -67,6 +67,7 @@
 
 Require Import Sail.Values.
 Require Import Sail.Instances.
+Require Import Sail.String.
 Require Import Sail.Prompt_monad.
 Require Export ZArith.Zwf.
 Require Import Lia.
@@ -295,3 +296,25 @@ Definition internal_pick {a} (xs : list a) : monad rt a E :=
   choose_from_list "internal_pick" xs.
 
 End Choose.
+
+(* The normal print routines do nothing in Coq so that they don't drag terms and functions into the
+   monad.  Here are alternative versions which do, which can be controlled by defining PRINT_EFFECTS
+   in Sail. *)
+Definition print_effect {rt E} (s : string) : monad rt unit E :=
+  Print s (Done tt).
+
+Definition print_endline_effect {rt E} (s : string) : monad rt unit E :=
+  print_effect (s ++ "
+")%string.
+
+Definition print_int_effect {rt E} s i : monad rt unit E :=
+  print_endline_effect (s ++ string_of_int i).
+
+Definition print_bits_effect {rt E n} s (w : mword n) : monad rt unit E :=
+  print_endline_effect (s ++ string_of_bits w).
+
+(* We only have one output stream that we use for both. *)
+Definition prerr_effect {rt E} s := @print_effect rt E s.
+Definition prerr_endline_effect {rt E} s := @print_endline_effect rt E s.
+Definition prerr_int_effect {rt E} s i := @print_int_effect rt E s i.
+Definition prerr_bits_effect {rt E} s i := @print_bits_effect rt E s i.

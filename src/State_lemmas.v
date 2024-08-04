@@ -649,7 +649,7 @@ Ltac lift_read_reg :=
 *)
 
 Lemma liftState_write_reg_updateS Regs reg_type A E get_regval' set_regval' (reg : reg_type A) (v : A) :
-  liftState (Regs := Regs) (E := E) (get_regval', set_regval') (write_reg reg v) === updateS (fun s => {| ss_regstate := (set_regval' _ reg v s.(ss_regstate)); ss_memstate := s.(ss_memstate); ss_tagstate := s.(ss_tagstate) |}).
+  liftState (Regs := Regs) (E := E) (get_regval', set_regval') (write_reg reg v) === updateS (fun s => {| ss_regstate := (set_regval' _ reg v s.(ss_regstate)); ss_memstate := s.(ss_memstate); ss_tagstate := s.(ss_tagstate); ss_output := s.(ss_output) |}).
 reflexivity.
 Qed.
 (*

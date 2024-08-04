@@ -89,7 +89,7 @@ Fixpoint liftState {Regs reg_type A E} (ra : register_accessors Regs reg_type) (
   | (Write_ea _ _ _ k)         => liftState ra k
   | (Footprint k)              => liftState ra k
   | (Barrier _ k)              => liftState ra k
-  | (Print _ k)                => liftState ra k (* TODO *)
+  | (Print s k)                => seqS (print_effectS s) (liftState ra k)
   | (Fail descr)               => failS descr
   | (Exception e)              => throwS e
 end.
