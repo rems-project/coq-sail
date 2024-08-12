@@ -20,12 +20,41 @@ Module Type Arch.
   Parameter reg : Type -> Type.
 
   (** We need to implement a gmap indexed by registers *)
-(* Not yet, or maybe not here...  (only needed by downstream libraries)
-  Parameter reg_eq : EqDecision reg.
+  Parameter reg_eq : ∀ A, EqDecision (reg A).
   #[export] Existing Instance reg_eq.
-  Parameter reg_countable : @Countable reg reg_eq.
+(* Eeek, TODO?
+  Parameter reg_countable : ∀ A, Countable (reg A).
   #[export] Existing Instance reg_countable.
 *)
+
+  Inductive greg := GReg (A : Type) (r : reg A).
+  #[global] Arguments GReg [_] _.
+  #[global] Coercion GReg : reg >-> greg.
+
+  Parameter greg_eq : EqDecision greg.
+  #[export] Existing Instance greg_eq.
+
+  Parameter greg_cnt : Countable greg.
+  #[export] Existing Instance greg_cnt.
+
+  #[export] Hint Extern 1 (reg _) => assumption : typeclass_instances.
+  Parameter regval_inhabited : ∀ A, reg A → Inhabited A.
+  #[export] Existing Instance regval_inhabited.
+  Parameter regval_eq : ∀ A, reg A → EqDecision A.
+  #[export] Existing Instance regval_eq.
+  Parameter regval_cnt : ∀ A (r : reg A), Countable A.
+  #[export] Existing Instance regval_cnt.
+
+  (** From a register equality proof, we need to transport a register value.
+      This must compute (with vm_compute) even if the proof is opaque, For Ocaml
+      extraction, this should be extracted to Obj.magic *)
+  Parameter regval_transport:
+    ∀ {A B} {rA : reg A} {rB : reg B}, rA =@{greg} rB → A → B.
+
+  (** Soundness proof for [regval_extract] *)
+  Parameter regval_transport_sound:
+    ∀ A (r r' : reg A) (e : r =@{greg} r') a,
+    regval_transport e a = a.
 
   (** Virtual address size *)
   Parameter va_size : N.
