@@ -22,10 +22,11 @@ Module Type Arch.
   (** We need to implement a gmap indexed by registers *)
   Parameter reg_eq : ∀ A, EqDecision (reg A).
   #[export] Existing Instance reg_eq.
-(* Eeek, TODO?
+  (* This would be nice, but it essentially involves inverting reg A, which doesn't seem to be
+     possible in a useful way.
   Parameter reg_countable : ∀ A, Countable (reg A).
   #[export] Existing Instance reg_countable.
-*)
+  *)
 
   Inductive greg := GReg (A : Type) (r : reg A).
   #[global] Arguments GReg [_] _.
@@ -65,13 +66,10 @@ Module Type Arch.
   Parameter pa : Type.
 
   (** We need to implement a gmap indexed by pa *)
-(* As above...
   Parameter pa_eq : EqDecision pa.
   #[export] Existing Instance pa_eq.
   Parameter pa_countable : @Countable pa pa_eq.
   #[export] Existing Instance pa_countable.
-*)
-
 
   (** Parameter for extra architecture specific access types. Can be an empty
       type if not used *)
