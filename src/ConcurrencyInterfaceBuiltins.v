@@ -298,7 +298,7 @@ Definition autocast_m {e m n} {T : Z -> Type} `{H : Inhabited (T n)} (x : monad 
 Definition sail_barrier {e} (b : A.barrier) : monad unit e :=
   I.Next (I.Barrier b) I.Ret.
 
-Definition sail_take_exception {e} (f : A.fault unit) : monad unit e :=
+Definition sail_take_exception {e} (f : A.fault) : monad unit e :=
   I.Next (I.TakeException f) I.Ret.
 
 Definition sail_return_exception {e} pa : monad unit e :=
@@ -388,8 +388,11 @@ refine (
         end value
       in
       let value := cast_N value _ in
-      let tag := match req.(Mem_write_request_tag) with None => false | Some b => b end in
-      let req' := I.WriteReq.make unit n' req.(Mem_write_request_pa) req.(Mem_write_request_access_kind) value va req.(Mem_write_request_translation) tag tt tt in
+      let pa := req.(Mem_write_request_pa) in
+      let tag := req.(Mem_write_request_tag) in
+      let access_kind := req.(Mem_write_request_access_kind) in
+      let translation := req.(Mem_write_request_translation) in
+      let req' := I.WriteReq.make unit n' pa access_kind value va translation tag tt tt in
       let k x :=
         match x with
         | inl y => I.Ret (Ok y)

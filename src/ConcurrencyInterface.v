@@ -106,8 +106,8 @@ Module Type Arch.
 
   (** Fault type for a fault raised by the instruction (not by the concurrency model)
       In Arm terms, this means any synchronous exception decided by the ISA model *)
-  Parameter fault : Type -> Type.
-  Parameter fault_eq : ∀`{EqDecision T}, EqDecision (fault T).
+  Parameter fault : Type.
+  Parameter fault_eq : EqDecision fault.
   #[export] Existing Instance fault_eq.
 End Arch.
 
@@ -153,7 +153,7 @@ Module Interface (A : Arch).
           value : bv (8 * n);
           va : option va;
           translation : A.translation;
-          tag : bool;
+          tag : option bool;
           addr_deps : deps;
           data_deps : deps;
         }.
@@ -219,7 +219,7 @@ Module Interface (A : Arch).
   | Barrier : barrier -> outcome unit
   | CacheOp (deps : deps) : cache_op -> outcome unit
   | TlbOp (deps : deps) : tlb_op -> outcome unit
-  | TakeException : fault deps -> outcome unit
+  | TakeException : fault -> outcome unit
   | ReturnException (pa : pa) : outcome unit
 
   (** Custom outcome to support simplified models on either side that want
