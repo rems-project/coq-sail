@@ -118,35 +118,19 @@ Module Interface (A : Arch).
   Definition accessKind := Access_kind arch_ak.
 
   Module ReadReq.
-    Record t {deps : Type} {n : N} :=
+    Record t {n : N} :=
       make
         { pa : pa;
           access_kind : accessKind;
           va : option va;
           translation : translation;
           tag : bool;
-          addr_deps : deps;
         }.
     Arguments t : clear implicits.
-
-    Definition set_deps {d1 d2 : Type} {n : N} (f : d1 -> d2) (rr : t d1 n)
-      : t d2 n :=
-      {|
-        pa := rr.(pa);
-        access_kind := rr.(access_kind);
-        va := rr.(va);
-        translation := rr.(translation);
-        tag := rr.(tag);
-        addr_deps := f rr.(addr_deps);
-        |}.
-
-    Definition setv_deps {d1 d2 : Type} {n : N} (adeps : d2) (rr : t d1 n) :=
-      set_deps (fun _ => adeps) rr.
-
   End ReadReq.
 
   Module WriteReq.
-    Record t {deps : Type} {n : N} :=
+    Record t {n : N} :=
       make
         { pa : pa;
           access_kind : accessKind;
@@ -154,41 +138,11 @@ Module Interface (A : Arch).
           va : option va;
           translation : A.translation;
           tag : option bool;
-          addr_deps : deps;
-          data_deps : deps;
         }.
     Arguments t : clear implicits.
-
-    Definition set_deps {d1 d2 : Type} {n : N} (f : d1 -> d2) (wr : t d1 n)
-      : t d2 n :=
-      {|
-        pa := wr.(pa);
-        access_kind := wr.(access_kind);
-        value := wr.(value);
-        va := wr.(va);
-        translation := wr.(translation);
-        tag := wr.(tag);
-        addr_deps := f wr.(addr_deps);
-        data_deps := f wr.(data_deps);
-        |}.
-
-    Definition setv_deps {d1 d2 : Type} {n : N} (adeps ddeps : d2)
-      (wr : t d1 n) : t d2 n:=
-      {|
-        pa := wr.(pa);
-        access_kind := wr.(access_kind);
-        value := wr.(value);
-        va := wr.(va);
-        translation := wr.(translation);
-        tag := wr.(tag);
-        addr_deps := adeps;
-        data_deps := ddeps;
-        |}.
-
   End WriteReq.
 
   Section T.
-    Context {deps : Type}.
     Context {eOutcome : Type -> Type}.
 
   Inductive outcome : Type -> Type :=
@@ -203,22 +157,19 @@ Module Interface (A : Arch).
 
         Generally, writing the PC introduces no dependency because control
         dependencies are specified by the branch announce *)
-  | RegWrite {T : Type} (reg : reg T) (direct : bool) (deps : deps)
+  | RegWrite {T : Type} (reg : reg T) (direct : bool)
              (regval: T) : outcome unit
-  | MemRead (n : N) : ReadReq.t deps n ->
+  | MemRead (n : N) : ReadReq.t n ->
                       outcome (bv (8 * n) * option bool + abort)
-  | MemWrite (n : N) : WriteReq.t deps n -> outcome (option bool + abort)
+  | MemWrite (n : N) : WriteReq.t n -> outcome (option bool + abort)
     (** Declare the opcode of the current instruction when known. Used for
         dependency computation *)
   | InstrAnnounce (opcode : bvn) : outcome unit
     (** The deps here specify the control dependency *)
-  (* TODO: resolve this: The SSC definition is
-  | BranchAnnounce (pa : pa) (deps : deps) : outcome unit
-     but the Sail library is *)
-  | BranchAnnounce sz (pa : mword sz) (deps : deps) : outcome unit
+  | BranchAnnounce sz (pa : mword sz) : outcome unit
   | Barrier : barrier -> outcome unit
-  | CacheOp (deps : deps) : cache_op -> outcome unit
-  | TlbOp (deps : deps) : tlb_op -> outcome unit
+  | CacheOp : cache_op -> outcome unit
+  | TlbOp : tlb_op -> outcome unit
   | TakeException : fault -> outcome unit
   | ReturnException (pa : pa) : outcome unit
 
@@ -340,30 +291,29 @@ Module Interface (A : Arch).
   Arguments iTrace : clear implicits.
   Arguments iEvent : clear implicits.
 
-  Definition iMonExtraMap (deps : Type) (out1 out2 : Type -> Type)
-    := forall (A : Type), out1 A -> iMon deps out2 A.
+  Definition iMonExtraMap (out1 out2 : Type -> Type)
+    := forall (A : Type), out1 A -> iMon out2 A.
 
   (** Suppose we can simulate the outcome of out1 in the instruction monad with
       architecture outcomes out2. Then  *)
-  Fixpoint map_extra_iMon {deps : Type} {out1 out2 : Type -> Type} {B : Type}
-    (f : iMonExtraMap deps out1 out2) (mon : iMon deps out1 B) :
-    iMon deps out2 B :=
-    match mon in iMon _ _ _ return iMon deps out2 _ with
+  Fixpoint map_extra_iMon {out1 out2 : Type -> Type} {B : Type}
+    (f : iMonExtraMap out1 out2) (mon : iMon out1 B) : iMon out2 B :=
+    match mon in iMon _ _ return iMon out2 _ with
     | Ret b => Ret b
     | Next oc k0 =>
         let k := fun x => map_extra_iMon f (k0 x) in
-        match oc in outcome _ _ T
-              return (T -> iMon deps out2 B) -> iMon deps out2 B with
+        match oc in outcome _ T
+              return (T -> iMon out2 B) -> iMon out2 B with
         | RegRead reg direct => Next (RegRead reg direct)
-        | RegWrite reg direct deps val =>
-            Next (RegWrite reg direct deps val)
+        | RegWrite reg direct val =>
+            Next (RegWrite reg direct val)
         | MemRead n readreq => Next (MemRead n readreq)
         | MemWrite n writereq => Next (MemWrite n writereq)
         | InstrAnnounce opcode => Next (InstrAnnounce opcode)
-        | BranchAnnounce sz pa deps => Next (BranchAnnounce sz pa deps)
+        | BranchAnnounce sz pa => Next (BranchAnnounce sz pa)
         | Barrier barrier => Next (Barrier barrier)
-        | CacheOp deps cache_op => Next (CacheOp deps cache_op)
-        | TlbOp deps tlb_op => Next (TlbOp deps tlb_op)
+        | CacheOp cache_op => Next (CacheOp cache_op)
+        | TlbOp tlb_op => Next (TlbOp tlb_op)
         | TakeException fault => Next (TakeException fault)
         | ReturnException pa => Next (ReturnException pa)
         | ExtraOutcome aout => iMon_bind (f _ aout)

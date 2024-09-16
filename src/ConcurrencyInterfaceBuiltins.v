@@ -11,10 +11,10 @@ Open Scope Z.
 
 Module Defs (A : Arch) (I : InterfaceT A).
 
-Definition monad A E := I.iMon unit (fun _ => E) A.
+Definition monad A E := I.iMon (fun _ => E) A.
 Definition returnm {A E} : A -> monad A E := I.Ret.
 
-Definition monadR A R E := I.iMon unit (fun _ => (R + E)%type) A.
+Definition monadR A R E := I.iMon (fun _ => (R + E)%type) A.
 Definition returnR {A E} R : A -> monadR A R E := I.Ret.
 
 Definition bind {A B E : Type} (m : monad A E) (f : A -> monad B E) : monad B E := I.iMon_bind m f.
@@ -55,14 +55,14 @@ Fixpoint try_catch {A E1 E2} (m : monad A E1) (h : E1 -> monad A E2) : monad A E
   | I.Ret r => I.Ret r
   | I.Next (I.ExtraOutcome e)                  _ => h e
   | I.Next (I.RegRead reg direct)              f => I.Next (I.RegRead reg direct) (fun t => try_catch (f t) h)
-  | I.Next (I.RegWrite reg direct deps regval) f => I.Next (I.RegWrite reg direct deps regval) (fun t => try_catch (f t) h)
+  | I.Next (I.RegWrite reg direct regval)      f => I.Next (I.RegWrite reg direct regval) (fun t => try_catch (f t) h)
   | I.Next (I.MemRead n req)                   f => I.Next (I.MemRead n req) (fun t => try_catch (f t) h)
   | I.Next (I.MemWrite n req)                  f => I.Next (I.MemWrite n req) (fun t => try_catch (f t) h)
   | I.Next (I.InstrAnnounce opcode)            f => I.Next (I.InstrAnnounce opcode) (fun t => try_catch (f t) h)
-  | I.Next (I.BranchAnnounce sz pa deps)       f => I.Next (I.BranchAnnounce sz pa deps) (fun t => try_catch (f t) h)
+  | I.Next (I.BranchAnnounce sz pa)            f => I.Next (I.BranchAnnounce sz pa) (fun t => try_catch (f t) h)
   | I.Next (I.Barrier barrier)                 f => I.Next (I.Barrier barrier) (fun t => try_catch (f t) h)
-  | I.Next (I.CacheOp deps op)                 f => I.Next (I.CacheOp deps op) (fun t => try_catch (f t) h)
-  | I.Next (I.TlbOp deps op)                   f => I.Next (I.TlbOp deps op) (fun t => try_catch (f t) h)
+  | I.Next (I.CacheOp op)                      f => I.Next (I.CacheOp op) (fun t => try_catch (f t) h)
+  | I.Next (I.TlbOp op)                        f => I.Next (I.TlbOp op) (fun t => try_catch (f t) h)
   | I.Next (I.TakeException fault)             f => I.Next (I.TakeException fault) (fun t => try_catch (f t) h)
   | I.Next (I.ReturnException pa)              f => I.Next (I.ReturnException pa) (fun t => try_catch (f t) h)
   | I.Next (I.GenericFail msg)                 f => I.Next (I.GenericFail msg) (fun t => try_catch (f t) h)
@@ -138,10 +138,10 @@ Definition read_reg_ref {a e} (ref : register_ref A.reg a) : monad a e :=
 Definition reg_deref {a e} := @read_reg_ref a e.
 
 Definition write_reg {a e} (reg : A.reg a) (v : a) : monad unit e :=
- I.Next (I.RegWrite reg (* ??? *) true tt v) I.Ret.
+ I.Next (I.RegWrite reg (* ??? *) true v) I.Ret.
 
 Definition write_reg_ref {a e} (ref : register_ref A.reg a) (v : a) : monad unit e :=
- I.Next (I.RegWrite ref.(Values.reg) (* ??? *) true tt v) I.Ret.
+ I.Next (I.RegWrite ref.(Values.reg) (* ??? *) true v) I.Ret.
 
 (* ---- Prompt *)
 
@@ -305,14 +305,14 @@ Definition sail_return_exception {e} pa : monad unit e :=
   I.Next (I.ReturnException pa) I.Ret.
 
 Definition sail_cache_op {e} (op : A.cache_op) : monad unit e :=
-  I.Next (I.CacheOp tt op) I.Ret.
+  I.Next (I.CacheOp op) I.Ret.
 
 Definition sail_tlbi {e} (op : A.tlb_op) : monad unit e :=
-  I.Next (I.TlbOp tt op) I.Ret.
+  I.Next (I.TlbOp op) I.Ret.
 
 Definition branch_announce {e} sz (addr : mword sz) : monad unit e :=
   (* TODO: branch_announce seems rather odd *)
-  I.Next (I.BranchAnnounce sz addr tt) I.Ret.
+  I.Next (I.BranchAnnounce sz addr) I.Ret.
 
 Definition instr_announce {e sz} (opcode : mword sz) : monad unit e :=
   I.Next (I.InstrAnnounce (bv_to_bvn (get_word opcode))) I.Ret.
@@ -341,7 +341,7 @@ refine (
         end va)
     end
   in
-  let req' := I.ReadReq.make unit n' req.(Mem_read_request_pa) req.(Mem_read_request_access_kind) va req.(Mem_read_request_translation) req.(Mem_read_request_tag) tt in
+  let req' := I.ReadReq.make n' req.(Mem_read_request_pa) req.(Mem_read_request_access_kind) va req.(Mem_read_request_translation) req.(Mem_read_request_tag) in
   let k r :=
     match r with
     | inl (x,y) =>
@@ -392,7 +392,7 @@ refine (
       let tag := req.(Mem_write_request_tag) in
       let access_kind := req.(Mem_write_request_access_kind) in
       let translation := req.(Mem_write_request_translation) in
-      let req' := I.WriteReq.make unit n' pa access_kind value va translation tag tt tt in
+      let req' := I.WriteReq.make n' pa access_kind value va translation tag in
       let k x :=
         match x with
         | inl y => I.Ret (Ok y)
