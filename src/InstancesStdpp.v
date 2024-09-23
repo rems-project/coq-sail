@@ -201,11 +201,13 @@ refine {|
   decode p := l ← decode p;
               vec_of_list n l
 |}.
-intros [l pf].
-rewrite decode_encode.
-simpl.
-apply vec_of_list_eq.
-Qed.
+Proof.
+  abstract
+    (intros [l pf];
+    rewrite decode_encode;
+    simpl;
+    apply vec_of_list_eq).
+Defined.
 
 (* "Decidable" in a classical sense... *)
 #[export] Instance Decidable_eq_real : EqDecision Reals.Rdefinitions.R :=
@@ -218,5 +220,6 @@ refine {|
   encode := match n with Zpos _ => encode | _ => encode end;
   decode p := match n return option (mword n) with Zpos _ => decode p | _ => decode p end;
 |}.
-destruct n; apply decode_encode.
-Qed.
+Proof.
+  abstract (destruct n; apply decode_encode).
+Defined.
