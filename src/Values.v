@@ -826,12 +826,7 @@ Import MachineWord.
    indexed.  To avoid carrying around proofs that sizes are non-negative
    everywhere we define negative sized machine words to be a trivial value. *)
 
-Definition mword (n : Z) :=
-  match n with
-  | Zneg _ => word 0
-  | Z0 => word 0
-  | Zpos p => word (Pos.to_nat p)
-  end.
+Definition mword (n : Z) := word (Z_idx n).
 
 #[export] Instance dummy_mword {n} : Inhabited (mword n) := {
   inhabitant := match n with
@@ -840,7 +835,8 @@ Definition mword (n : Z) :=
   end
 }.
 
-Definition get_word {n} : mword n -> word (Z.to_nat n) :=
+(* TODO: keep or drop? *)
+Definition get_word {n} : mword n -> word (Z_idx n) :=
   match n with
   | Zneg _ => fun x => x
   | Z0 => fun x => x
@@ -851,31 +847,31 @@ Lemma get_word_inj {n} (w v : mword n) : get_word w = get_word v -> w = v.
 destruct n; simpl; auto.
 Qed.
 
-Definition with_word {n} {P : Type -> Type} : (word (Z.to_nat n) -> P (word (Z.to_nat n))) -> mword n -> P (mword n) :=
+Definition with_word {n} {P : Type -> Type} : (word (Z_idx n) -> P (word (Z_idx n))) -> mword n -> P (mword n) :=
 match n with
 | Zneg _ => fun f w => f w
 | Z0 => fun f w => f w
 | Zpos _ => fun f w => f w
 end.
 
-Definition to_word {n} : word (Z.to_nat n) -> mword n :=
+Definition to_word {n} : word (Z_idx n) -> mword n :=
   match n with
   | Zneg _ => fun _ => zeros _
   | Z0 => fun w => w
   | Zpos _ => fun w => w
   end.
 
-Definition to_word_nat {n} (w : word n) : mword (Z.of_nat n) :=
-  to_word (cast_nat w (eq_sym (Nat2Z.id n))).
+Definition to_word_idx {n} (w : word n) : mword (idx_Z n) :=
+  to_word (cast_idx w (Z_idx_Z n)).
 
 (* Establish the relationship between to_word and to_word_nat, starting with some
    reasoning using dependent equality, but ultimately finishing with a directly
    usably plain equality result. *)
 
-Lemma to_word_eq_dep m n (w : MachineWord.word (Z.to_nat m)) (v : MachineWord.word (Z.to_nat n)) :
+Lemma to_word_eq_dep m n (w : MachineWord.word (Z_idx m)) (v : MachineWord.word (Z_idx n)) :
   m > 0 ->
   n > 0 ->
-  EqdepFacts.eq_dep Z (fun n => MachineWord.word (Z.to_nat n)) m w n v ->
+  EqdepFacts.eq_dep Z (fun n => MachineWord.word (Z_idx n)) m w n v ->
   EqdepFacts.eq_dep Z mword _ (to_word w) _ (to_word v).
 intros M N EQ.
 destruct m,n; try lia.
@@ -883,14 +879,14 @@ inversion EQ. subst.
 constructor.
 Qed.
 
-Lemma cast_nat_eq_dep T m n o (x : T m) (y : T n) EQ : EqdepFacts.eq_dep _ _ _ x _ y -> EqdepFacts.eq_dep _ _ _ x o (cast_nat y EQ).
+Lemma cast_idx_eq_dep T m n o (x : T m) (y : T n) EQ : EqdepFacts.eq_dep _ _ _ x _ y -> EqdepFacts.eq_dep _ _ _ x o (cast_idx y EQ).
 intros.
 subst.
-rewrite cast_nat_refl.
+rewrite cast_idx_refl.
 assumption.
 Qed.
 
-Lemma Z_nat_eq_dep T m n (x : T (Z.to_nat m)) (y : T (Z.to_nat n)) : m > 0 -> n > 0 -> EqdepFacts.eq_dep nat T _ x _ y -> EqdepFacts.eq_dep Z (fun n => T (Z.to_nat n)) _ x _ y.
+Lemma Z_idx_eq_dep T m n (x : T (Z_idx m)) (y : T (Z_idx n)) : m > 0 -> n > 0 -> EqdepFacts.eq_dep idx T _ x _ y -> EqdepFacts.eq_dep Z (fun n => T (Z_idx n)) _ x _ y.
 intros M N EQ.
 assert (m = n). {
   inversion EQ.
@@ -902,26 +898,26 @@ subst.
 constructor.
 Qed.
 
-Lemma to_word_to_word_nat n (w : MachineWord.word (Z.to_nat n)) :
+Lemma to_word_to_word_nat n (w : MachineWord.word (Z_idx n)) :
   n > 0 ->
-  to_word w = autocast (to_word_nat w).
+  to_word w = autocast (to_word_idx w).
 intros.
 apply Eqdep_dec.eq_dep_eq_dec; auto using Z.eq_dec.
-eapply EqdepFacts.eq_dep_trans. 2: apply autocast_eq_dep. 2: auto with zarith.
-unfold to_word_nat.
-apply to_word_eq_dep; auto with zarith.
-apply Z_nat_eq_dep; auto with zarith.
-apply cast_nat_eq_dep.
+eapply EqdepFacts.eq_dep_trans. 2: apply autocast_eq_dep. 2: (apply idx_Z_idx; lia).
+unfold to_word_idx.
+apply to_word_eq_dep; [assumption | rewrite idx_Z_idx; lia | ].
+apply Z_idx_eq_dep; [ assumption | rewrite idx_Z_idx; lia | ].
+apply cast_idx_eq_dep.
 constructor.
 Qed.
 
-Definition word_to_mword {n} (w : word (Z.to_nat n)) : mword n :=
+Definition word_to_mword {n} (w : word (Z_idx n)) : mword n :=
   to_word w.
 
 (*val length_mword : forall a. mword a -> Z*)
 Definition length_mword {n} (w : mword n) := n.
 
-Definition access_mword_dec {m} (w : mword m) n := bitU_of_bool (get_bit (get_word w) (Z.to_nat n)).
+Definition access_mword_dec {m} (w : mword m) n := bitU_of_bool (get_bit (get_word w) (Z_idx n)).
 
 (*val access_mword_inc : forall a. mword a -> Z -> bitU*)
 Definition access_mword_inc {m} (w : mword m) n :=
@@ -934,7 +930,7 @@ Definition access_mword {a} (is_inc : bool) (w : mword a) n :=
 
 (*val update_mword_bool_dec : forall 'a. mword 'a -> integer -> bool -> mword 'a*)
 Definition update_mword_bool_dec {a} (w : mword a) n b : mword a :=
-  with_word (P := id) (fun w => set_bit w (Z.to_nat n) b) w.
+  with_word (P := id) (fun w => set_bit w (Z_idx n) b) w.
 Definition update_mword_dec {a} (w : mword a) n b :=
  match bool_of_bitU b with
  | Some bl => Some (update_mword_bool_dec w n bl)
@@ -960,12 +956,7 @@ Definition mword_of_int len n :=
   let w := wordFromInteger n in
   if (length_mword w = len) then w else failwith "unexpected word length"
 *)
-Definition mword_of_int {len} n : mword len :=
-match len with
-| Zneg _ => zeros _
-| Z0 => Z_to_word 0 n
-| Zpos p => Z_to_word (Pos.to_nat p) n
-end.
+Definition mword_of_int {len} n : mword len := Z_to_word _ n.
 
 (*
 (* Translating between a type level number (itself n) and an integer *)
@@ -982,10 +973,10 @@ Definition inline make_the_value x := the_value
 Definition mword_to_N {n} (w : mword n) : N :=
   word_to_N (get_word w).
 
-Lemma word_to_N_cast_nat {m n w} {E : m = n} :
-  word_to_N (cast_nat w E) = word_to_N w.
+Lemma word_to_N_cast_idx {m n w} {E : m = n} :
+  word_to_N (cast_idx w E) = word_to_N w.
 subst.
-rewrite cast_nat_refl.
+rewrite cast_idx_refl.
 reflexivity.
 Qed.
 
@@ -997,7 +988,7 @@ reflexivity.
 Qed.
 
 Definition mword_to_bools {n} (w : mword n) : list bool := word_to_bools (get_word w).
-Definition bools_to_mword (l : list bool) : mword (length_list l) := to_word_nat (bools_to_word l).
+Definition bools_to_mword (l : list bool) : mword (length_list l) := cast_idx (bools_to_word l) (nat_idx_Z _).
 
 Definition eq_vec_dec {n} : forall (x y : mword n), {x = y} + {x <> y} :=
   match n with

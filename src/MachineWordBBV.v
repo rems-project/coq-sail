@@ -15,6 +15,67 @@ Definition dummy {T:Type} (t:T) : T.
 exact t.
 Qed.
 
+Definition idx := nat.
+
+Definition Z_idx := Z.to_nat.
+Definition N_idx := N.to_nat.
+Definition nat_idx (n : nat) := n.
+Hint Unfold Z_idx N_idx nat_idx : core.
+Arguments Z_idx /.
+Arguments N_idx /.
+Arguments nat_idx /.
+
+Definition idx_Z := Z.of_nat.
+Definition idx_N := N.of_nat.
+Definition idx_nat (n : nat) := n.
+Arguments idx_Z /.
+Arguments idx_N /.
+Arguments idx_nat /.
+
+Lemma Z_idx_Z n : n = Z_idx (idx_Z n).
+Proof.
+  simpl.
+  rewrite Nat2Z.id.
+  reflexivity.
+Qed.
+Lemma idx_Z_idx z : (z >= 0)%Z -> idx_Z (Z_idx z) = z.
+Proof.
+  intro GE.
+  simpl.
+  rewrite Z2Nat.id; auto with zarith.
+Qed.
+Lemma nat_idx_Z n : nat_idx n = Z_idx (Z.of_nat n).
+Proof.
+  simpl.
+  rewrite Nat2Z.id.
+  reflexivity.
+Qed.
+Lemma idx_N_Z_idx z : idx_N (Z_idx z) = Z.to_N z.
+Proof.
+  simpl.
+  apply Z_nat_N.
+Qed.
+
+Definition cast_idx {T m n} := @TypeCasts.cast_nat T m n.
+Lemma cast_idx_refl n T (x : T n) (e : n = n) : cast_idx x e = x.
+Proof.
+  apply TypeCasts.cast_nat_refl.
+Qed.
+
+Definition idx_S := S.
+Definition idx_add := Nat.add.
+Definition idx_mul := Nat.mul.
+Hint Unfold idx_S idx_add idx_mul : core.
+Arguments idx_S /.
+Arguments idx_add /.
+Arguments idx_mul /.
+Lemma Z_idx_S z : (z >= 0)%Z -> Z_idx (Z.succ z) = idx_S (Z_idx z).
+Proof.
+  simpl.
+  intro GE.
+  apply Z2Nat.inj_succ; Lia.lia.
+Qed.
+
 Definition word := Word.word.
 Definition zeros n : word n := @Word.wzero n.
 Definition ones n : word n := @Word.wones n.
@@ -28,7 +89,7 @@ Fixpoint get_bit [n] (w : word n) : nat -> bool :=
              end
   end.
 
-Lemma get_bit_eq [n] (w v : word n) :
+Lemma get_bit_eq_nat [n] (w v : word n) :
   (forall i, i < n -> get_bit w i = get_bit v i) -> w = v.
 intro H.
 induction w.

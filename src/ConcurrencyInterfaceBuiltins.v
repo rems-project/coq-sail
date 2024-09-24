@@ -345,15 +345,8 @@ refine (
   let k r :=
     match r with
     | inl (x,y) =>
-        let x' := cast_N (m := 8 * Z.to_N n) (n := N.of_nat (Z.to_nat (8 * n))) x _ in
-        let x'' : mword (8 * n) :=
-          match n return bv (N.of_nat (Z.to_nat (8 * n))) -> mword (8 * n) with
-          | Zneg _ => fun x => x
-          | Z0 => fun x => x
-          | Zpos _ => fun x => x
-          end x'
-        in
-        I.Ret (Ok (x'', y))
+        let x' := cast_N (m := 8 * Z.to_N n) (n := (Z.to_N (8 * n))) x _ in
+        I.Ret (Ok (x', y))
     | inr abort => I.Ret (Err abort)
     end
   in
@@ -361,7 +354,7 @@ refine (
 ).
 Lia.lia.
 Unshelve.
-Lia.lia.
+reflexivity.
 Defined.
 
 Definition sail_mem_write {e n} (req : Mem_write_request n (Z.of_N A.va_size) A.pa A.translation A.arch_ak) : monad (result (option bool) A.abort) e.
@@ -381,7 +374,7 @@ refine (
         end
       in
       let value :=
-        match n return mword (8 * n) -> bv (N.of_nat (Z.to_nat (8 * n))) with
+        match n return mword (8 * n) -> bv (Z.to_N (8 * n)) with
         | Zneg _ => fun x => x
         | Z0 => fun x => x
         | Zpos _ => fun x => x
@@ -404,7 +397,7 @@ refine (
 ).
 Lia.lia.
 Unshelve.
-Lia.lia.
+reflexivity.
 Defined.
 
 (* ----------- *)

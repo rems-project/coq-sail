@@ -48,6 +48,14 @@ match p, q with
 end); congruence.
 Defined.
 
+Definition cast_N {T : N -> Type} {m n} : forall (x : T m) (eq : m = n), T n.
+refine (match m,n with
+| N0, N0 => fun x _ => x
+| Npos p1, Npos p2 => fun x e => cast_positive (fun p => T (Npos p)) p1 p2 x _
+| _,_ => _
+end); congruence.
+Defined.
+
 Definition cast_Z {T : Z -> Type} {m n} : forall (x : T m) (eq : m = n), T n.
 refine (match m,n with
 | Z0, Z0 => fun x _ => x
@@ -63,6 +71,12 @@ induction p.
 * intros. simpl. rewrite IHp; auto.
 * intros. simpl. rewrite IHp; auto.
 * reflexivity.
+Qed.
+
+Lemma cast_N_refl {T : N -> Type} {m} {H:m = m} (x : T m) : cast_N x H = x.
+destruct m.
+* reflexivity.
+* simpl. rewrite cast_positive_refl. reflexivity.
 Qed.
 
 Lemma cast_Z_refl {T : Z -> Type} {m} {H:m = m} (x : T m) : cast_Z x H = x.

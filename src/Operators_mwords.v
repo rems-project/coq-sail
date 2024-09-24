@@ -98,24 +98,22 @@ Definition update_vec_inc {a} (w : mword a) i b : mword a :=
 Definition update_vec_dec {a} (w : mword a) i b : mword a := opt_def w (update_mword_dec w i b).
 
 Definition subrange_vec_dec {n} (v : mword n) m o : mword (m - o + 1) :=
-  let m' := Z.to_nat m in
-  let o' := Z.to_nat o in
-  autocast (to_word_nat (MachineWord.slice (m' - o' + 1) (get_word v) o')).
+  autocast (to_word_idx (MachineWord.slice (MachineWord.Z_idx (m - o + 1)) (get_word v) (MachineWord.Z_idx o))).
 
 Definition subrange_vec_inc {n} (v : mword n) m o : mword (o - m + 1) := autocast (subrange_vec_dec v (n-1-m) (n-1-o)).
 
 Definition update_subrange_vec_dec {n} (v : mword n) m o (w : mword (m - (o - 1))) : mword n :=
-  autocast (to_word_nat (MachineWord.update_slice (get_word v) (Z.to_nat o) (get_word w))).
+  autocast (to_word_idx (MachineWord.update_slice (get_word v) (MachineWord.Z_idx o) (get_word w))).
 
 Definition update_subrange_vec_inc {n} (v : mword n) m o (w : mword (o - (m - 1))) : mword n := update_subrange_vec_dec v (n-1-m) (n-1-o) (autocast w).
 
 (*val extz_vec : forall 'a 'b. Size 'a, Size 'b => integer -> mword 'a -> mword 'b*)
 Definition extz_vec {a b} (n : Z) (v : mword a) : mword b :=
-  to_word (MachineWord.zero_extend (Z.to_nat b) (get_word v)).
+  to_word (MachineWord.zero_extend (MachineWord.Z_idx b) (get_word v)).
 
 (*val exts_vec : forall 'a 'b. Size 'a, Size 'b => integer -> mword 'a -> mword 'b*)
 Definition exts_vec {a b} (n : Z) (v : mword a) : mword b :=
-  to_word (MachineWord.sign_extend (Z.to_nat b) (get_word v)).
+  to_word (MachineWord.sign_extend (MachineWord.Z_idx b) (get_word v)).
 
 Definition zero_extend {a} (v : mword a) (n : Z) : mword n := extz_vec n v.
 
@@ -129,14 +127,14 @@ Definition zeros (n : Z) : mword n :=
   end.
 
 Definition slice {n} (v : mword n) i len : mword len :=
-  to_word (MachineWord.slice (Z.to_nat len) (get_word v) (Z.to_nat i)).
+  to_word (MachineWord.slice (MachineWord.Z_idx len) (get_word v) (MachineWord.Z_idx i)).
 
 Definition vector_truncate {n} (v : mword n) (m : Z) : mword m := slice v 0 m.
 Definition vector_truncateLSB {n} (v : mword n) (m : Z) : mword m := slice v (n - m) m.
 
 (*val concat_vec : forall 'a 'b 'c. Size 'a, Size 'b, Size 'c => mword 'a -> mword 'b -> mword 'c*)
 Definition concat_vec {a b} (w : mword a) (v : mword b) : mword (a + b) :=
- autocast (to_word_nat (MachineWord.concat (get_word w) (get_word v))).
+ autocast (to_word_idx (MachineWord.concat (get_word w) (get_word v))).
 
 (*val cons_vec : forall 'a 'b 'c. Size 'a, Size 'b => bitU -> mword 'a -> mword 'b*)
 (*Definition cons_vec {a b} : bitU -> mword a -> mword b := cons_bv.*)
@@ -165,7 +163,7 @@ split.
     rewrite Z2N.id; auto with zarith.
   }
   apply N2Z.inj_lt.
-  rewrite <- Z_nat_N.
+  rewrite <- (MachineWord.idx_N_Z_idx a).
   apply MachineWord.word_to_N_range.
 Qed.
 
@@ -177,10 +175,11 @@ intro a_gt_0.
 unfold sint.
 assert (LELT: forall x y, x <= y - 1 <-> x < y) by lia.
 rewrite LELT.
-set (n := Z.to_nat (a - 1)).
+set (n := a - 1).
 generalize (get_word x).
-replace (a - 1) with (Z.of_nat n) by lia.
-replace (Z.to_nat a) with (S n) by lia.
+rewrite <- (MachineWord.idx_Z_idx n); [ | lia].
+replace a with (Z.succ n) by lia.
+rewrite MachineWord.Z_idx_S; [ | lia].
 apply MachineWord.word_to_Z_range.
 Qed.
 
@@ -203,7 +202,7 @@ Definition int_of_vec := int_of_bv
 
 *)
 
-Definition with_word' {n} (P : Type -> Type) : (forall n, MachineWord.word n -> P (MachineWord.word n)) -> mword n -> P (mword n) := fun f w => @with_word n _ (f (Z.to_nat n)) w.
+Definition with_word' {n} (P : Type -> Type) : (forall n, MachineWord.word n -> P (MachineWord.word n)) -> mword n -> P (mword n) := fun f w => @with_word n _ (f (MachineWord.Z_idx n)) w.
 Definition word_binop {n} (f : forall n, MachineWord.word n -> MachineWord.word n -> MachineWord.word n) : mword n -> mword n -> mword n := with_word' (fun x => x -> x) f.
 Definition word_unop {n} (f : forall n, MachineWord.word n -> MachineWord.word n) : mword n -> mword n := with_word' (fun x => x) f.
 
@@ -225,13 +224,13 @@ Definition add_vec_int   {a} (l : mword a) (r : Z) : mword a := add_vec l (mword
 Definition sub_vec_int   {a} (l : mword a) (r : Z) : mword a := sub_vec l (mword_of_int r).
 
 (* TODO: check/redefine behaviour on out-of-range n *)
-Definition shiftl       {a} (v : mword a) n : mword a := with_word (P := id) (fun w => MachineWord.logical_shift_left w (Z.to_nat n)) v.
-Definition shiftr       {a} (v : mword a) n : mword a := with_word (P := id) (fun w => MachineWord.logical_shift_right w (Z.to_nat n)) v.
-Definition arith_shiftr {a} (v : mword a) n : mword a := with_word (P := id) (fun w => MachineWord.arith_shift_right w (Z.to_nat n)) v.
+Definition shiftl       {a} (v : mword a) n : mword a := with_word (P := id) (fun w => MachineWord.logical_shift_left w (MachineWord.Z_idx n)) v.
+Definition shiftr       {a} (v : mword a) n : mword a := with_word (P := id) (fun w => MachineWord.logical_shift_right w (MachineWord.Z_idx n)) v.
+Definition arith_shiftr {a} (v : mword a) n : mword a := with_word (P := id) (fun w => MachineWord.arith_shift_right w (MachineWord.Z_idx n)) v.
 
 Definition replicate_bits {a} (w : mword a) (n : Z) : mword (a * n) :=
  if sumbool_of_bool (n >=? 0) then
-   autocast (to_word_nat (MachineWord.replicate (Z.to_nat n) (get_word w)))
+   autocast (to_word_idx (MachineWord.replicate (Z.to_nat n) (get_word w)))
  else dummy_value.
 
 Definition eq_vec  {n} (x : mword n) (y : mword n) : bool := MachineWord.eqb (get_word x) (get_word y).
@@ -255,7 +254,7 @@ Qed.
 Definition reverse_endianness {n} (bits : mword n) := with_word (P := id) (MachineWord.reverse_endian (n:=_)) bits.
 
 Definition bools_of_int len n :=
-  let w := MachineWord.Z_to_word (Z.to_nat len) n in
+  let w := MachineWord.Z_to_word (MachineWord.Z_idx len) n in
   MachineWord.word_to_bools w.
 
 (* We hide this behind an eta expansion of n to prevent tactics that
@@ -296,9 +295,7 @@ Lemma slice_is_ok m (v : mword m) lo len
                   (H1 : 0 <= lo) (H2 : 0 < len) (H3: lo + len < m) :
   slice v lo len = autocast (subrange_vec_dec v (lo + len - 1) lo).
 unfold slice, subrange_vec_dec.
-assert (EQ1: (Z.to_nat (lo + len - 1) - Z.to_nat lo + 1)%nat = Z.to_nat len) by lia.
-assert (EQ2: lo + len - 1 - lo + 1 = len) by lia.
-rewrite EQ1, EQ2.
+replace (lo + len - 1 - lo + 1) with len by lia.
 rewrite autocast_refl.
 apply to_word_to_word_nat.
 lia.
