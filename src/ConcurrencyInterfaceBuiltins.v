@@ -129,19 +129,19 @@ End Undef.
 
 Definition read_reg {a e} (reg : A.reg a) : monad a e :=
   let k v := I.Ret v in
-  I.Next (I.RegRead reg (*???*) true) k.
+  I.Next (I.RegRead reg None) k.
 
 Definition read_reg_ref {a e} (ref : register_ref A.reg a) : monad a e :=
   let k v := I.Ret v in
-  I.Next (I.RegRead ref.(Values.reg) (*???*) true) k.
+  I.Next (I.RegRead ref.(Values.reg) None) k.
 
 Definition reg_deref {a e} := @read_reg_ref a e.
 
 Definition write_reg {a e} (reg : A.reg a) (v : a) : monad unit e :=
- I.Next (I.RegWrite reg (* ??? *) true v) I.Ret.
+ I.Next (I.RegWrite reg None v) I.Ret.
 
 Definition write_reg_ref {a e} (ref : register_ref A.reg a) (v : a) : monad unit e :=
- I.Next (I.RegWrite ref.(Values.reg) (* ??? *) true v) I.Ret.
+ I.Next (I.RegWrite ref.(Values.reg) None v) I.Ret.
 
 (* ---- Prompt *)
 
@@ -399,6 +399,12 @@ Lia.lia.
 Unshelve.
 reflexivity.
 Defined.
+
+Definition sail_sys_reg_read {e T} (id : A.sys_reg_id) (r : register_ref A.reg T) : monad T e :=
+  I.Next (I.RegRead r.(Values.reg) (Some id)) I.Ret.
+
+Definition sail_sys_reg_write {e T} (id : A.sys_reg_id) (r : register_ref A.reg T) (v : T) : monad unit e :=
+  I.Next (I.RegWrite r.(Values.reg) (Some id) v) I.Ret.
 
 (* ----------- *)
 

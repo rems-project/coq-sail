@@ -109,6 +109,13 @@ Module Type Arch.
   Parameter fault : Type.
   Parameter fault_eq : EqDecision fault.
   #[export] Existing Instance fault_eq.
+
+  (** Identifier type for direct accesses to system registers *)
+  Parameter sys_reg_id : Type.
+  Parameter sys_reg_id_eq : EqDecision sys_reg_id.
+  #[export] Existing Instance sys_reg_id_eq.
+  Parameter sys_reg_id_countable : Countable sys_reg_id.
+  #[export] Existing Instance sys_reg_id_countable.
 End Arch.
 
 Module Interface (A : Arch).
@@ -146,18 +153,18 @@ Module Interface (A : Arch).
     Context {eOutcome : Type -> Type}.
 
   Inductive outcome : Type -> Type :=
-    (** The direct or indirect flag is to specify how much coherence is required
-        for relaxed registers *)
-  | RegRead {T : Type} (reg : reg T) (direct : bool) : outcome T
+    (** The access_kind says whether this is an explicit system register
+        access, and if so what system register identifier was used. *)
+  | RegRead {T : Type} (reg : reg T) (access_kind : option sys_reg_id) : outcome T
 
-    (** The direct or indirect flag is to specify how much coherence is required
-        for relaxed registers.
+    (** The access_kind says whether this is an explicit system register
+        access, and if so what system register identifier was used.
 
         The dep_on would be the dependency of the register write.
 
         Generally, writing the PC introduces no dependency because control
         dependencies are specified by the branch announce *)
-  | RegWrite {T : Type} (reg : reg T) (direct : bool)
+  | RegWrite {T : Type} (reg : reg T) (access_kind : option sys_reg_id)
              (regval: T) : outcome unit
   | MemRead (n : N) : ReadReq.t n ->
                       outcome (bv (8 * n) * option bool + abort)
