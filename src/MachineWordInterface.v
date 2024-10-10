@@ -35,6 +35,7 @@ Parameter ones : forall n, word n.
 Parameter get_bit : forall [n], word n -> idx -> bool.
 Parameter set_bit : forall [n], word n -> idx -> bool -> word n.
 
+Axiom word_0_eq : forall w w' : word (Z_idx 0), w = w'.
 Axiom get_bit_eq_nat : forall [n] (w v : word (nat_idx n)),
   (forall i, i < n -> get_bit w (nat_idx i) = get_bit v (nat_idx i)) -> w = v.
 

@@ -73,6 +73,15 @@ Definition zeros n : word n := bv_0 n.
 
 Definition get_bit [n] (w : word n) i : bool := Z.testbit (bv_unsigned w) (Z.of_N i).
 
+Lemma word_0_eq : forall w w' : word (Z_idx 0), w = w'.
+Proof.
+  simpl.
+  intros.
+  apply bv_eq.
+  rewrite !bv_unsigned_N_0.
+  reflexivity.
+Qed.
+
 Lemma get_bit_eq_nat : forall [n] (w v : word (nat_idx n)),
   (forall i, i < n -> get_bit w (nat_idx i) = get_bit v (nat_idx i)) -> w = v.
 intros n w v H.

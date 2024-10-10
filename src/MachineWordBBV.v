@@ -89,6 +89,14 @@ Fixpoint get_bit [n] (w : word n) : nat -> bool :=
              end
   end.
 
+Lemma word_0_eq : forall w w' : word (Z_idx 0), w = w'.
+simpl.
+intros.
+rewrite (Word.word0 w).
+rewrite (Word.word0 w').
+reflexivity.
+Qed.
+
 Lemma get_bit_eq_nat [n] (w v : word n) :
   (forall i, i < n -> get_bit w i = get_bit v i) -> w = v.
 intro H.
