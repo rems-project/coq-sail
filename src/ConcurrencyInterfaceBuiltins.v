@@ -352,7 +352,7 @@ refine (
   in
   I.Next (I.MemRead n' req') k
 ).
-Lia.lia.
+clear; abstract Lia.lia.
 Unshelve.
 reflexivity.
 Defined.
@@ -395,7 +395,7 @@ refine (
       I.Next (I.MemWrite n' req') k
   end
 ).
-Lia.lia.
+clear; abstract Lia.lia.
 Unshelve.
 reflexivity.
 Defined.
