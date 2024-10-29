@@ -373,13 +373,6 @@ refine (
                   end va)
         end
       in
-      let value :=
-        match n return mword (8 * n) -> bv (Z.to_N (8 * n)) with
-        | Zneg _ => fun x => x
-        | Z0 => fun x => x
-        | Zpos _ => fun x => x
-        end value
-      in
       let value := cast_N value _ in
       let pa := req.(Mem_write_request_pa) in
       let tag := req.(Mem_write_request_tag) in
@@ -395,7 +388,7 @@ refine (
       I.Next (I.MemWrite n' req') k
   end
 ).
-clear; abstract Lia.lia.
+clear; abstract (unfold MachineWord.MachineWord.Z_idx; Lia.lia).
 Unshelve.
 reflexivity.
 Defined.
