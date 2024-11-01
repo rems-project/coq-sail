@@ -320,14 +320,6 @@ Definition instr_announce {e sz} (opcode : mword sz) : monad e unit :=
 Definition cycle_count {e} (_ : unit) : monad e unit := I.Next I.CycleCount I.Ret.
 Definition get_cycle_count {e} (_ : unit) : monad e Z := I.Next I.GetCycleCount I.Ret.
 
-Definition cast_N  {T : N -> Type} {m n} : forall (x : T m) (eq : m = n), T n.
-refine (match m,n with
-| N0, N0 => fun x _ => x
-| Npos p1, Npos p2 => fun x e => cast_positive (fun p => T (Npos p)) p1 p2 x _
-| _,_ => _
-end); congruence.
-Defined.
-
 Definition sail_mem_read {e n} (req : Mem_read_request n (Z.of_N A.va_size) A.pa A.translation A.arch_ak) : monad e (result (mword (8 * n) * option bool) A.abort).
 refine (
   let n' := Z.to_N n in
