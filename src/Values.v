@@ -836,30 +836,16 @@ Definition mword (n : Z) := word (Z_idx n).
 }.
 
 (* TODO: keep or drop? *)
-Definition get_word {n} : mword n -> word (Z_idx n) :=
-  match n with
-  | Zneg _ => fun x => x
-  | Z0 => fun x => x
-  | Zpos p => fun x => x
-  end.
+Definition get_word {n} : mword n -> word (Z_idx n) := fun x => x.
 
 Lemma get_word_inj {n} (w v : mword n) : get_word w = get_word v -> w = v.
-destruct n; simpl; auto.
+unfold get_word; auto.
 Qed.
 
 Definition with_word {n} {P : Type -> Type} : (word (Z_idx n) -> P (word (Z_idx n))) -> mword n -> P (mword n) :=
-match n with
-| Zneg _ => fun f w => f w
-| Z0 => fun f w => f w
-| Zpos _ => fun f w => f w
-end.
+  fun f w => f w.
 
-Definition to_word {n} : word (Z_idx n) -> mword n :=
-  match n with
-  | Zneg _ => fun _ => zeros _
-  | Z0 => fun w => w
-  | Zpos _ => fun w => w
-  end.
+Definition to_word {n} : word (Z_idx n) -> mword n := fun w => w.
 
 Definition to_word_idx {n} (w : word n) : mword (idx_Z n) :=
   to_word (cast_idx w (Z_idx_Z n)).
