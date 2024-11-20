@@ -323,10 +323,10 @@ Fixpoint replicate m [n] (w : word n) : word (N.of_nat m * n) :=
 
 Definition eq_dec [n] (w v : word n) : {w = v} + {w <> v} := base.decide (w = v).
 
-Definition eqb [n] (w v : word n) := if eq_dec w v then true else false.
+Definition eqb [n] (w v : word n) := bool_decide (w = v).
 Lemma eqb_true_iff {n} (w v : word n) : eqb w v = true <-> w = v.
 unfold eqb.
-destruct (eq_dec w v); split; congruence.
+case_bool_decide; split; congruence.
 Qed.
 
 Definition reverse_endian [n] (w : word n) : word n :=
