@@ -1,4 +1,6 @@
 Require Import ZArith.
+ (* We cannot import String since this would give use the wrong length function. *)
+Require String.
 
 Module Type MachineWordInterface.
 
