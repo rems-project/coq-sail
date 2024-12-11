@@ -311,6 +311,14 @@ Definition count_leading_zeros {N : Z} (x : mword N) (* N >=? 1 *)
             (Z.sub (Z.sub (length_mword x) i) 1)
        else r))
    .
+Definition count_trailing_zeros {N : Z} (x : mword N) (* N >=? 1 *)
+: Z (* n. (0 <=? n <=? N) *) :=
+  foreach_Z_down (N - 1) 0 1 N
+    (fun i r =>
+      (if ((eq_vec (vec_of_bits [access_vec_dec x i]  : mword 1) (vec_of_bits [B1]  : mword 1)))
+       then i
+       else r))
+   .
 
 Definition prerr_bits {a} (s : string) (bs : mword a) : unit := tt.
 Definition print_bits {a} (s : string) (bs : mword a) : unit := tt.
