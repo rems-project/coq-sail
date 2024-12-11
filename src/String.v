@@ -277,11 +277,11 @@ match limit with
   let acc := String (Ascii.ascii_of_N digit) acc in
   if N.ltb 0 d then hex_string_of_N upper limit' d acc else acc
 end%N.
-Definition hex_string_of_int (upper : bool) (z : Z) : string :=
+Local Definition hex_string_of_int (prefix : string) (upper : bool) (z : Z) : string :=
 match z with
-| Z0 => "0"
-| Zpos p => hex_string_of_N upper (pos_limit p) (Npos p) ""
-| Zneg p => String "-" (hex_string_of_N upper (pos_limit p) (Npos p) "")
+| Z0 => append prefix "0"
+| Zpos p => append prefix (hex_string_of_N upper (pos_limit p) (Npos p) "")
+| Zneg p => String "-" (append prefix (hex_string_of_N upper (pos_limit p) (Npos p) ""))
 end.
 
 Definition decimal_string_of_bits {n} (bv : mword n) : string := string_of_int (int_of_mword false bv).
@@ -295,13 +295,13 @@ Local Fixpoint pad0 (n : nat) s :=
 Definition binary_string_of_word {n} (bv : MachineWord.word n) := String "0" (String "b" (MachineWord.word_to_binary_string bv)).
 Definition string_of_bits {n} (w : mword n) : string :=
   if Z.modulo n 4 =? 0 then
-    let s := hex_string_of_int true (int_of_mword false w) in
+    let s := hex_string_of_int "" true (int_of_mword false w) in
     String "0" (String "x" (pad0 (Z.to_nat (Z.div n 4) - String.length s) s))
   else
     binary_string_of_word (get_word w).
 
 (* Some aliases for compatibility. *)
 Definition dec_str := string_of_int.
-Definition hex_str x := String "0" (String "x" (hex_string_of_int false x)).
-Definition hex_str_upper x := String "0" (String "x" (hex_string_of_int true x)).
+Definition hex_str x := hex_string_of_int "0x" false x.
+Definition hex_str_upper x := hex_string_of_int "0x" true x.
 Definition concat_str := String.append.
