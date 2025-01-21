@@ -278,6 +278,12 @@ Definition pure_early_return {A} (v : A + A) : A :=
   | inr v' => v'
   end.
 
+Definition pure_early_return_embed {rv A R E} (v : R + A) : monadR rv A R E :=
+  match v with
+  | inl v' => early_return v'
+  | inr v' => Done v'
+  end.
+
 (* Lift to monad with early return by wrapping exceptions *)
 (*val liftR : forall rv a r e. monad rv a e -> monadR rv a r e*)
 Definition liftR {rv A R E} (m : monad rv A E) : monadR rv A R E :=

@@ -99,6 +99,12 @@ Definition pure_early_return {A} (v : A + A) : A :=
 Definition liftR {A R E} (m : monad E A) : monadR R E A :=
  try_catch m (fun e => throw (inr e)).
 
+Definition pure_early_return_embed {A R E} (v : R + A) : monadR R E A :=
+  match v with
+  | inl v' => early_return v'
+  | inr v' => returnm v'
+  end.
+
 (* Catch exceptions in the presence : early returns *)
 Definition try_catchR {A R E} (m : monadR R E A) (h : E -> monadR R E A) :=
   try_catch m
