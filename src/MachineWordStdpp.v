@@ -156,7 +156,8 @@ intros.
 unfold idx_nat.
 unfold word_to_bools.
 rewrite List.rev_length.
-rewrite bv_to_bits_length.
+(* Renamed in recent stdpp *)
+first [rewrite bv_to_bits_length | rewrite length_bv_to_bits].
 reflexivity.
 Qed.
 
@@ -203,7 +204,8 @@ rewrite nth_error_lookup.
 intro H.
 rewrite nth_error_rev.
 rewrite List.rev_involutive, List.rev_length.
-rewrite bv_to_bits_length.
+(* Renamed in recent stdpp *)
+first [rewrite bv_to_bits_length | rewrite length_bv_to_bits].
 rewrite H.
 rewrite nat_N_Z.
 firstorder.
