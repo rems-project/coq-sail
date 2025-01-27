@@ -68,22 +68,14 @@
 (* Version of sail_values.lem that uses Lems machine words library *)
 
 (*Require Import Sail_impl_base*)
-Require Export ZArith.
-Require Import Ascii.
-Require Export String.
-Require BinaryString.
-Require HexString.
-Require Export List.
-Require Export Sumbool.
-Require Import Eqdep_dec.
-Require Export Zeuclid.
-Require Import Lia.
+From Coq Require Export ZArith String List Sumbool Zeuclid.
+From Coq Require Import Ascii Eqdep_dec Lia.
+From Coq Require BinaryString HexString.
 Import ListNotations.
-Require Import Rbase.  (* TODO would like to avoid this in models without reals *)
-Require Eqdep EqdepFacts.
+From Coq Require Import Rbase.  (* TODO would like to avoid this in models without reals *)
+From Coq Require Eqdep EqdepFacts Zquot.
 
-Require Import Sail.TypeCasts.
-Require Import Sail.MachineWord.
+From Sail Require Import TypeCasts MachineWord.
 
 Local Open Scope Z.
 Local Open Scope bool.
@@ -1491,7 +1483,6 @@ end.
 
 (* Limits for remainders *)
 
-Require Zquot.
 Lemma Z_rem_really_nonneg : forall a b : Z, 0 <= a -> 0 <= Z.rem a b.
 intros.
 destruct (Z.eq_dec b 0).

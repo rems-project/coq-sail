@@ -65,11 +65,7 @@
 (*  SUCH DAMAGE.                                                            *)
 (*==========================================================================*)
 
-Require Import Sail.Values.
-Require Import Sail.Instances.
-Require Import Sail.Prompt_monad.
-Require Import Sail.Prompt.
-Require Import Sail.State_monad.
+From Sail Require Import Values Instances Prompt_monad Prompt State_monad.
 Import ListNotations.
 
 (* Lifting from prompt monad to state monad *)

@@ -65,10 +65,8 @@
 (*  SUCH DAMAGE.                                                            *)
 (*==========================================================================*)
 
-Require Import String ZArith Setoid Morphisms Equivalence.
-Require Import Sail.Values Sail.State_monad Sail.Prompt Sail.State Sail.State_monad_lemmas.
-Require Import Sail.State_lemmas.
-Require Import Lia.
+From Coq Require Import String ZArith Setoid Morphisms Equivalence Lia.
+From Sail Require Import Values State_monad Prompt State State_monad_lemmas State_lemmas.
 
 (*adhoc_overloading
   Monad_Syntax.bind State_monad.bindS*)

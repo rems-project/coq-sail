@@ -65,9 +65,9 @@
 (*  SUCH DAMAGE.                                                            *)
 (*==========================================================================*)
 
-Require Import Sail.Values Sail.Prompt_monad Sail.Prompt Sail.State_monad Sail.State Sail.State Sail.State_lifting.
-Require Import Sail.State_monad_lemmas.
-Require Import Lia.
+From Sail Require Import Values Prompt_monad Prompt State_monad State State State_lifting.
+From Sail Require Import State_monad_lemmas.
+From Coq Require Import Lia.
 
 Local Open Scope equiv_scope.
 Local Open Scope Z.

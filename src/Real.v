@@ -65,11 +65,9 @@
 (*  SUCH DAMAGE.                                                            *)
 (*==========================================================================*)
 
-Require Import Rbase.
-Require Import Reals.
-Require Export ROrderedType.
-Require Import Sail.Values.
-Require Import Lia.
+From Coq Require Import Rbase Reals Lia.
+From Coq Require Export ROrderedType.
+From Sail Require Import Values.
 Local Open Scope Z.
 
 Export Rdefinitions(R).

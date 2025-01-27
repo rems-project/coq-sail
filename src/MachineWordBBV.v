@@ -1,11 +1,9 @@
 From Sail Require Import TypeCasts.
 From Sail Require MachineWordInterface.
 From bbv Require Word.
-Require Arith.
-Require Import ZArith NArith.
-Require Lia.
-Require String.
-Require Strings.Ascii.
+From Coq Require Arith.
+From Coq Require Import ZArith NArith.
+From Coq Require Lia String Strings.Ascii.
 
 Module MachineWord <: MachineWordInterface.MachineWordInterface.
 

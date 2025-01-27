@@ -65,7 +65,7 @@
 (*  SUCH DAMAGE.                                                            *)
 (*==========================================================================*)
 
-Require Import Sail.Instr_kinds.
+From Sail Require Import Instr_kinds.
 
 (*
 class ( EnumerationType 'a ) 

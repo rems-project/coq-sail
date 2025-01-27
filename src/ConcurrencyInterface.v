@@ -1,12 +1,10 @@
-
-Require Import Strings.String.
-Require Import stdpp.bitvector.definitions.
-Require Import stdpp.countable.
+From Coq Require Import Strings.String.
+From stdpp Require Import bitvector.definitions countable.
 
 (* For choice outcomes *)
-Require Import Sail.Values.
+From Sail Require Import Values.
 (* This is needed because sail cannot export into multiple Coq files *)
-Require Import Sail.ConcurrencyInterfaceTypes.
+From Sail Require Import ConcurrencyInterfaceTypes.
 
 Local Open Scope stdpp_scope.
 Local Open Scope Z_scope.

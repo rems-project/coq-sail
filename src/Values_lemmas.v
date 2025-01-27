@@ -65,8 +65,8 @@
 (*  SUCH DAMAGE.                                                            *)
 (*==========================================================================*)
 
-Require Import Sail.Values.
-Require Program.
+From Sail Require Import Values.
+From Coq Require Program Program.Wf.
 
 (*
 
@@ -85,7 +85,6 @@ declare take_list_def[simp]
 declare drop_list_def[simp]
 *)
 Import ListNotations.
-Require Program.Wf.
 
 Lemma skipn_length T n (xs : list T) :
   n <> 0%nat ->

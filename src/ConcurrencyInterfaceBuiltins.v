@@ -1,8 +1,5 @@
-Require Import Sail.Real.
-Require Import Sail.Base.
-Require Import Sail.ConcurrencyInterfaceTypes.
-Require Import Sail.ConcurrencyInterface.
-Require Import stdpp.bitvector.definitions.
+From Sail Require Import Real Base ConcurrencyInterfaceTypes ConcurrencyInterface.
+From stdpp Require Import bitvector.definitions.
 
 Import ListNotations.
 Open Scope string.

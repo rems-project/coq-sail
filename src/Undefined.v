@@ -66,7 +66,7 @@
 (*==========================================================================*)
 
 From Sail Require Import TypeCasts Prompt_monad Prompt Values.
-Require Import String ZArith.
+From Coq Require Import String ZArith.
 Local Open Scope Z.
 
 Section Undef.

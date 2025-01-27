@@ -65,7 +65,7 @@
 (*  SUCH DAMAGE.                                                            *)
 (*==========================================================================*)
 
-Require Import DecidableClass.
+From Coq Require Import DecidableClass.
 
 Class EnumerationType (A : Type) := {
   toNat : A -> nat

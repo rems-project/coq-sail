@@ -65,13 +65,9 @@
 (*  SUCH DAMAGE.                                                            *)
 (*==========================================================================*)
 
-Require Import Sail.Values.
-Require Import Sail.Instances.
-Require Import Sail.String.
-Require Import Sail.Prompt_monad.
-Require Export ZArith.Zwf.
-Require Import Lia.
-Require Import List.
+From Sail Require Import Values Instances String Prompt_monad.
+From Coq Require Export ZArith.Zwf.
+From Coq Require Import Lia List.
 Import ListNotations.
 Local Open Scope Z.
 (*
