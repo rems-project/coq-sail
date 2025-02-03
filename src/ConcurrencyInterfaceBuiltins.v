@@ -394,6 +394,10 @@ Definition sail_sys_reg_read {e T} (id : A.sys_reg_id) (r : register_ref A.reg T
 Definition sail_sys_reg_write {e T} (id : A.sys_reg_id) (r : register_ref A.reg T) (v : T) : monad e unit :=
   I.Next (I.RegWrite r.(Values.reg) (Some id) v) I.Ret.
 
+(* Placeholder definitions *)
+Definition sail_translation_start {e T} (ts : T) : monad e unit := I.Ret ().
+Definition sail_translation_end {e T} (ts : T) : monad e unit := I.Ret ().
+
 (* ----------- *)
 
 End Defs.
