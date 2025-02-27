@@ -199,6 +199,16 @@ Definition valid_hex_bits sz s := match parse_hex_bits_opt sz s with None => fal
 Definition parse_hex_bits sz s : mword sz :=
   match parse_hex_bits_opt sz s with None => TypeCasts.dummy_value | Some v => v end.
 
+Definition parse_dec_bits_opt sz s : option (mword sz) :=
+  match maybe_int_of_string s with
+  | Some i => if andb (i >=? 0) (i <? 2 ^ sz) then Some (mword_of_int i) else None
+  | None => None
+  end.
+
+Definition valid_dec_bits sz s := match parse_dec_bits_opt sz s with None => false | Some _ => true end.
+Definition parse_dec_bits sz s : mword sz :=
+  match parse_dec_bits_opt sz s with None => TypeCasts.dummy_value | Some v => v end.
+
 Definition hex_bits_n_matches_prefix sz s : option (mword sz * Z) :=
   match maybe_int_of_prefix s with
   | None => None
