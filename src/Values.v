@@ -1509,6 +1509,24 @@ lia.
 Qed.
 #[export] Hint Resolve sail_lt_ge : sail.
 
+(* Helpers for constructing eq_dec functions from encodings into positives *)
+
+Lemma decode_encode_inj {T} (f : T -> positive) (g : positive -> option T) :
+  (forall x, g (f x) = Some x) ->
+  forall x y, f x = f y -> x = y.
+Proof.
+  intros H x y ?.
+  enough (Some x = Some y); congruence.
+Qed.
+Definition decode_encode_eq_dec {T} (f : T -> positive) (g : positive -> option T)
+  (H : forall x, g (f x) = Some x) (x y : T) : {x = y} + {x <> y}.
+  refine (match Pos.eq_dec (f x) (f y) with
+  | left e => left (decode_encode_inj f g H x y e)
+  | right ne => right _
+  end).
+  congruence.
+Defined.
+
 (* Override expensive unary exponential notation for binary, fill in sizes too *)
 Notation "sz ''b' a" := (MachineWord.N_to_word sz (BinaryString.Raw.to_N a N0)) (at level 50).
 Notation "''b' a" := (MachineWord.N_to_word _ (BinaryString.Raw.to_N a N0) :
