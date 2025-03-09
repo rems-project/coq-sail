@@ -1,6 +1,15 @@
 Changelog
 =========
 
+0.19
+----
+
+* New properly typed representation of sequential register state and
+  register references
+* Simpler definition of the `mword` bitvector type, so that it can be
+  more easily replaced with the underlying library type
+* Fixes for Coq 8.20
+
 0.18
 ----
 

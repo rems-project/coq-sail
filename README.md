@@ -1,5 +1,5 @@
-The Sail ISA specification language - Coq support library
-=========================================================
+The Sail ISA specification language - Rocq support library
+==========================================================
 
 Overview
 ========
@@ -14,25 +14,26 @@ been used for several papers, available from
 <http://www.cl.cam.ac.uk/~pes20/sail/>.
 <p>
 
-This repository contains the Coq support library for models produced
-by Sail for the [Coq theorem prover](https://coq.inria.fr/).  The
+This repository contains the Rocq support library for models produced
+by Sail for the [Rocq theorem prover](https://rocq-prover.org/),
+previously known as [Coq](https://coq.inria.fr/).  The
 [main Sail repository](https://github.com/rems-project/sail) contains
 the Sail tool for processing Sail specifications and translating them
-into Coq.
+into Rocq.
 
 Installation
 ============
 
 We suggest using the [opam package manager](https://opam.ocaml.org/)
-if you also used it to install Coq.  See [the instructions on using
-opam with Coq](https://coq.inria.fr/opam-using.html) for more
+if you also used it to install Rocq.  See [the instructions on using
+opam with Rocq](https://coq.inria.fr/opam-using.html) for more
 information.  There are two variants which use different bitvector
 libraries:
 
 * The `coq-sail-stdpp` package uses the [stdpp
-  library's](https://gitlab.mpi-sws.org/iris/stdpp) bitvector
-  package.  Use the `--coq-lib-style stdpp` option with Sail to target
-  this package.
+  library's](https://gitlab.mpi-sws.org/iris/stdpp) bitvector package.
+  This is the default, but you can also use the `--coq-lib-style
+  stdpp` option with Sail to target this package.
 * The `coq-sail` package depends on the `coq-bbv` package
   for its implementation of bitvectors.  Use the `--coq-lib-style bbv`
   option with Sail to target this package.  Note that the new Sail
