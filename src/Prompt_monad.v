@@ -66,7 +66,7 @@
 (*==========================================================================*)
 
 From Coq Require Import String.
-From Sail Require Import Instr_kinds Values Instances.
+Require Import Instr_kinds Values Instances.
 Import ListNotations.
 Local Open Scope Z.
 

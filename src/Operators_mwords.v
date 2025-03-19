@@ -65,7 +65,7 @@
 (*  SUCH DAMAGE.                                                            *)
 (*==========================================================================*)
 
-From Sail Require Import TypeCasts Values Instances Prompt_monad Prompt MachineWord.
+Require Import TypeCasts Values Instances Prompt_monad Prompt MachineWord.
 From Coq Require Import ZArith Lia Eqdep_dec.
 Local Open Scope Z.
 

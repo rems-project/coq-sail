@@ -65,5 +65,5 @@
 (*  SUCH DAMAGE.                                                            *)
 (*==========================================================================*)
 
-From Sail Require Export TypeCasts Instr_kinds Values Instances String
-                         Operators_mwords Prompt_monad Prompt State Undefined.
+Require Export TypeCasts Instr_kinds Values Instances String
+               Operators_mwords Prompt_monad Prompt State Undefined.

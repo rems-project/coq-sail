@@ -67,7 +67,7 @@
 
 From Coq Require Import Rbase Reals Lia.
 From Coq Require Export ROrderedType.
-From Sail Require Import Values.
+Require Import Values.
 Local Open Scope Z.
 
 Export Rdefinitions(R).

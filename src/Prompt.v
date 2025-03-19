@@ -65,7 +65,7 @@
 (*  SUCH DAMAGE.                                                            *)
 (*==========================================================================*)
 
-From Sail Require Import Values Instances String Prompt_monad.
+Require Import Values Instances String Prompt_monad.
 From Coq Require Export ZArith.Zwf.
 From Coq Require Import Lia List.
 Import ListNotations.
