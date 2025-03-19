@@ -66,7 +66,7 @@
 (*==========================================================================*)
 
 From Coq Require Import String.
-From Sail Require Import Instr_kinds Values Instances.
+Require Import Instr_kinds Values Instances.
 Import ListNotations.
 Local Open Scope Z.
 
@@ -266,8 +266,6 @@ Definition pure_early_return_bind {A B E} (v : E + A) (f : A -> E + B) : E + B :
   | inr a => f a
   end.
 
-Notation "m >>$= f" := (pure_early_return_bind m f) (at level 50, left associativity).
-Notation "m >>$ n" := (m >>$= fun _ => n) (at level 50, left associativity).
 
 Definition pure_early_return {A} (v : A + A) : A :=
   match v with

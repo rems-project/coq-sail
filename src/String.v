@@ -65,7 +65,7 @@
 (*  SUCH DAMAGE.                                                            *)
 (*==========================================================================*)
 
-From Sail Require Import Values MachineWord.
+Require Import Values MachineWord.
 From Coq Require Import Strings.Ascii.
 Local Open Scope Z.
 

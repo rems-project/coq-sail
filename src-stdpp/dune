@@ -1,0 +1,54 @@
+(coq.theory
+ (name SailStdpp)
+ (package coq-sail-stdpp)
+ (modules
+   Inhabited
+   MachineWordInterface
+   TypeCasts
+   MachineWord
+   Values
+   Instances
+   Instr_kinds
+   Values_lemmas
+   String
+   Prompt_monad
+   Prompt
+   State
+   State_monad
+   State_lemmas
+   State_monad_lemmas
+   State_lifting
+   Hoare
+   Undefined
+   Operators_mwords
+   Base
+   Real
+   Impl_base
+   ConcurrencyInterfaceBuiltins
+   ConcurrencyInterfaceTypes
+   ConcurrencyInterface
+ )
+ (theories stdpp stdpp.bitvector)
+ (coqdoc_flags :standard --utf8
+               --external https://plv.mpi-sws.org/coqdoc/stdpp/ stdpp
+               --coqlib_url https://coq.inria.fr/doc/V8.20.1/stdlib
+ )
+)
+
+(subdir tests
+ (coq.theory
+  (name SailStdpp.tests)
+  (modules MachineWordTest)
+  (theories stdpp stdpp.bitvector SailStdpp)
+ )
+ (rule (copy ../MachineWordTest.v MachineWordTest.v))
+ (alias
+  (name runtest)
+  (deps (alias all))
+ )
+)
+
+(alias
+ (name stdpp)
+ (deps (alias all))
+)

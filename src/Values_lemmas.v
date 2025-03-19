@@ -65,7 +65,7 @@
 (*  SUCH DAMAGE.                                                            *)
 (*==========================================================================*)
 
-From Sail Require Import Values.
+Require Import Values.
 From Coq Require Program Program.Wf.
 
 (*

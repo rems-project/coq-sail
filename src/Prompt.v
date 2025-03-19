@@ -65,11 +65,17 @@
 (*  SUCH DAMAGE.                                                            *)
 (*==========================================================================*)
 
-From Sail Require Import Values Instances String Prompt_monad.
+Require Import Values Instances String Prompt_monad.
 From Coq Require Export ZArith.Zwf.
 From Coq Require Import Lia List.
 Import ListNotations.
 Local Open Scope Z.
+
+#[local]
+Notation "m >>$= f" := (pure_early_return_bind m f) (at level 50, left associativity).
+#[local]
+Notation "m >>$ n" := (m >>$= fun _ => n) (at level 50, left associativity).
+
 (*
 
 val iter_aux : forall 'rv 'a 'e. integer -> (integer -> 'a -> monad 'rv unit 'e) -> list 'a -> monad 'rv unit 'e

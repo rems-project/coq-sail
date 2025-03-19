@@ -65,7 +65,7 @@
 (*  SUCH DAMAGE.                                                            *)
 (*==========================================================================*)
 
-From Sail Require Import Instr_kinds Values.
+Require Import Instr_kinds Values.
 From Coq Require FMapAVL OrderedType OrderedTypeEx.
 From Coq Require Import List.
 From Coq Require Import Rbase.  (* TODO would like to avoid this in models without reals *)
