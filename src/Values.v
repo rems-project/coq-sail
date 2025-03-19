@@ -75,7 +75,7 @@ Import ListNotations.
 From Coq Require Import Rbase.  (* TODO would like to avoid this in models without reals *)
 From Coq Require Eqdep EqdepFacts Zquot.
 
-From Sail Require Import TypeCasts MachineWord.
+Require Import TypeCasts MachineWord.
 
 Local Open Scope Z.
 Local Open Scope bool.
@@ -1116,8 +1116,8 @@ code, so it doesn't matter that it's not useful. *)
 
 (* Register accessors: pair of functions for reading and writing register values *)
 Definition register_accessors regstate reg_type : Type :=
-  ((forall {T}, reg_type T -> regstate -> T) *
-   (forall {T}, reg_type T -> T -> regstate -> regstate)).
+  ((forall T, reg_type T -> regstate -> T) *
+   (forall T, reg_type T -> T -> regstate -> regstate)).
 
 
 (* The choice operations in the monads operate on a small selection of base

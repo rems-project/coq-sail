@@ -65,7 +65,7 @@
 (*  SUCH DAMAGE.                                                            *)
 (*==========================================================================*)
 
-From Sail Require Import State_monad.
+Require Import State_monad.
 From Coq Require Export Setoid.
 From Coq Require Export Morphisms Equivalence.
 
@@ -74,7 +74,7 @@ From Coq Require Export Morphisms Equivalence.
    Note that rewriting results are put into both a rewriting hint database and
    a normal automation one.  The former can be used with autorewrite and friends,
    but the latter can be used with the rewriting under congruence tactics, such as
-   statecong in Sail.State_lemmas, and PrePostE_rewrite in Hoare. *)
+   statecong in State_lemmas, and PrePostE_rewrite in Hoare. *)
 
 (* Ensure that pointwise equality on states is the preferred notion of
    equivalence for the state monad. *)
@@ -610,7 +610,7 @@ Qed.
 Lemma no_throw_mem_builtins_8 Regs E1 E2 A wk addr sz v t :
   ignore_throw (E2 := E2) (@write_memtS Regs E1 A wk addr sz v t) === write_memtS wk addr sz v t.
 unfold write_memtS. rewrite ignore_throw_option_case_distrib_2.
-destruct (Sail.Values.mem_bytes_of_bits v); autorewrite with ignore_throw; auto.
+destruct (Values.mem_bytes_of_bits v); autorewrite with ignore_throw; auto.
 Qed.
 #[export] Hint Rewrite no_throw_mem_builtins_8 : ignore_throw.
 #[export] Hint Resolve no_throw_mem_builtins_8 : ignore_throw.

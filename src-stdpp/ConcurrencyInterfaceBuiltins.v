@@ -1,4 +1,4 @@
-From Sail Require Import Real Base ConcurrencyInterfaceTypes ConcurrencyInterface.
+Require Import Real Base ConcurrencyInterfaceTypes ConcurrencyInterface.
 From stdpp Require Import bitvector.definitions.
 
 Import ListNotations.
@@ -15,9 +15,11 @@ Definition monadR R E := I.iMon (fun _ => (R + E)%type).
 Definition returnR {A E} R : A -> monadR R E A := I.Ret.
 
 Definition bind {A B E : Type} (m : monad E A) (f : A -> monad E B) : monad E B := I.iMon_bind m f.
+#[warnings="-notation-overridden"]
 Notation "m >>= f" := (bind m f) (at level 50, left associativity).
 Definition bind0 {A E} (m : monad E unit) (n : monad E A) :=
   m >>= fun (_ : unit) => n.
+#[warnings="-notation-overridden"]
 Notation "m >> n" := (bind0 m n) (at level 50, left associativity).
 
 Definition fail {A E} (msg : string) : monad E A :=
@@ -83,7 +85,9 @@ Definition pure_early_return_bind {A B E} (v : E + A) (f : A -> E + B) : E + B :
   | inr a => f a
   end.
 
+#[warnings="-notation-overridden"]
 Notation "m >>$= f" := (pure_early_return_bind m f) (at level 50, left associativity).
+#[warnings="-notation-overridden"]
 Notation "m >>$ n" := (m >>$= fun _ => n) (at level 50, left associativity).
 
 Definition pure_early_return {A} (v : A + A) : A :=

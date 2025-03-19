@@ -1,0 +1,37 @@
+(coq.theory
+ (name Sail)
+ (package coq-sail)
+ (modules
+   Inhabited
+   MachineWordInterface
+   TypeCasts
+   MachineWord
+   Instances
+   Instr_kinds
+   Values
+   Values_lemmas
+   String
+   Prompt_monad
+   Prompt
+   State
+   State_lemmas
+   State_monad
+   State_monad_lemmas
+   State_lifting
+   Hoare
+   Undefined
+   Operators_mwords
+   Base
+   Real
+   Impl_base
+ )
+ (theories bbv)
+ (coqdoc_flags :standard --utf8
+               --coqlib_url https://coq.inria.fr/doc/V8.20.1/stdlib
+ )
+)
+
+(alias
+ (name bbv)
+ (deps (alias all))
+)
