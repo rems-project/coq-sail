@@ -15,8 +15,8 @@ been used for several papers, available from
 <p>
 
 This repository contains the Rocq support library for models produced
-by Sail for the [Rocq theorem prover](https://rocq-prover.org/),
-previously known as [Coq](https://coq.inria.fr/).  The
+by Sail for the [Rocq theorem prover](https://rocq-prover.org/)(
+previously known as Coq). The
 [main Sail repository](https://github.com/rems-project/sail) contains
 the Sail tool for processing Sail specifications and translating them
 into Rocq.
@@ -26,7 +26,7 @@ Installation
 
 We suggest using the [opam package manager](https://opam.ocaml.org/)
 if you also used it to install Rocq.  See [the instructions on using
-opam with Rocq](https://coq.inria.fr/opam-using.html) for more
+opam with Rocq](https://rocq-prover.org/docs/installing-rocq) for more
 information.  There are two variants which use different bitvector
 libraries:
 
@@ -40,9 +40,11 @@ libraries:
   concurrency interface isn't supported when targeting bbv at the
   moment; please get in touch if you need this.
 
-It's also possible to build the library locally without opam using the
-Makefile in the `src` directory.  You can also change the bitvector
-library used by changing the `src/MachineWord.v` symbolic link.
+It's also possible to build the libraries locally with dune. You need to install
+either `coq-bbv` or `coq-stdpp-bitvector`, and then respectively
+run `dune build @bbv` or `dune build @stdpp`. `dune build` alone will build both
+of them. You can run very bare-bones tests for the stdpp version with
+`dune build @runtest`
 
 Licensing
 =========
@@ -50,7 +52,7 @@ Licensing
 The library has the same licensing terms as the main Sail tool.  These
 can be found in [LICENSE](LICENSE).
 
-## Funding 
+## Funding
 
 This work was partially supported by the UK Government Industrial Strategy Challenge Fund (ISCF) under the Digital Security by Design (DSbD) Programme, to deliver a DSbDtech enabled digital platform (grant 105694).
 This project has received funding from the European Research Council

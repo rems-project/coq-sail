@@ -65,7 +65,7 @@
 (*  SUCH DAMAGE.                                                            *)
 (*==========================================================================*)
 
-From Sail Require Import Values Prompt_monad Prompt State_monad.
+Require Import Values Prompt_monad Prompt State_monad.
 Import ListNotations.
 Local Open Scope Z.
 

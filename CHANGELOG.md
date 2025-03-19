@@ -1,6 +1,10 @@
 Changelog
 =========
 
+master
+----
+* Port to `dune`
+
 0.19
 ----
 

@@ -65,7 +65,7 @@
 (*  SUCH DAMAGE.                                                            *)
 (*==========================================================================*)
 
-From Sail Require Import Instr_kinds Values.
+Require Import Instr_kinds Values.
 From Coq Require FMapAVL OrderedType OrderedTypeEx.
 From Coq Require Import List.
 From Coq Require Import Rbase.  (* TODO would like to avoid this in models without reals *)
@@ -165,8 +165,13 @@ Definition seqS {Regs B E} (m : monadS Regs unit E) (n : monadS Regs B E) : mona
 let inline (>>$=) = bindS
 let inline (>>$) = seqS
 *)
-Notation "m >>$= f" := (bindS m f) (at level 50, left associativity).
-Notation "m >>$ n" := (seqS m n) (at level 50, left associativity).
+
+Declare Scope state_monad.
+
+Notation "m >>$= f" := (bindS m f) (at level 50, left associativity) : state_monad.
+Notation "m >>$ n" := (seqS m n) (at level 50, left associativity) : state_monad.
+
+Open Scope state_monad.
 
 (*val chooseS : forall 'regs 'a 'e. SetType 'a => list 'a -> monadS 'regs 'a 'e*)
 Definition choose_listS {Regs A E} (xs : list A) : monadS Regs A E :=

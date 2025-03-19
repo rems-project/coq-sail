@@ -1,4 +1,4 @@
-From Sail Require TypeCasts MachineWordInterface.
+Require TypeCasts MachineWordInterface.
 From stdpp Require Import base bitvector.definitions.
 From Coq Require Import ZArith String.
 

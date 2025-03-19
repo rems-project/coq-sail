@@ -66,7 +66,7 @@
 (*==========================================================================*)
 
 From Coq Require Import String ZArith Setoid Morphisms Equivalence Lia.
-From Sail Require Import Values State_monad Prompt State State_monad_lemmas State_lemmas.
+Require Import Values State_monad Prompt State State_monad_lemmas State_lemmas.
 
 (*adhoc_overloading
   Monad_Syntax.bind State_monad.bindS*)
@@ -806,7 +806,7 @@ apply PrePostE_use_pre. intros s0 Pre0.
 assert (measure vars >= 0) as Hlimit_0 by eauto. clear s0 Pre0.
 remember (measure vars) as limit eqn: Heqlimit in Hlimit_0 |- *.
 assert (measure vars <= limit) as Hlimit by lia. clear Heqlimit.
-generalize (Sail.Prompt.Zwf_guarded limit).
+generalize (Prompt.Zwf_guarded limit).
 revert vars Hlimit.
 apply Wf_Z.natlike_ind with (x := limit).
 * intros vars Hmeasure_limit [acc]. simpl.
@@ -968,7 +968,7 @@ unfold internal_pickS.
 intro notnil.
 eapply PrePostE_bindS with (R := fun _ s => forall x, List.In x xs -> Q x s).
 * intros.
-  destruct (nth_error_modulo (Sail.Values.nat_of_bools a) notnil) as (x & IN & nth).
+  destruct (nth_error_modulo (Values.nat_of_bools a) notnil) as (x & IN & nth).
   rewrite nth.
   eapply PrePostE_strengthen_pre.
   apply PrePostE_returnS.
@@ -1006,7 +1006,7 @@ Qed.
 
 Local Open Scope Z.
 
-Lemma PrePostE_undefined_bitvectorS_any Regs Ety n (Q : Sail.Values.mword n -> predS Regs) (E : ex Ety -> predS Regs) :
+Lemma PrePostE_undefined_bitvectorS_any Regs Ety n (Q : Values.mword n -> predS Regs) (E : ex Ety -> predS Regs) :
   PrePostE (fun s => forall w, Q w s) (undefined_bitvectorS n) Q E.
 unfold undefined_bitvectorS.
 destruct n.
