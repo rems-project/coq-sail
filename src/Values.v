@@ -1527,6 +1527,13 @@ Definition decode_encode_eq_dec {T} (f : T -> positive) (g : positive -> option 
   congruence.
 Defined.
 
+(* If we can pick arbitrary inhabitants for the elements of a dependent pair,
+   then it's inhabited. *)
+
+#[export] Instance Inhabited_sigT {T} {P : T -> Type} `{Inhabited T} `{forall t, Inhabited (P t)} : Inhabited (sigT P) := {
+  inhabitant := @existT _ _ inhabitant inhabitant
+}.
+
 (* Override expensive unary exponential notation for binary, fill in sizes too *)
 Notation "sz ''b' a" := (MachineWord.N_to_word sz (BinaryString.Raw.to_N a N0)) (at level 50).
 Notation "''b' a" := (MachineWord.N_to_word _ (BinaryString.Raw.to_N a N0) :

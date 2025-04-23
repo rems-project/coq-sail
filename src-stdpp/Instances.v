@@ -209,6 +209,31 @@ Proof.
     apply vec_of_list_eq).
 Defined.
 
+#[export] Instance Decidable_eq_sigT {T} {P : T -> Type} `{ET : EqDecision T} `{Peq : forall t, EqDecision (P t)} : EqDecision (sigT P).
+refine (fun '(@existT _ _ x p) '(@existT _ _ y q) =>
+          match decide (x = y) with
+          | left e => _
+          | right ne => right _
+          end).
+Proof.
+  - subst y.
+    refine (match Peq _ p q with left e' => left _ | right ne => right _ end).
+    * congruence.
+    * contradict ne. apply (Eqdep_dec.inj_pair2_eq_dec _ ET _ _ _ _ ne).
+  - contradict ne. apply (eq_sigT_fst ne).
+Defined.
+
+#[export] Instance Countable_eq_sigT {T} {P : T -> Type} `{EqDecision T} `{forall t, EqDecision (P t)} `{CT : Countable T} `{CPt : forall t, Countable (P t)} : Countable (sigT P).
+refine {|
+  encode x := encode (projT1 x, encode (projT2 x));
+  decode p := match decode p with Some (t, q) => match decode q with Some v => Some (@existT _ _ t v) | None => None end | None => None end
+|}.
+Proof.
+  intros [t v].
+  rewrite !decode_encode.
+  reflexivity.
+Defined.
+
 (* "Decidable" in a classical sense... *)
 #[export] Instance Decidable_eq_real : EqDecision Reals.Rdefinitions.R :=
   Reals.ROrderedType.Req_dec.
