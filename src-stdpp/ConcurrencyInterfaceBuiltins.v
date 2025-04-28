@@ -64,6 +64,8 @@ Fixpoint try_catch {A E1 E2} (m : monad E1 A) (h : E1 -> monad E2 A) : monad E2 
   | I.Next (I.TlbOp op)                        f => I.Next (I.TlbOp op) (fun t => try_catch (f t) h)
   | I.Next (I.TakeException fault)             f => I.Next (I.TakeException fault) (fun t => try_catch (f t) h)
   | I.Next (I.ReturnException pa)              f => I.Next (I.ReturnException pa) (fun t => try_catch (f t) h)
+  | I.Next (I.TranslationStart ts)             f => I.Next (I.TranslationStart ts) (fun t => try_catch (f t) h)
+  | I.Next (I.TranslationEnd te)               f => I.Next (I.TranslationEnd te) (fun t => try_catch (f t) h)
   | I.Next (I.GenericFail msg)                 f => I.Next (I.GenericFail msg) (fun t => try_catch (f t) h)
   | I.Next  I.CycleCount                       f => I.Next  I.CycleCount (fun t => try_catch (f t) h)
   | I.Next  I.GetCycleCount                    f => I.Next  I.GetCycleCount (fun t => try_catch (f t) h)
@@ -399,8 +401,8 @@ Definition sail_sys_reg_write {e T} (id : A.sys_reg_id) (r : register_ref A.reg 
   I.Next (I.RegWrite r.(Values.reg) (Some id) v) I.Ret.
 
 (* Placeholder definitions *)
-Definition sail_translation_start {e T} (ts : T) : monad e unit := I.Ret ().
-Definition sail_translation_end {e T} (ts : T) : monad e unit := I.Ret ().
+Definition sail_translation_start {e} (ts : A.trans_start) : monad e unit := I.Next (I.TranslationStart ts) I.Ret.
+Definition sail_translation_end {e} (te : A.trans_end) : monad e unit := I.Next (I.TranslationEnd te) I.Ret.
 
 (* ----------- *)
 
