@@ -207,7 +207,10 @@ Module Interface (A : Arch).
   (** Discard means that the instruction could never have made the previous
       non-deterministic choices and the current execution can be silently
       discarded. *)
-  | Discard : outcome False.
+  | Discard : outcome False
+
+  (** Messages from the model for tracing or debugging *)
+  | Message : string -> outcome unit.
 
 
   (********** Monad instance **********)
@@ -339,6 +342,7 @@ Module Interface (A : Arch).
         | GetCycleCount => Next GetCycleCount
         | Choose n => Next (Choose n)
         | Discard => Next (Discard)
+        | Message msg => Next (Message msg)
         end k
     end.
 

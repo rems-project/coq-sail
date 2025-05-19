@@ -71,6 +71,7 @@ Fixpoint try_catch {A E1 E2} (m : monad E1 A) (h : E1 -> monad E2 A) : monad E2 
   | I.Next  I.GetCycleCount                    f => I.Next  I.GetCycleCount (fun t => try_catch (f t) h)
   | I.Next (I.Choose n)                        f => I.Next (I.Choose n) (fun t => try_catch (f t) h)
   | I.Next (I.Discard)                         f => I.Next (I.Discard) (fun t => try_catch (f t) h)
+  | I.Next (I.Message msg)                     f => I.Next (I.Message msg) (fun t => try_catch (f t) h)
   end.
 
 Definition early_return {A R E} (r : R) : monadR R E A := throw (inl r).
@@ -400,10 +401,30 @@ Definition sail_sys_reg_read {e T} (id : A.sys_reg_id) (r : register_ref A.reg T
 Definition sail_sys_reg_write {e T} (id : A.sys_reg_id) (r : register_ref A.reg T) (v : T) : monad e unit :=
   I.Next (I.RegWrite r.(Values.reg) (Some id) v) I.Ret.
 
-(* Placeholder definitions *)
 Definition sail_translation_start {e} (ts : A.trans_start) : monad e unit := I.Next (I.TranslationStart ts) I.Ret.
 Definition sail_translation_end {e} (te : A.trans_end) : monad e unit := I.Next (I.TranslationEnd te) I.Ret.
 
 (* ----------- *)
+(* The normal print routines do nothing in Coq so that they don't drag terms and functions into the
+   monad.  Here are alternative versions which do, which can be controlled by defining PRINT_EFFECTS
+   in Sail. *)
+Definition print_effect {e} (s : string) : monad e unit :=
+  I.Next (I.Message s) I.Ret.
+
+Definition print_endline_effect {e} (s : string) : monad e unit :=
+  print_effect (s ++ "
+")%string.
+
+Definition print_int_effect {e} s i : monad e unit :=
+  print_endline_effect (s ++ string_of_int i).
+
+Definition print_bits_effect {e n} s (w : mword n) : monad e unit :=
+  print_endline_effect (s ++ string_of_bits w).
+
+(* We only have one output stream that we use for both. *)
+Definition prerr_effect {e} s := @print_effect e s.
+Definition prerr_endline_effect {e} s := @print_endline_effect e s.
+Definition prerr_int_effect {e} s i := @print_int_effect e s i.
+Definition prerr_bits_effect {e} s i := @print_bits_effect e s i.
 
 End Defs.
