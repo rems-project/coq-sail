@@ -19,7 +19,7 @@
   "Mark Wassell"
 )
 (maintainers "Sail Devs <cl-sail-dev@lists.cam.ac.uk>")
-(version 0.19)
+(version 0.19.1)
 
 (package
  (name coq-sail)
