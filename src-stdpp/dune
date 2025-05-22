@@ -27,6 +27,9 @@
    ConcurrencyInterfaceBuiltins
    ConcurrencyInterfaceTypes
    ConcurrencyInterface
+   ConcurrencyInterfaceTypesV2
+   ConcurrencyInterfaceBuiltinsV2
+   ConcurrencyInterfaceV2
  )
  (theories stdpp stdpp.bitvector)
  (coqdoc_flags :standard --utf8
