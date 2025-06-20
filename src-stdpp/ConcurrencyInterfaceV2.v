@@ -159,6 +159,16 @@ Module Interface (A : Arch).
     Arguments t : clear implicits.
   End WriteReq.
 
+  Module AddressAnnounce.
+    Record t {n : N} {nt : N} :=
+      make
+        { access_kind : mem_acc;
+          address : address;
+          address_space : addr_space;
+         }.
+    Arguments t : clear implicits.
+  End AddressAnnounce.
+
   Section T.
     Context {eOutcome : Type -> Type}.
 
@@ -179,6 +189,7 @@ Module Interface (A : Arch).
   | MemRead (n : N) (nt : N) : ReadReq.t n nt ->
                       outcome (bv (8 * n) * bv nt + abort)
   | MemWrite (n : N) (nt : N) : WriteReq.t n nt -> outcome (option bool + abort)
+  | MemAddressAnnounce (n : N) (nt : N) : AddressAnnounce.t n nt -> outcome unit
     (** Declare the opcode of the current instruction when known. Used for
         dependency computation *)
   | InstrAnnounce (opcode : bvn) : outcome unit
@@ -331,6 +342,7 @@ Module Interface (A : Arch).
             Next (RegWrite reg direct val)
         | MemRead n nt readreq => Next (MemRead n nt readreq)
         | MemWrite n nt writereq => Next (MemWrite n nt writereq)
+        | MemAddressAnnounce n nt announcement => Next (MemAddressAnnounce n nt announcement)
         | InstrAnnounce opcode => Next (InstrAnnounce opcode)
         | BranchAnnounce sz pa => Next (BranchAnnounce sz pa)
         | Barrier barrier => Next (Barrier barrier)

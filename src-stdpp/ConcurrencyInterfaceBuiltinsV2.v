@@ -57,6 +57,7 @@ Fixpoint try_catch {A E1 E2} (m : monad E1 A) (h : E1 -> monad E2 A) : monad E2 
   | I.Next (I.RegWrite reg direct regval)      f => I.Next (I.RegWrite reg direct regval) (fun t => try_catch (f t) h)
   | I.Next (I.MemRead n nt req)                f => I.Next (I.MemRead n nt req) (fun t => try_catch (f t) h)
   | I.Next (I.MemWrite n nt req)               f => I.Next (I.MemWrite n nt req) (fun t => try_catch (f t) h)
+  | I.Next (I.MemAddressAnnounce n nt ann)     f => I.Next (I.MemAddressAnnounce n nt ann) (fun t => try_catch (f t) h)
   | I.Next (I.InstrAnnounce opcode)            f => I.Next (I.InstrAnnounce opcode) (fun t => try_catch (f t) h)
   | I.Next (I.BranchAnnounce sz pa)            f => I.Next (I.BranchAnnounce sz pa) (fun t => try_catch (f t) h)
   | I.Next (I.Barrier barrier)                 f => I.Next (I.Barrier barrier) (fun t => try_catch (f t) h)
@@ -380,6 +381,15 @@ Definition sail_mem_write {e n nt} (req : Mem_write_request n nt (Z.of_N A.addr_
     end
   in
   I.Next (I.MemWrite n' nt' req') k.
+
+Definition sail_mem_address_announce {e n nt} (ann : Mem_address_announce n nt (Z.of_N A.addr_size) A.addr_space A.mem_acc) : monad e unit :=
+  let n' := Z.to_N n in
+  let nt' := Z.to_N nt in
+  let address := cast_N ann.(Mem_address_announce_address) (N2Z.id _) in
+  let address_space := ann.(Mem_address_announce_address_space) in
+  let access_kind := ann.(Mem_address_announce_access_kind) in
+  let ann' := I.AddressAnnounce.make n' nt' access_kind address address_space in
+  I.Next (I.MemAddressAnnounce n' nt' ann') I.Ret.
 
 Definition sail_sys_reg_read {e T} (id : A.sys_reg_id) (r : register_ref A.reg T) : monad e T :=
   I.Next (I.RegRead r.(Values.reg) (Some id)) I.Ret.

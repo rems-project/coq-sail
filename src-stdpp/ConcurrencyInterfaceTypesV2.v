@@ -148,5 +148,69 @@ Instance dummy_Mem_write_request {n : Z} {nt : Z} {addr_size : Z} {addr_space : 
 |} }.
 
 
+Record Mem_address_announce {n : Z} {nt : Z} {addr_size : Z} {addr_space : Type} {mem_acc : Type}
+(*(n >=? 0) && ((nt >=? 0) && (addr_size >? 0))*) := {
+  Mem_address_announce_access_kind : mem_acc;
+  Mem_address_announce_address : mword addr_size;
+  Mem_address_announce_address_space : addr_space;
+  Mem_address_announce_size : Z;
+  Mem_address_announce_num_tag : Z;
+}.
+Arguments Mem_address_announce : clear implicits.
+#[export]
+Instance Decidable_eq_Mem_address_announce {n : Z} {nt : Z} {addr_size : Z} {addr_space : Type}
+  {mem_acc : Type} (*(n >=? 0) && ((nt >=? 0) && (addr_size >? 0))*) `{EqDecision addr_space}
+  `{EqDecision mem_acc} : EqDecision (Mem_address_announce n nt addr_size addr_space mem_acc).
+   intros [x0 x1 x2 x3 x4].
+   intros [y0 y1 y2 y3 y4].
+  cmp_record_field x0 y0.
+  cmp_record_field x1 y1.
+  cmp_record_field x2 y2.
+  cmp_record_field x3 y3.
+  cmp_record_field x4 y4.
+left; subst; reflexivity.
+Defined.
+#[export]
+Instance Countable_Mem_address_announce {n : Z} {nt : Z} {addr_size : Z} {addr_space : Type}
+  {mem_acc : Type} (*(n >=? 0) && ((nt >=? 0) && (addr_size >? 0))*) `{Countable addr_space}
+  `{Countable mem_acc} : Countable (Mem_address_announce n nt addr_size addr_space mem_acc).
+refine {|
+  encode x := encode (Mem_address_announce_access_kind x, Mem_address_announce_address x, Mem_address_announce_address_space x, Mem_address_announce_size x, Mem_address_announce_num_tag x);
+  decode x := '(x0, x1, x2, x3, x4) ← decode x;
+              mret (Build_Mem_address_announce n nt addr_size addr_space mem_acc x0 x1 x2 x3 x4)
+|}.
+abstract (
+  intros [x0 x1 x2 x3 x4];
+  rewrite decode_encode;
+  reflexivity).
+Defined.
+Notation "{[ r 'with' 'Mem_address_announce_access_kind' := e ]}" :=
+  match r with Build_Mem_address_announce _ _ _ _ _ _ (_ as f1) (_ as f2) (_ as f3) (_ as f4) =>
+    Build_Mem_address_announce _ _ _ _ _ e f1 f2 f3 f4 end (at level 1).
+Notation "{[ r 'with' 'Mem_address_announce_address' := e ]}" :=
+  match r with Build_Mem_address_announce _ _ _ _ _ (_ as f0) _ (_ as f2) (_ as f3) (_ as f4) =>
+    Build_Mem_address_announce _ _ _ _ _ f0 e f2 f3 f4 end (at level 1).
+Notation "{[ r 'with' 'Mem_address_announce_address_space' := e ]}" :=
+  match r with Build_Mem_address_announce _ _ _ _ _ (_ as f0) (_ as f1) _ (_ as f3) (_ as f4) =>
+    Build_Mem_address_announce _ _ _ _ _ f0 f1 e f3 f4 end (at level 1).
+Notation "{[ r 'with' 'Mem_address_announce_size' := e ]}" :=
+  match r with Build_Mem_address_announce _ _ _ _ _ (_ as f0) (_ as f1) (_ as f2) _ (_ as f4) =>
+    Build_Mem_address_announce _ _ _ _ _ f0 f1 f2 e f4 end (at level 1).
+Notation "{[ r 'with' 'Mem_address_announce_num_tag' := e ]}" :=
+  match r with Build_Mem_address_announce _ _ _ _ _ (_ as f0) (_ as f1) (_ as f2) (_ as f3) _ =>
+    Build_Mem_address_announce _ _ _ _ _ f0 f1 f2 f3 e end (at level 1).
+#[export]
+Instance dummy_Mem_address_announce {n : Z} {nt : Z} {addr_size : Z} {addr_space : Type}
+  {mem_acc : Type} (*(n >=? 0) && ((nt >=? 0) && (addr_size >? 0))*) `{Inhabited addr_space}
+  `{Inhabited mem_acc} : Inhabited (Mem_address_announce n nt addr_size addr_space mem_acc) := {
+  inhabitant := {|
+    Mem_address_announce_access_kind := inhabitant;
+    Mem_address_announce_address := inhabitant;
+    Mem_address_announce_address_space := inhabitant;
+    Mem_address_announce_size := inhabitant;
+    Mem_address_announce_num_tag := inhabitant;
+|} }.
+
+
 
 
