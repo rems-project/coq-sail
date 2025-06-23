@@ -309,7 +309,7 @@ Definition autocast_m {e m n} {T : Z -> Type} `{H : Inhabited (T n)} (x : monad 
 Definition sail_barrier {e} (b : A.barrier) : monad e unit :=
   I.Next (I.Barrier b) I.Ret.
 
-Definition sail_take_exception {e} (f : A.fault) : monad e unit :=
+Definition sail_take_exception {e} (f : A.exn) : monad e unit :=
   I.Next (I.TakeException f) I.Ret.
 
 Definition sail_return_exception {e} (_:unit) : monad e unit :=
@@ -318,7 +318,7 @@ Definition sail_return_exception {e} (_:unit) : monad e unit :=
 Definition sail_cache_op {e} (op : A.cache_op) : monad e unit :=
   I.Next (I.CacheOp op) I.Ret.
 
-Definition sail_tlbi {e} (op : A.tlb_op) : monad e unit :=
+Definition sail_tlbi {e} (op : A.tlbi) : monad e unit :=
   I.Next (I.TlbOp op) I.Ret.
 
 Definition branch_announce {e} sz (addr : mword sz) : monad e unit :=

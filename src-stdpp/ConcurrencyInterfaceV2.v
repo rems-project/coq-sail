@@ -112,15 +112,15 @@ Module Type Arch.
   #[export] Existing Instance cache_op_eq.
 
   (** TLB operations *)
-  Parameter tlb_op : Type.
-  Parameter tlb_op_eq : EqDecision tlb_op.
-  #[export] Existing Instance tlb_op_eq.
+  Parameter tlbi : Type.
+  Parameter tlbi_eq : EqDecision tlbi.
+  #[export] Existing Instance tlbi_eq.
 
   (** Fault type for a fault raised by the instruction (not by the concurrency model)
       In Arm terms, this means any synchronous exception decided by the ISA model *)
-  Parameter fault : Type.
-  Parameter fault_eq : EqDecision fault.
-  #[export] Existing Instance fault_eq.
+  Parameter exn : Type.
+  Parameter exn_eq : EqDecision exn.
+  #[export] Existing Instance exn_eq.
 
   (** Identifier type for direct accesses to system registers *)
   Parameter sys_reg_id : Type.
@@ -197,8 +197,8 @@ Module Interface (A : Arch).
   | BranchAnnounce sz (pa : mword sz) : outcome unit
   | Barrier : barrier -> outcome unit
   | CacheOp : cache_op -> outcome unit
-  | TlbOp : tlb_op -> outcome unit
-  | TakeException : fault -> outcome unit
+  | TlbOp : tlbi -> outcome unit
+  | TakeException : exn -> outcome unit
   | ReturnException : outcome unit
   | TranslationStart : trans_start -> outcome unit
   | TranslationEnd : trans_end -> outcome unit
