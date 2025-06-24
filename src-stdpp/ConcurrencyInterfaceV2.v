@@ -67,7 +67,7 @@ Module Type Arch.
 
   (** Capability support and size *)
   Parameter CHERI : bool.
-  Parameter cap_size_log : Z.
+  Parameter cap_size_log : N.
 
   (** Memory access type and classifiers *)
   Parameter mem_acc : Type.
