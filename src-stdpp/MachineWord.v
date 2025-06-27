@@ -1,5 +1,5 @@
 Require TypeCasts MachineWordInterface.
-From stdpp Require Import base bitvector.definitions.
+From stdpp Require Import base bitvector.definitions list.
 From Coq Require Import ZArith String.
 
 Module MachineWord <: MachineWordInterface.MachineWordInterface.
@@ -168,12 +168,12 @@ destruct (List.nth_error l i) eqn:H.
     apply List.nth_error_Some.
     congruence.
   }
-  destruct (list.nth_lookup_or_length l i a) as [E|E].
+  destruct (nth_lookup_or_length l i a) as [E|E].
   - rewrite (List.nth_error_nth l i a H) in E.
     assumption.
   - contradict E.
     Lia.lia.
-* apply list.lookup_ge_None.
+* apply lookup_ge_None.
   apply List.nth_error_None.
   assumption.
 Qed.
