@@ -117,7 +117,14 @@ Definition try_catchR {A R E} (m : monadR R E A) (h : E -> monadR R E A) :=
       | inr e => h e
      end).
 
-
+(* Helper for value definitions that may contain an assertion or incomplete pattern match.  If the
+   computation reduces immediately to a value it will return that, otherwise there will be a
+   typechecking failure. *)
+Definition unwrap_value {A E} (m : monad E A) : match m with I.Ret _ => A | I.Next _ _ => True end :=
+  match m with
+  | I.Ret a => a
+  | I.Next _ _ => I
+  end.
 
 Section Undef.
 

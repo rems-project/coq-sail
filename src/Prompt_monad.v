@@ -192,6 +192,15 @@ match x with
   | None => Fail msg
 end.
 
+(* Helper for value definitions that may contain an assertion or incomplete pattern match.  If the
+   computation reduces immediately to a value it will return that, otherwise there will be a
+   typechecking failure. *)
+Definition unwrap_value {rv A E} (m : monad rv A E) : match m with Done _ => A | _ => True end :=
+  match m with
+  | Done a => a
+  | _ => I
+  end.
+
 Section Choose.
 Context {rt : Type -> Type} {E : Type}.
 
