@@ -69,4 +69,6 @@ The Sail tool can be found in main opam repository.")
     "category:Computer Science/Semantics and Compilation/Semantics"))
 )
 
-(generate_opam_files)
+; Don't generate opam files for the moment because they've been altered to work
+; around dune's lack for support for the Stdlib change.
+; (generate_opam_files)
