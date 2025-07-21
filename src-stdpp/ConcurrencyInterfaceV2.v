@@ -1,5 +1,5 @@
 From Coq Require Import Strings.String.
-From stdpp Require Import bitvector.definitions countable.
+From stdpp Require Import bitvector.definitions countable pretty.
 
 (* For choice outcomes *)
 Require Import Values.
@@ -35,6 +35,9 @@ Module Type Arch.
 
   Parameter greg_cnt : Countable greg.
   #[export] Existing Instance greg_cnt.
+
+  Parameter greg_pretty : Pretty greg.
+  #[export] Existing Instance greg_pretty.
 
   #[export] Hint Extern 1 (reg _) => assumption : typeclass_instances.
   Parameter regval_inhabited : ∀ A, reg A → Inhabited A.
