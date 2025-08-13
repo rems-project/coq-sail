@@ -756,17 +756,8 @@ Qed.
 Close Scope nat.
 
 (*val access_list_inc : forall a. list a -> Z -> a*)
-Definition access_list_inc {A} (xs : list A) `{Inhabited A} (n : Z) : A.
-refine (
-  let i := Z.to_nat n in
-  if sumbool_of_bool ((0 <=? n) && (i <? List.length xs)%nat) then
-    nth_in_range i xs _
-  else dummy_value
-).
-rewrite Bool.andb_true_iff in e.
-rewrite Nat.ltb_lt in e.
-tauto.
-Defined.
+Definition access_list_inc {A} (xs : list A) `{Inhabited A} (n : Z) : A :=
+  if n <? 0 then dummy_value else nth (Z.to_nat n) xs dummy_value.
 
 (*val access_list_dec : forall a. list a -> Z -> a*)
 Definition access_list_dec {A} (xs : list A) n `{Inhabited A} : A :=
