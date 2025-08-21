@@ -181,47 +181,97 @@ match l with
   foreachE xs vars body
 end.
 
-Fixpoint foreach_ZM_up' {E Vars} (from to step off : Z) (n : nat) (* 0 <? step *) (* 0 <=? off *) (vars : Vars) (body : forall (z : Z) (* from <=? z <=? to *), Vars -> monad E Vars) {struct n} : monad E Vars :=
-  if sumbool_of_bool (from + off <=? to) then
+Fixpoint foreach_ZM_up' {E Vars} (from to step : Z) (n : nat) (vars : Vars) (body : forall (z : Z), Vars -> monad E Vars) {struct n} : monad E Vars :=
+  if from <=? to then
     match n with
     | O => returnm vars
-    | S n => body (from + off) vars >>= fun vars => foreach_ZM_up' from to step (off + step) n vars body
+    | S n => body from vars >>= fun vars => foreach_ZM_up' (from + step) to step n vars body
     end
   else returnm vars.
 
-Fixpoint foreach_ZE_up' {e Vars} (from to step off : Z) (n : nat) (* 0 <? step *) (* 0 <=? off *) (vars : Vars) (body : forall (z : Z) (* from <=? z <=? to *), Vars -> e + Vars) {struct n} : e + Vars :=
-  if sumbool_of_bool (from + off <=? to) then
+Lemma unroll_foreach_ZM_up' E Vars from to step n vars body:
+  from <= to ->
+  @foreach_ZM_up' E Vars from to step (S n) vars body =
+  body from vars >>= fun vars' => @foreach_ZM_up' E Vars (from + step) to step n vars' body.
+Proof.
+  intro Range.
+  unfold foreach_ZM_up' at 1.
+  replace (from <=? to) with true by lia.
+  fold (@foreach_ZM_up' E Vars).
+  reflexivity.
+Qed.
+
+Fixpoint foreach_ZE_up' {e Vars} (from to step : Z) (n : nat) (* 0 <? step *) (vars : Vars) (body : forall (z : Z) (* from <=? z <=? to *), Vars -> e + Vars) {struct n} : e + Vars :=
+  if from <=? to then
     match n with
     | O => inr vars
-    | S n => body (from + off) vars >>$= fun vars => foreach_ZE_up' from to step (off + step) n vars body
+    | S n => body from vars >>$= fun vars => foreach_ZE_up' (from + step) to step n vars body
     end
   else inr vars.
 
-Fixpoint foreach_ZM_down' {E Vars} (from to step off : Z) (n : nat) (* 0 <? step *) (* off <=? 0 *) (vars : Vars) (body : forall (z : Z) (* to <=? z <=? from *), Vars -> monad E Vars) {struct n} : monad E Vars :=
-  if sumbool_of_bool (to <=? from + off) then
+Lemma unroll_foreach_ZE_up' E Vars from to step n vars body:
+  from <= to ->
+  @foreach_ZE_up' E Vars from to step (S n) vars body =
+  body from vars >>$= fun vars' => @foreach_ZE_up' E Vars (from + step) to step n vars' body.
+Proof.
+  intro Range.
+  unfold foreach_ZE_up' at 1.
+  replace (from <=? to) with true by lia.
+  fold (@foreach_ZE_up' E Vars).
+  reflexivity.
+Qed.
+
+Fixpoint foreach_ZM_down' {E Vars} (from to step : Z) (n : nat) (* 0 <? step *) (vars : Vars) (body : forall (z : Z) (* to <=? z <=? from *), Vars -> monad E Vars) {struct n} : monad E Vars :=
+  if to <=? from then
     match n with
     | O => returnm vars
-    | S n => body (from + off) vars >>= fun vars => foreach_ZM_down' from to step (off - step) n vars body
+    | S n => body from vars >>= fun vars => foreach_ZM_down' (from - step) to step n vars body
     end
   else returnm vars.
 
-Fixpoint foreach_ZE_down' {e Vars} (from to step off : Z) (n : nat) (* 0 <? step *) (* off <=? 0 *) (vars : Vars) (body : forall (z : Z) (* to <=? z <=? from *), Vars -> e + Vars) {struct n} : e + Vars :=
-  if sumbool_of_bool (to <=? from + off) then
+Lemma unroll_foreach_ZM_down' E Vars from to step n vars body:
+  to <= from ->
+  @foreach_ZM_down' E Vars from to step (S n) vars body =
+  body from vars >>= fun vars' => @foreach_ZM_down' E Vars (from - step) to step n vars' body.
+Proof.
+  intro Range.
+  unfold foreach_ZM_down' at 1.
+  replace (to <=? from) with true by lia.
+  fold (@foreach_ZM_down' E Vars).
+  reflexivity.
+Qed.
+
+Fixpoint foreach_ZE_down' {e Vars} (from to step : Z) (n : nat) (* 0 <? step *) (vars : Vars) (body : forall (z : Z) (* to <=? z <=? from *), Vars -> e + Vars) {struct n} : e + Vars :=
+  if to <=? from then
     match n with
     | O => inr vars
-    | S n => body (from + off) vars >>$= fun vars => foreach_ZE_down' from to step (off - step) n vars body
+    | S n => body from vars >>$= fun vars => foreach_ZE_down' (from - step) to step n vars body
     end
   else inr vars.
+
+Lemma unroll_foreach_ZE_down' E Vars from to step n vars body:
+  to <= from ->
+  @foreach_ZE_down' E Vars from to step (S n) vars body =
+  body from vars >>$= fun vars' => @foreach_ZE_down' E Vars (from - step) to step n vars' body.
+Proof.
+  intro Range.
+  unfold foreach_ZE_down' at 1.
+  replace (to <=? from) with true by lia.
+  fold (@foreach_ZE_down' E Vars).
+  reflexivity.
+Qed.
+
 
 Definition foreach_ZM_up {E Vars} from to step vars body (* 0 <? step *) :=
-    foreach_ZM_up' (E := E) (Vars := Vars) from to step 0 (S (Z.abs_nat (from - to))) vars body.
+    foreach_ZM_up' (E := E) (Vars := Vars) from to step (S (Z.abs_nat (from - to))) vars body.
+
 Definition foreach_ZM_down {E Vars} from to step vars body (* 0 <? step *) :=
-    foreach_ZM_down' (E := E) (Vars := Vars) from to step 0 (S (Z.abs_nat (from - to))) vars body.
+    foreach_ZM_down' (E := E) (Vars := Vars) from to step (S (Z.abs_nat (from - to))) vars body.
 
 Definition foreach_ZE_up {e Vars} from to step vars body (* 0 <? step *) :=
-    foreach_ZE_up' (e := e) (Vars := Vars) from to step 0 (S (Z.abs_nat (from - to))) vars body.
+    foreach_ZE_up' (e := e) (Vars := Vars) from to step (S (Z.abs_nat (from - to))) vars body.
 Definition foreach_ZE_down {e Vars} from to step vars body (* 0 <? step *) :=
-    foreach_ZE_down' (e := e) (Vars := Vars) from to step 0 (S (Z.abs_nat (from - to))) vars body.
+    foreach_ZE_down' (e := e) (Vars := Vars) from to step (S (Z.abs_nat (from - to))) vars body.
 
 Definition genlistM {A E} (f : nat -> monad E A) (n : nat) : monad E (list A) :=
   let indices := List.seq 0 n in

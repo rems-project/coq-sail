@@ -187,7 +187,7 @@ Fixpoint foreach_ZM_up' {E Vars} (from to step : Z) (n : nat) (vars : Vars) (bod
   else returnm vars.
 
 Lemma unroll_foreach_ZM_up' E Vars from to step n vars body:
-  from < to ->
+  from <= to ->
   @foreach_ZM_up' E Vars from to step (S n) vars body =
   body from vars >>= fun vars' => @foreach_ZM_up' E Vars (from + step) to step n vars' body.
 Proof.
@@ -207,7 +207,7 @@ Fixpoint foreach_ZE_up' {e Vars} (from to step : Z) (n : nat) (* 0 <? step *) (v
   else inr vars.
 
 Lemma unroll_foreach_ZE_up' E Vars from to step n vars body:
-  from < to ->
+  from <= to ->
   @foreach_ZE_up' E Vars from to step (S n) vars body =
   body from vars >>$= fun vars' => @foreach_ZE_up' E Vars (from + step) to step n vars' body.
 Proof.
@@ -227,7 +227,7 @@ Fixpoint foreach_ZM_down' {E Vars} (from to step : Z) (n : nat) (* 0 <? step *) 
   else returnm vars.
 
 Lemma unroll_foreach_ZM_down' E Vars from to step n vars body:
-  to < from ->
+  to <= from ->
   @foreach_ZM_down' E Vars from to step (S n) vars body =
   body from vars >>= fun vars' => @foreach_ZM_down' E Vars (from - step) to step n vars' body.
 Proof.
@@ -247,7 +247,7 @@ Fixpoint foreach_ZE_down' {e Vars} (from to step : Z) (n : nat) (* 0 <? step *) 
   else inr vars.
 
 Lemma unroll_foreach_ZE_down' E Vars from to step n vars body:
-  to < from ->
+  to <= from ->
   @foreach_ZE_down' E Vars from to step (S n) vars body =
   body from vars >>$= fun vars' => @foreach_ZE_down' E Vars (from - step) to step n vars' body.
 Proof.
