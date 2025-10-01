@@ -397,11 +397,11 @@ Definition bytes_of_bv {n} (v : bv (8 * Z.to_N n)) : vec (bv 8) n :=
 Definition bools_of_bv {n} (v : bv (Z.to_N n)) : vec bool n :=
   vec_init_fn n (fun i => MachineWord.MachineWord.get_bit v (Z.to_N i)).
 
-Definition sail_mem_read {e n nt} (req : Mem_read_request n nt (Z.of_N A.addr_size) A.addr_space A.mem_acc) : monad e (result (vec (mword 8) n * vec bool nt) A.abort) :=
+Definition sail_mem_read {e n nt} (req : Mem_request n nt (Z.of_N A.addr_size) A.addr_space A.mem_acc) : monad e (result (vec (mword 8) n * vec bool nt) A.abort) :=
   let n' := Z.to_N n in
   let nt' := Z.to_N nt in
-  let address := cast_N req.(Mem_read_request_address) (N2Z.id _) in
-  let req' := I.ReadReq.make n' nt' req.(Mem_read_request_access_kind) address req.(Mem_read_request_address_space) in
+  let address := cast_N req.(Mem_request_address) (N2Z.id _) in
+  let req' := I.ReadReq.make n' nt' req.(Mem_request_access_kind) address req.(Mem_request_address_space) in
   let k r :=
     match r with
     | inl (x,y) =>
@@ -424,14 +424,14 @@ Defined.
 
 Definition bv_of_bools {n} (v : vec bool n) : bv (Z.to_N n) := of_bools (projT1 v).
 
-Definition sail_mem_write {e n nt} (req : Mem_write_request n nt (Z.of_N A.addr_size) A.addr_space A.mem_acc) : monad e (result unit A.abort) :=
+Definition sail_mem_write {e n nt} (req : Mem_request n nt (Z.of_N A.addr_size) A.addr_space A.mem_acc) (value_bytes : vec (mword 8) n) (tags_vec : vec bool nt) : monad e (result unit A.abort) :=
   let n' := Z.to_N n in
   let nt' := Z.to_N nt in
-  let value := bv_of_bytes req.(Mem_write_request_value) in
-  let address := cast_N req.(Mem_write_request_address) (N2Z.id _) in
-  let address_space := req.(Mem_write_request_address_space) in
-  let tags := bv_of_bools req.(Mem_write_request_tags) in
-  let access_kind := req.(Mem_write_request_access_kind) in
+  let value := bv_of_bytes value_bytes in
+  let address := cast_N req.(Mem_request_address) (N2Z.id _) in
+  let address_space := req.(Mem_request_address_space) in
+  let tags := bv_of_bools tags_vec in
+  let access_kind := req.(Mem_request_access_kind) in
   let req' := I.WriteReq.make n' nt' access_kind address address_space value tags in
   let k x :=
     match x with
@@ -441,12 +441,12 @@ Definition sail_mem_write {e n nt} (req : Mem_write_request n nt (Z.of_N A.addr_
   in
   I.Next (I.MemWrite n' nt' req') k.
 
-Definition sail_mem_address_announce {e n nt} (ann : Mem_address_announce n nt (Z.of_N A.addr_size) A.addr_space A.mem_acc) : monad e unit :=
+Definition sail_mem_address_announce {e n nt} (ann : Mem_request n nt (Z.of_N A.addr_size) A.addr_space A.mem_acc) : monad e unit :=
   let n' := Z.to_N n in
   let nt' := Z.to_N nt in
-  let address := cast_N ann.(Mem_address_announce_address) (N2Z.id _) in
-  let address_space := ann.(Mem_address_announce_address_space) in
-  let access_kind := ann.(Mem_address_announce_access_kind) in
+  let address := cast_N ann.(Mem_request_address) (N2Z.id _) in
+  let address_space := ann.(Mem_request_address_space) in
+  let access_kind := ann.(Mem_request_access_kind) in
   let ann' := I.AddressAnnounce.make n' nt' access_kind address address_space in
   I.Next (I.MemAddressAnnounce n' nt' ann') I.Ret.
 
