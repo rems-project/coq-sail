@@ -140,37 +140,18 @@ Module Interface (A : Arch).
   #[export] Typeclasses Transparent address.
   #[export] Hint Transparent address : bv_unfold_db.
 
-  Module ReadReq.
-    Record t {n : N} {nt : N} :=
+  Module MemReq.
+    Record t :=
       make
         { access_kind : mem_acc;
           address : address;
           address_space : addr_space;
+          size : N;
+          num_tag : N;
         }.
-    Arguments t : clear implicits.
-  End ReadReq.
 
-  Module WriteReq.
-    Record t {n : N} {nt : N} :=
-      make
-        { access_kind : mem_acc;
-          address : address;
-          address_space : addr_space;
-          value : bv (8 * n);
-          tags : bv nt;
-         }.
     Arguments t : clear implicits.
-  End WriteReq.
-
-  Module AddressAnnounce.
-    Record t {n : N} {nt : N} :=
-      make
-        { access_kind : mem_acc;
-          address : address;
-          address_space : addr_space;
-         }.
-    Arguments t : clear implicits.
-  End AddressAnnounce.
+  End MemReq.
 
   Section T.
     Context {eOutcome : Type -> Type}.
@@ -189,10 +170,9 @@ Module Interface (A : Arch).
         dependencies are specified by the branch announce *)
   | RegWrite {T : Type} (reg : reg T) (access_kind : option sys_reg_id)
              (regval: T) : outcome unit
-  | MemRead (n : N) (nt : N) : ReadReq.t n nt ->
-                      outcome (bv (8 * n) * bv nt + abort)
-  | MemWrite (n : N) (nt : N) : WriteReq.t n nt -> outcome (option bool + abort)
-  | MemAddressAnnounce (n : N) (nt : N) : AddressAnnounce.t n nt -> outcome unit
+  | MemRead (mr : MemReq.t) : outcome (bv (8 * mr.(MemReq.size)) * bv mr.(MemReq.num_tag) + abort)
+  | MemWrite (mr : MemReq.t) (value : bv (8 * mr.(MemReq.size))) (tags : bv mr.(MemReq.num_tag)) : outcome (option bool + abort)
+  | MemAddressAnnounce (mr : MemReq.t) : outcome unit
     (** Declare the opcode of the current instruction when known. Used for
         dependency computation *)
   | InstrAnnounce (opcode : bvn) : outcome unit
@@ -343,9 +323,9 @@ Module Interface (A : Arch).
         | RegRead reg direct => Next (RegRead reg direct)
         | RegWrite reg direct val =>
             Next (RegWrite reg direct val)
-        | MemRead n nt readreq => Next (MemRead n nt readreq)
-        | MemWrite n nt writereq => Next (MemWrite n nt writereq)
-        | MemAddressAnnounce n nt announcement => Next (MemAddressAnnounce n nt announcement)
+        | MemRead mr => Next (MemRead mr)
+        | MemWrite mr value tags => Next (MemWrite mr value tags)
+        | MemAddressAnnounce mr => Next (MemAddressAnnounce mr)
         | InstrAnnounce opcode => Next (InstrAnnounce opcode)
         | BranchAnnounce sz pa => Next (BranchAnnounce sz pa)
         | Barrier barrier => Next (Barrier barrier)

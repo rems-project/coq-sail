@@ -55,9 +55,9 @@ Fixpoint try_catch {A E1 E2} (m : monad E1 A) (h : E1 -> monad E2 A) : monad E2 
   | I.Next (I.ExtraOutcome e)                  _ => h e
   | I.Next (I.RegRead reg direct)              f => I.Next (I.RegRead reg direct) (fun t => try_catch (f t) h)
   | I.Next (I.RegWrite reg direct regval)      f => I.Next (I.RegWrite reg direct regval) (fun t => try_catch (f t) h)
-  | I.Next (I.MemRead n nt req)                f => I.Next (I.MemRead n nt req) (fun t => try_catch (f t) h)
-  | I.Next (I.MemWrite n nt req)               f => I.Next (I.MemWrite n nt req) (fun t => try_catch (f t) h)
-  | I.Next (I.MemAddressAnnounce n nt ann)     f => I.Next (I.MemAddressAnnounce n nt ann) (fun t => try_catch (f t) h)
+  | I.Next (I.MemRead mr)                      f => I.Next (I.MemRead mr) (fun t => try_catch (f t) h)
+  | I.Next (I.MemWrite mr value tags)          f => I.Next (I.MemWrite mr value tags) (fun t => try_catch (f t) h)
+  | I.Next (I.MemAddressAnnounce mr)           f => I.Next (I.MemAddressAnnounce mr) (fun t => try_catch (f t) h)
   | I.Next (I.InstrAnnounce opcode)            f => I.Next (I.InstrAnnounce opcode) (fun t => try_catch (f t) h)
   | I.Next (I.BranchAnnounce sz pa)            f => I.Next (I.BranchAnnounce sz pa) (fun t => try_catch (f t) h)
   | I.Next (I.Barrier barrier)                 f => I.Next (I.Barrier barrier) (fun t => try_catch (f t) h)
@@ -401,7 +401,7 @@ Definition sail_mem_read {e n nt} (req : Mem_request n nt (Z.of_N A.addr_size) A
   let n' := Z.to_N n in
   let nt' := Z.to_N nt in
   let address := cast_N req.(Mem_request_address) (N2Z.id _) in
-  let req' := I.ReadReq.make n' nt' req.(Mem_request_access_kind) address req.(Mem_request_address_space) in
+  let req' := I.MemReq.make req.(Mem_request_access_kind) address req.(Mem_request_address_space) n' nt' in
   let k r :=
     match r with
     | inl (x,y) =>
@@ -409,7 +409,7 @@ Definition sail_mem_read {e n nt} (req : Mem_request n nt (Z.of_N A.addr_size) A
     | inr abort => I.Ret (Err abort)
     end
   in
-  I.Next (I.MemRead n' nt' req') k.
+  I.Next (I.MemRead req') k.
 
 Definition bv_of_bytes {n} (v : vec (bv 8) n) : bv (8 * Z.to_N n).
 refine (
@@ -432,14 +432,14 @@ Definition sail_mem_write {e n nt} (req : Mem_request n nt (Z.of_N A.addr_size) 
   let address_space := req.(Mem_request_address_space) in
   let tags := bv_of_bools tags_vec in
   let access_kind := req.(Mem_request_access_kind) in
-  let req' := I.WriteReq.make n' nt' access_kind address address_space value tags in
+  let req' := I.MemReq.make access_kind address address_space n' nt' in
   let k x :=
     match x with
     | inl _ => I.Ret (Ok tt)
     | inr y => I.Ret (Err y)
     end
   in
-  I.Next (I.MemWrite n' nt' req') k.
+  I.Next (I.MemWrite req' value tags) k.
 
 Definition sail_mem_address_announce {e n nt} (ann : Mem_request n nt (Z.of_N A.addr_size) A.addr_space A.mem_acc) : monad e unit :=
   let n' := Z.to_N n in
@@ -447,8 +447,8 @@ Definition sail_mem_address_announce {e n nt} (ann : Mem_request n nt (Z.of_N A.
   let address := cast_N ann.(Mem_request_address) (N2Z.id _) in
   let address_space := ann.(Mem_request_address_space) in
   let access_kind := ann.(Mem_request_access_kind) in
-  let ann' := I.AddressAnnounce.make n' nt' access_kind address address_space in
-  I.Next (I.MemAddressAnnounce n' nt' ann') I.Ret.
+  let ann' := I.MemReq.make access_kind address address_space n' nt' in
+  I.Next (I.MemAddressAnnounce ann') I.Ret.
 
 Definition sail_sys_reg_read {e T} (id : A.sys_reg_id) (r : register_ref A.reg T) : monad e T :=
   I.Next (I.RegRead r.(Values.reg) (Some id)) I.Ret.
