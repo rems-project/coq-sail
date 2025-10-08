@@ -144,21 +144,21 @@ End Undef.
 
 (* ---- Prompt_monad *)
 
-Definition read_reg {a e} (reg : A.reg a) : monad e a :=
+Definition read_reg {e} (reg : A.reg) : monad e (A.reg_type reg) :=
   let k v := I.Ret v in
   I.Next (I.RegRead reg None) k.
 
-Definition read_reg_ref {a e} (ref : register_ref A.reg a) : monad e a :=
-  let k v := I.Ret v in
-  I.Next (I.RegRead ref.(Values.reg) None) k.
+Definition read_reg_ref {a e} (ref : @register_ref A.reg A.reg_type a) : monad e a :=
+  let k v := I.Ret (ref.(to_ty) v) in
+  I.Next (I.RegRead ref.(reg) None) k.
 
 Definition reg_deref {a e} := @read_reg_ref a e.
 
-Definition write_reg {a e} (reg : A.reg a) (v : a) : monad e unit :=
+Definition write_reg {e} (reg : A.reg) (v : A.reg_type reg) : monad e unit :=
  I.Next (I.RegWrite reg None v) I.Ret.
 
-Definition write_reg_ref {a e} (ref : register_ref A.reg a) (v : a) : monad e unit :=
- I.Next (I.RegWrite ref.(Values.reg) None v) I.Ret.
+Definition write_reg_ref {a e} (ref : @register_ref A.reg A.reg_type a) (v : a) : monad e unit :=
+ I.Next (I.RegWrite ref.(reg) None (ref.(from_ty) v)) I.Ret.
 
 (* ---- Prompt *)
 
@@ -453,11 +453,11 @@ Unshelve.
 reflexivity.
 Defined.
 
-Definition sail_sys_reg_read {e T} (id : A.sys_reg_id) (r : register_ref A.reg T) : monad e T :=
-  I.Next (I.RegRead r.(Values.reg) (Some id)) I.Ret.
+Definition sail_sys_reg_read {a e} (id : A.sys_reg_id) (r : @register_ref A.reg A.reg_type a) : monad e a :=
+  I.Next (I.RegRead r.(Values.reg) (Some id)) (fun v => I.Ret (r.(to_ty) v)).
 
-Definition sail_sys_reg_write {e T} (id : A.sys_reg_id) (r : register_ref A.reg T) (v : T) : monad e unit :=
-  I.Next (I.RegWrite r.(Values.reg) (Some id) v) I.Ret.
+Definition sail_sys_reg_write {a e} (id : A.sys_reg_id) (r : @register_ref A.reg A.reg_type a) (v : a) : monad e unit :=
+  I.Next (I.RegWrite r.(Values.reg) (Some id) (r.(from_ty) v)) I.Ret.
 
 Definition sail_translation_start {e} (ts : A.trans_start) : monad e unit := I.Next (I.TranslationStart ts) I.Ret.
 Definition sail_translation_end {e} (te : A.trans_end) : monad e unit := I.Next (I.TranslationEnd te) I.Ret.
