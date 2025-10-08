@@ -365,23 +365,23 @@ Definition write_tag_boolS {Regs E A} (addr : mword A) (tag : bool) : monadS Reg
 Definition write_memS {Regs E A} wk (addr : mword A) sz (v : mword (8 * sz)) : monadS Regs bool E :=
  write_memtS wk addr sz v B0.
 
-Definition read_regS {Regs rt} {register_lookup : forall {T}, Regs -> rt T -> T} {A E} (reg : rt A) : monadS Regs A E :=
+Definition read_regS {Regs rt rtype} {register_lookup : Regs -> forall (r : rt), rtype r} {E} (reg : rt) : monadS Regs (rtype reg) E :=
  readS (fun s => register_lookup s.(ss_regstate) reg).
 
-Definition read_reg_refS {Regs rt} {register_lookup : forall {T}, Regs -> rt T -> T} {A E} (ref : register_ref rt A) : monadS Regs A E :=
- readS (fun s => register_lookup s.(ss_regstate) ref.(reg)).
+Definition read_reg_refS {Regs rt rtype A} {register_lookup : Regs -> forall (r : rt), rtype r} {E} (ref : @register_ref rt rtype A) : monadS Regs A E :=
+ readS (fun s => ref.(to_ty) (register_lookup s.(ss_regstate) ref.(reg))).
 
 (*val read_regvalS : forall 'regs 'rv 'e.
   register_accessors 'regs 'rv -> string -> monadS 'regs 'rv 'e*)
-Definition read_regvalS {Regs reg_type A E} (acc : register_accessors Regs reg_type) (reg : reg_type A) : monadS Regs A E :=
+Definition read_regvalS {Regs reg_type reg_to_type E} (acc : register_accessors Regs reg_type reg_to_type) (reg : reg_type) : monadS Regs (reg_to_type reg) E :=
   let '(read, _) := acc in
-  readS (fun s => read _ reg s.(ss_regstate)).
+  readS (fun s => read reg s.(ss_regstate)).
 
 (*val write_regvalS : forall 'regs 'rv 'e.
   register_accessors 'regs 'rv -> string -> 'rv -> monadS 'regs unit 'e*)
-Definition write_regvalS {Regs reg_type A E} (acc : register_accessors Regs reg_type) (reg : reg_type A) (v : A) : monadS Regs unit E :=
+Definition write_regvalS {Regs reg_type reg_to_type E} (acc : register_accessors Regs reg_type reg_to_type) (reg : reg_type) (v : reg_to_type reg) : monadS Regs unit E :=
   let '(_, write) := acc in
-  readS (fun s => write _ reg v s.(ss_regstate)) >>$= (fun rs' =>
+  readS (fun s => write reg v s.(ss_regstate)) >>$= (fun rs' =>
       updateS (fun s =>
                  {| ss_regstate := rs';
                     ss_memstate := s.(ss_memstate);
@@ -389,7 +389,7 @@ Definition write_regvalS {Regs reg_type A E} (acc : register_accessors Regs reg_
                     ss_output := s.(ss_output);
                  |})).
 
-Definition write_regS {Regs rt} {register_set : forall {T}, Regs -> rt T -> T -> Regs} {A E} (reg : rt A) (v:A) : monadS Regs unit E :=
+Definition write_regS {Regs rt rtype} {register_set : Regs -> forall (r : rt), rtype r -> Regs} {E} (reg : rt) (v:rtype reg) : monadS Regs unit E :=
   updateS (fun s =>
              {| ss_regstate := register_set s.(ss_regstate) reg v;
                 ss_memstate := s.(ss_memstate);
@@ -397,9 +397,9 @@ Definition write_regS {Regs rt} {register_set : forall {T}, Regs -> rt T -> T ->
                 ss_output := s.(ss_output);
              |}).
 
-Definition write_reg_refS {Regs rt} {register_set : forall {T}, Regs -> rt T -> T -> Regs} {A E} (ref : register_ref rt A) (v:A) : monadS Regs unit E :=
+Definition write_reg_refS {Regs rt rtype A} {register_set : Regs -> forall (r : rt), rtype r -> Regs} {E} (ref : @register_ref rt rtype A) (v:A) : monadS Regs unit E :=
   updateS (fun s =>
-             {| ss_regstate := register_set s.(ss_regstate) ref.(reg) v;
+             {| ss_regstate := register_set s.(ss_regstate) ref.(reg) (ref.(from_ty) v);
                 ss_memstate := s.(ss_memstate);
                 ss_tagstate := s.(ss_tagstate);
                 ss_output := s.(ss_output);

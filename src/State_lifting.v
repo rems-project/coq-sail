@@ -70,7 +70,7 @@ Import ListNotations.
 
 (* Lifting from prompt monad to state monad *)
 (*val liftState : forall 'regval 'regs 'a 'e. register_accessors 'regs 'regval -> monad 'regval 'a 'e -> monadS 'regs 'a 'e*)
-Fixpoint liftState {Regs reg_type A E} (ra : register_accessors Regs reg_type) (m : monad reg_type A E) : monadS Regs A E :=
+Fixpoint liftState {Regs register reg_type A E} (ra : register_accessors Regs register reg_type) (m : @monad register reg_type A E) : monadS Regs A E :=
  match m with
   | (Done a)                   => returnS a
   | (Read_mem rk a sz k)       => bindS (read_mem_bytesS rk a sz)       (fun v => liftState ra (k v))

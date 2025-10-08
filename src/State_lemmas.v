@@ -244,14 +244,14 @@ Qed.
 
 (* Monad lifting *)
 
-Lemma liftState_bind Regval Regs A B E {r : Values.register_accessors Regs Regval} {m : monad Regval A E} {f : A -> monad Regval B E} :
+Lemma liftState_bind Reg RegType Regs A B E {r : Values.register_accessors Regs Reg RegType} {m : @monad Reg RegType A E} {f : A -> @monad Reg RegType B E} :
   liftState r (bind m f) === bindS (liftState r m) (fun x => liftState r (f x)).
 induction m; simpl; autorewrite with state; auto using bindS_cong.
 Qed.
 #[export] Hint Rewrite liftState_bind : liftState.
 #[export] Hint Resolve liftState_bind : liftState.
 
-Lemma liftState_bind0 Regval Regs B E {r : Values.register_accessors Regs Regval} {m : monad Regval unit E} {m' : monad Regval B E} :
+Lemma liftState_bind0 Reg RegType Regs B E {r : Values.register_accessors Regs Reg RegType} {m : @monad Reg RegType unit E} {m' : @monad Reg RegType B E} :
   liftState r (bind0 m m') === seqS (liftState r m) (liftState r m').
 induction m; simpl; autorewrite with state; auto using bindS_cong.
 Qed.
@@ -356,7 +356,7 @@ Ltac rewrite_liftState :=
     try let H := fresh "H" in (eassert (H:liftState r tm === _); [ statecong liftState | rewrite H; clear H])
   end.
 
-Lemma liftState_return Regval Regs A E {r : Values.register_accessors Regs Regval} {a :A} :
+Lemma liftState_return Reg RegType Regs A E {r : Values.register_accessors Regs Reg RegType} {a :A} :
   liftState (E:=E) r (returnm a) = returnS a.
 reflexivity.
 Qed.
@@ -373,8 +373,8 @@ Lemma Value_liftState_Run:
 
 lemmas liftState_if_distrib[liftState_simp] = if_distrib[where f = "liftState ra" for ra]
 *)
-Lemma liftState_if_distrib Regs Regval A E {r x y} {c : bool} :
-  @liftState Regs Regval A E r (if c then x else y) = if c then liftState r x else liftState r y.
+Lemma liftState_if_distrib Regs Reg RegType A E {r x y} {c : bool} :
+  @liftState Regs Reg RegType A E r (if c then x else y) = if c then liftState r x else liftState r y.
 destruct c; reflexivity.
 Qed.
 #[export] Hint Resolve liftState_if_distrib : liftState.
@@ -382,8 +382,8 @@ Qed.
    monad type.  For some reason attempting to give a Resolve hint with a pattern doesn't
    work, but an Extern one works: *)
 #[export] Hint Extern 0 (liftState _ _ = _) => simple apply liftState_if_distrib : liftState.
-Lemma liftState_if_distrib_sumbool {Regs Regval A E P Q r x y} {c : sumbool P Q} :
-  @liftState Regs Regval A E r (if c then x else y) = if c then liftState r x else liftState r y.
+Lemma liftState_if_distrib_sumbool {Regs Reg RegType A E P Q r x y} {c : sumbool P Q} :
+  @liftState Regs Reg RegType A E r (if c then x else y) = if c then liftState r x else liftState r y.
 destruct c; reflexivity.
 Qed.
 #[export] Hint Resolve liftState_if_distrib_sumbool : liftState.
@@ -398,8 +398,8 @@ Qed.
     end
   end : liftState.
 
-Lemma liftState_match_distrib_sumbool {Regs Regval A E P Q r x y} {c : sumbool P Q} :
-  @liftState Regs Regval A E r (match c with left H => x H | right H => y H end) = match c with left H => liftState r (x H) | right H => liftState r (y H) end.
+Lemma liftState_match_distrib_sumbool {Regs Reg RegType A E P Q r x y} {c : sumbool P Q} :
+  @liftState Regs Reg RegType A E r (match c with left H => x H | right H => y H end) = match c with left H => liftState r (x H) | right H => liftState r (y H) end.
 destruct c; reflexivity.
 Qed.
 (* As above, but also need to beta reduce H into x and y. *)
@@ -411,8 +411,8 @@ Qed.
     end
   end : liftState.
 
-Lemma liftState_let_pair Regs RegVal A B C E r (x : B * C) M :
-  @liftState Regs RegVal A E r (let '(y, z) := x in M y z) =
+Lemma liftState_let_pair Regs Reg RegType A B C E r (x : B * C) M :
+  @liftState Regs Reg RegType A E r (let '(y, z) := x in M y z) =
   let '(y, z) := x in liftState r (M y z).
 destruct x.
 reflexivity.
@@ -420,8 +420,8 @@ Qed.
 #[export] Hint Extern 0 (liftState _ (let '(x,y) := _ in _) = _) =>
   (rewrite liftState_let_pair; reflexivity) : liftState.
 
-Lemma liftState_let_Tpair Regs RegVal A B (P : B -> Prop) E r (x : sigT P) M :
-  @liftState Regs RegVal A E r (let '(@existT _ _ y z) := x in M y z) =
+Lemma liftState_let_Tpair Regs Reg RegType A B (P : B -> Prop) E r (x : sigT P) M :
+  @liftState Regs Reg RegType A E r (let '(@existT _ _ y z) := x in M y z) =
   let '(@existT _ _ y z) := x in liftState r (M y z).
 destruct x.
 reflexivity.
@@ -429,8 +429,8 @@ Qed.
 #[export] Hint Extern 0 (liftState _ (let '(@existT _ _ x y) := _ in _) = _) =>
   (rewrite liftState_let_Tpair; reflexivity) : liftState.
 
-Lemma liftState_opt_match Regs RegVal A B E (x : option A) m f r :
-  @liftState Regs RegVal B E r (match x with None => m | Some v => f v end) =
+Lemma liftState_opt_match Regs Reg RegType A B E (x : option A) m f r :
+  @liftState Regs Reg RegType B E r (match x with None => m | Some v => f v end) =
   match x with None => liftState r m | Some v => liftState r (f v) end.
 destruct x; reflexivity.
 Qed.
@@ -459,47 +459,47 @@ split.
   eauto with bindS_intros.
 Qed.
 
-Lemma liftState_throw Regs Regval A E {r} {e : E} :
-  @liftState Regval Regs A E r (throw e) = throwS e.
+Lemma liftState_throw Regs Reg RegType A E {r} {e : E} :
+  @liftState Regs Reg RegType A E r (throw e) = throwS e.
 reflexivity.
 Qed.
-Lemma liftState_assert Regs Regval E {r c msg} :
-  @liftState Regval Regs _ E r (assert_exp c msg) = assert_expS c msg.
+Lemma liftState_assert Regs Reg RegType E {r c msg} :
+  @liftState Regs Reg RegType _ E r (assert_exp c msg) = assert_expS c msg.
 destruct c; reflexivity.
 Qed.
-Lemma liftState_assert' Regs Regval E {r c msg} :
-  @liftState Regval Regs _ E r (assert_exp' c msg) = assert_expS' c msg.
+Lemma liftState_assert' Regs Reg RegType E {r c msg} :
+  @liftState Regs Reg RegType _ E r (assert_exp' c msg) = assert_expS' c msg.
 destruct c; reflexivity.
 Qed.
-Lemma liftState_exit Regs Regval A E r :
-  @liftState Regval Regs A E r (exit tt) = exitS tt.
+Lemma liftState_exit Regs Reg RegType A E r :
+  @liftState Regs Reg RegType A E r (exit tt) = exitS tt.
 reflexivity.
 Qed.
-Lemma liftState_exclResult Regs Regval E r :
-  @liftState Regs Regval _ E r (excl_result tt) = excl_resultS tt.
+Lemma liftState_exclResult Regs Reg RegType E r :
+  @liftState Regs Reg RegType _ E r (excl_result tt) = excl_resultS tt.
 reflexivity.
 Qed.
-Lemma liftState_barrier Regs Regval E r bk :
-  @liftState Regs Regval _ E r (barrier bk) = returnS tt.
+Lemma liftState_barrier Regs Reg RegType E r bk :
+  @liftState Regs Reg RegType _ E r (barrier bk) = returnS tt.
 reflexivity.
 Qed.
-Lemma liftState_footprint Regs Regval E r :
-  @liftState Regs Regval _ E r (footprint tt) = returnS tt.
+Lemma liftState_footprint Regs Reg RegType E r :
+  @liftState Regs Reg RegType _ E r (footprint tt) = returnS tt.
 reflexivity.
 Qed.
-Lemma liftState_maybe_fail Regs Regval A E r msg x :
-  @liftState Regs Regval A E r (maybe_fail msg x) = maybe_failS msg x.
+Lemma liftState_maybe_fail Regs Reg RegType A E r msg x :
+  @liftState Regs Reg RegType A E r (maybe_fail msg x) = maybe_failS msg x.
 destruct x; reflexivity.
 Qed.
-Lemma liftState_and_boolM Regs Regval E r x y :
-  @liftState Regs Regval _ E r (and_boolM x y) === and_boolS (liftState r x) (liftState r y).
+Lemma liftState_and_boolM Regs Reg RegType E r x y :
+  @liftState Regs Reg RegType _ E r (and_boolM x y) === and_boolS (liftState r x) (liftState r y).
 unfold and_boolM, and_boolS.
 rewrite_liftState.
 reflexivity.
 Qed.
 
-Lemma liftState_or_boolM Regs Regval E r x y :
-  @liftState Regs Regval _ E r (or_boolM x y) === or_boolS (liftState r x) (liftState r y).
+Lemma liftState_or_boolM Regs Reg RegType E r x y :
+  @liftState Regs Reg RegType _ E r (or_boolM x y) === or_boolS (liftState r x) (liftState r y).
 unfold or_boolM, or_boolS.
 rewrite liftState_bind.
 apply bindS_cong; auto.
@@ -520,8 +520,8 @@ Qed.
              liftState_or_boolM
            : liftState.
 
-Lemma liftState_try_catch Regs Regval A E1 E2 r m h :
-  @liftState Regs Regval A E2 r (try_catch (E1 := E1) m h) === try_catchS (liftState r m) (fun e => liftState r (h e)).
+Lemma liftState_try_catch Regs Reg RegType A E1 E2 r m h :
+  @liftState Regs Reg RegType A E2 r (try_catch (E1 := E1) m h) === try_catchS (liftState r m) (fun e => liftState r (h e)).
 induction m; intros; simpl; autorewrite with state;
 solve
 [ auto
@@ -533,15 +533,15 @@ Qed.
 #[export] Hint Rewrite liftState_try_catch : liftState.
 #[export] Hint Resolve liftState_try_catch : liftState.
 
-Lemma liftState_early_return Regs Regval A R E r x :
-  liftState (Regs := Regs) r (@early_return Regval A R E x) = early_returnS x.
+Lemma liftState_early_return Regs Reg RegType A R E r x :
+  liftState (Regs := Regs) r (@early_return Reg RegType A R E x) = early_returnS x.
 reflexivity.
 Qed.
 #[export] Hint Rewrite liftState_early_return : liftState.
 #[export] Hint Resolve liftState_early_return : liftState.
 
-Lemma liftState_catch_early_return (*[liftState_simp]:*) Regs Regval A E r m :
-  liftState (Regs := Regs) r (@catch_early_return Regval A E m) === catch_early_returnS (liftState r m).
+Lemma liftState_catch_early_return (*[liftState_simp]:*) Regs Reg RegType A E r m :
+  liftState (Regs := Regs) r (@catch_early_return Reg RegType A E m) === catch_early_returnS (liftState r m).
 unfold catch_early_return, catch_early_returnS.
 rewrite_liftState.
 apply try_catchS_cong; auto.
@@ -550,8 +550,8 @@ Qed.
 #[export] Hint Rewrite liftState_catch_early_return : liftState.
 #[export] Hint Resolve liftState_catch_early_return : liftState.
 
-Lemma liftState_liftR Regs Regval A R E r m :
-  liftState (Regs := Regs) r (@liftR Regval A R E m) === liftRS (liftState r m).
+Lemma liftState_liftR Regs Reg RegType A R E r m :
+  liftState (Regs := Regs) r (@liftR Reg RegType A R E m) === liftRS (liftState r m).
 unfold liftR, liftRS.
 rewrite_liftState.
 reflexivity.
@@ -559,8 +559,8 @@ Qed.
 #[export] Hint Rewrite liftState_liftR : liftState.
 #[export] Hint Resolve liftState_liftR : liftState.
 
-Lemma liftState_try_catchR Regs Regval A R E1 E2 r m h :
-  liftState (Regs := Regs) r (@try_catchR Regval A R E1 E2 m h) === try_catchRS (liftState r m) (fun x => liftState r (h x)).
+Lemma liftState_try_catchR Regs Reg RegType A R E1 E2 r m h :
+  liftState (Regs := Regs) r (@try_catchR Reg RegType A R E1 E2 m h) === try_catchRS (liftState r m) (fun x => liftState r (h x)).
 unfold try_catchR, try_catchRS. rewrite_liftState.
 apply try_catchS_cong; auto.
 intros [r' | e] s' cs'; auto.
@@ -568,8 +568,8 @@ Qed.
 #[export] Hint Rewrite liftState_try_catchR : liftState.
 #[export] Hint Resolve liftState_try_catchR : liftState.
 
-Lemma liftState_read_memt Regs Regval A E rk a sz r :
-  liftState (Regs := Regs) r (@read_memt Regval A E rk a sz) === read_memtS rk a sz.
+Lemma liftState_read_memt Regs Reg RegType A E rk a sz r :
+  liftState (Regs := Regs) r (@read_memt Reg RegType A E rk a sz) === read_memtS rk a sz.
 unfold read_memt, read_memt_bytes, read_memtS, maybe_failS. simpl.
 apply bindS_cong; auto.
 intros [byte bit].
@@ -578,8 +578,8 @@ Qed.
 #[export] Hint Rewrite liftState_read_memt : liftState.
 #[export] Hint Resolve liftState_read_memt : liftState.
 
-Lemma liftState_read_mem Regs Regval A E rk asz a sz r :
-  liftState (Regs := Regs) r (@read_mem Regval A E rk asz a sz) === read_memS rk a sz.
+Lemma liftState_read_mem Regs Reg RegType A E rk asz a sz r :
+  liftState (Regs := Regs) r (@read_mem Reg RegType A E rk asz a sz) === read_memS rk a sz.
 unfold read_mem, read_memS, read_memtS. simpl.
 unfold read_mem_bytesS, read_memt_bytesS.
 repeat rewrite bindS_assoc.
@@ -593,23 +593,23 @@ Qed.
 #[export] Hint Rewrite liftState_read_mem : liftState.
 #[export] Hint Resolve liftState_read_mem : liftState.
 
-Lemma liftState_write_mem_ea Regs Regval A E rk asz a sz r :
-  liftState (Regs := Regs) r (@write_mem_ea Regval A E rk asz a sz) = returnS tt.
+Lemma liftState_write_mem_ea Regs Reg RegType A E rk asz a sz r :
+  liftState (Regs := Regs) r (@write_mem_ea Reg RegType A E rk asz a sz) = returnS tt.
 reflexivity.
 Qed.
 #[export] Hint Rewrite liftState_write_mem_ea : liftState.
 #[export] Hint Resolve liftState_write_mem_ea : liftState.
 
-Lemma liftState_write_memt Regs Regval A E wk addr sz v t r :
-  liftState (Regs := Regs) r (@write_memt Regval A E wk addr sz v t) = write_memtS wk addr sz v t.
+Lemma liftState_write_memt Regs Reg RegType A E wk addr sz v t r :
+  liftState (Regs := Regs) r (@write_memt Reg RegType A E wk addr sz v t) = write_memtS wk addr sz v t.
 unfold write_memt, write_memtS.
 destruct (Values.mem_bytes_of_bits v); auto.
 Qed.
 #[export] Hint Rewrite liftState_write_memt : liftState.
 #[export] Hint Resolve liftState_write_memt : liftState.
 
-Lemma liftState_write_mem Regs Regval A E wk addrsize addr sz v r :
-  liftState (Regs := Regs) r (@write_mem Regval A E wk addrsize addr sz v) = write_memS wk addr sz v.
+Lemma liftState_write_mem Regs Reg RegType A E wk addrsize addr sz v r :
+  liftState (Regs := Regs) r (@write_mem Reg RegType A E wk addrsize addr sz v) = write_memS wk addr sz v.
 unfold write_mem, write_memS, write_memtS.
 destruct (Values.mem_bytes_of_bits v); simpl; auto.
 Qed.
@@ -623,7 +623,7 @@ intro H. unfold bindS. rewrite H. reflexivity.
 Qed. 
 
 Lemma liftState_read_reg_readS Regs reg_type A E reg get_regval' set_regval' :
-  liftState (Regs := Regs) (get_regval', set_regval') (@read_reg reg_type A E reg) === readS (fun x => get_regval' _ reg (ss_regstate x)).
+  liftState (Regs := Regs) (get_regval', set_regval') (@read_reg reg_type A E reg) === readS (fun x => get_regval' reg (ss_regstate x)).
 intros.
 unfold read_reg. simpl. unfold readS.
 rewrite bindS_returnS_right.
@@ -649,11 +649,11 @@ Ltac lift_read_reg :=
 *)
 
 Lemma liftState_write_reg_updateS Regs reg_type A E get_regval' set_regval' (reg : reg_type A) (v : A) :
-  liftState (Regs := Regs) (E := E) (get_regval', set_regval') (write_reg reg v) === updateS (fun s => {| ss_regstate := (set_regval' _ reg v s.(ss_regstate)); ss_memstate := s.(ss_memstate); ss_tagstate := s.(ss_tagstate); ss_output := s.(ss_output) |}).
+  liftState (Regs := Regs) (E := E) (get_regval', set_regval') (write_reg reg v) === updateS (fun s => {| ss_regstate := (set_regval' reg v s.(ss_regstate)); ss_memstate := s.(ss_memstate); ss_tagstate := s.(ss_tagstate); ss_output := s.(ss_output) |}).
 reflexivity.
 Qed.
 (*
-Lemma liftState_iter_aux Regs Regval A E :
+Lemma liftState_iter_aux Regs Reg RegType A E :
   liftState r (iter_aux i f xs) = iterS_aux i (fun i x => liftState r (f i x)) xs.
   by (induction i "\<lambda>i x. liftState r (f i x)" xs rule: iterS_aux.induct)
      (auto simp: liftState_simp cong: bindS_cong)
@@ -668,7 +668,7 @@ lemma liftState_iter[liftState_simp]:
   "liftState r (iter f xs) = iterS (liftState r \<circ> f) xs"
   by (auto simp: iter_def iterS_def liftState_simp)
 *)
-Lemma liftState_foreachM Regs Regval A Vars E (xs : list A) (vars : Vars) (body : A -> Vars -> monad Regval Vars E) r :
+Lemma liftState_foreachM Regs Reg RegType A Vars E (xs : list A) (vars : Vars) (body : A -> Vars -> @monad Reg RegType Vars E) r :
   liftState (Regs := Regs) r (foreachM xs vars body) === foreachS xs vars (fun x vars => liftState r (body x vars)).
 revert vars.
 induction xs as [ | h t].
@@ -680,9 +680,9 @@ Qed.
 #[export] Hint Rewrite liftState_foreachM : liftState.
 #[export] Hint Resolve liftState_foreachM : liftState.
 
-Lemma liftState_foreach_ZM_up Regs Regval Vars E from to step vars body r :
+Lemma liftState_foreach_ZM_up Regs Reg RegType Vars E from to step vars body r :
   liftState (Regs := Regs) r
-    (@foreach_ZM_up Regval E Vars from to step vars body) ===
+    (@foreach_ZM_up Reg RegType E Vars from to step vars body) ===
      foreach_ZS_up from to step vars (fun z a => liftState r (body z a)).
 unfold foreach_ZM_up, foreach_ZS_up.
 generalize 0 as off.
@@ -698,9 +698,9 @@ Qed.
 #[export] Hint Rewrite liftState_foreach_ZM_up : liftState.
 #[export] Hint Resolve liftState_foreach_ZM_up : liftState.
 
-Lemma liftState_foreach_ZM_down Regs Regval Vars E from to step vars body r :
+Lemma liftState_foreach_ZM_down Regs Reg RegType Vars E from to step vars body r :
   liftState (Regs := Regs) r
-    (@foreach_ZM_down Regval E Vars from to step vars body) ===
+    (@foreach_ZM_down Reg RegType E Vars from to step vars body) ===
      foreach_ZS_down from to step vars (fun z a => liftState r (body z a)).
 unfold foreach_ZM_down, foreach_ZS_down.
 generalize 0 as off.
@@ -716,8 +716,8 @@ Qed.
 #[export] Hint Rewrite liftState_foreach_ZM_down : liftState.
 #[export] Hint Resolve liftState_foreach_ZM_down : liftState.
 
-Lemma liftState_genlistM Regs Regval A E r f n :
-  liftState (Regs := Regs) r (@genlistM A Regval E f n) === genlistS (fun x => liftState r (f x)) n.
+Lemma liftState_genlistM Regs Reg RegType A E r f n :
+  liftState (Regs := Regs) r (@genlistM Reg RegType A E f n) === genlistS (fun x => liftState r (f x)) n.
 unfold genlistM, genlistS.
 rewrite_liftState.
 reflexivity.
@@ -843,7 +843,7 @@ qed
 *)
 
 
-Lemma liftState_whileM Regs reg_type Vars E r measure vars cond (body : Vars -> monad reg_type Vars E) :
+Lemma liftState_whileM Regs Reg RegType Vars E r measure vars cond (body : Vars -> @monad Reg RegType Vars E) :
   liftState (Regs := Regs) r (whileMT vars measure cond body) === whileST vars measure (fun vars => liftState r (cond vars)) (fun vars => liftState r (body vars)).
 unfold whileMT, whileST.
 generalize (measure vars) as limit. intro.
@@ -917,7 +917,7 @@ proof (use assms in \<open>induction vars "liftState r \<circ> cond" "liftState 
   qed auto
 qed*)
 
-Lemma liftState_untilM Regs reg_type Vars E r measure vars cond (body : Vars -> monad reg_type Vars E) :
+Lemma liftState_untilM Regs Reg RegType Vars E r measure vars cond (body : Vars -> @monad Reg RegType Vars E) :
   liftState (Regs := Regs) r (untilMT vars measure cond body) === untilST vars measure (fun vars => liftState r (cond vars)) (fun vars => liftState r (body vars)).
 unfold untilMT, untilST.
 generalize (measure vars) as limit. intro.

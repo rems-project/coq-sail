@@ -14,46 +14,32 @@ Inductive empOutcome (R : Type) :=.
 (** The architecture parameters that must be provided to the interface *)
 Module Type Arch.
 
-  (** The type of registers, parametrised by the type of values for that register *)
-  Parameter reg : Type -> Type.
+  (** The type of registers *)
+  Parameter reg : Type.
 
   (** We need to implement a gmap indexed by registers *)
-  Parameter reg_eq : ∀ A, EqDecision (reg A).
+  Parameter reg_eq : EqDecision reg.
   #[export] Existing Instance reg_eq.
-  (* This would be nice, but it essentially involves inverting reg A, which doesn't seem to be
-     possible in a useful way.
-  Parameter reg_countable : ∀ A, Countable (reg A).
+  Parameter reg_countable : Countable reg.
   #[export] Existing Instance reg_countable.
-  *)
 
-  Inductive greg := GReg (A : Type) (r : reg A).
-  #[global] Arguments GReg [_] _.
-  #[global] Coercion GReg : reg >-> greg.
-
-  Parameter greg_eq : EqDecision greg.
-  #[export] Existing Instance greg_eq.
-
-  Parameter greg_cnt : Countable greg.
-  #[export] Existing Instance greg_cnt.
-
-  #[export] Hint Extern 1 (reg _) => assumption : typeclass_instances.
-  Parameter regval_inhabited : ∀ A, reg A → Inhabited A.
-  #[export] Existing Instance regval_inhabited.
-  Parameter regval_eq : ∀ A, reg A → EqDecision A.
-  #[export] Existing Instance regval_eq.
-  Parameter regval_cnt : ∀ A (r : reg A), Countable A.
-  #[export] Existing Instance regval_cnt.
+  Parameter reg_type : reg → Type.
+  Parameter reg_type_eq : ∀(r : reg), EqDecision (reg_type r).
+  #[export] Existing Instance reg_type_eq.
+  Parameter reg_type_countable : ∀(r : reg), Countable (reg_type r).
+  #[export] Existing Instance reg_type_countable.
+  Parameter reg_type_inhabited : ∀(r : reg), Inhabited (reg_type r).
+  #[export] Existing Instance reg_type_inhabited.
 
   (** From a register equality proof, we need to transport a register value.
       This must compute (with vm_compute) even if the proof is opaque, For Ocaml
       extraction, this should be extracted to Obj.magic *)
   Parameter regval_transport:
-    ∀ {A B} {rA : reg A} {rB : reg B}, rA =@{greg} rB → A → B.
+    ∀ {rA rB : reg}, rA =@{reg} rB → reg_type rA → reg_type rB.
 
   (** Soundness proof for [regval_extract] *)
   Parameter regval_transport_sound:
-    ∀ A (r r' : reg A) (e : r =@{greg} r') a,
-    regval_transport e a = a.
+    ∀ (r : reg) (e : r =@{reg} r) a, regval_transport e a = a.
 
   (** Virtual address size *)
   Parameter va_size : N.
@@ -161,7 +147,7 @@ Module Interface (A : Arch).
   Inductive outcome : Type -> Type :=
     (** The access_kind says whether this is an explicit system register
         access, and if so what system register identifier was used. *)
-  | RegRead {T : Type} (reg : reg T) (access_kind : option sys_reg_id) : outcome T
+  | RegRead (reg : reg) (access_kind : option sys_reg_id) : outcome (reg_type reg)
 
     (** The access_kind says whether this is an explicit system register
         access, and if so what system register identifier was used.
@@ -170,8 +156,8 @@ Module Interface (A : Arch).
 
         Generally, writing the PC introduces no dependency because control
         dependencies are specified by the branch announce *)
-  | RegWrite {T : Type} (reg : reg T) (access_kind : option sys_reg_id)
-             (regval: T) : outcome unit
+  | RegWrite (reg : reg) (access_kind : option sys_reg_id)
+             (regval: reg_type reg) : outcome unit
   | MemRead (n : N) : ReadReq.t n ->
                       outcome (bv (8 * n) * option bool + abort)
   | MemWrite (n : N) : WriteReq.t n -> outcome (option bool + abort)

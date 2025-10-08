@@ -70,6 +70,12 @@ From Coq Require Export ZArith.Zwf.
 From Coq Require Import Lia List.
 Import ListNotations.
 Local Open Scope Z.
+
+Section WithRegisterType.
+Context {register : Type} {reg_to_type : register -> Type}.
+
+Let monad := @monad register reg_to_type.
+
 (*
 
 val iter_aux : forall 'rv 'a 'e. integer -> (integer -> 'a -> monad 'rv unit 'e) -> list 'a -> monad 'rv unit 'e
@@ -88,7 +94,7 @@ let iter f xs = iteri (fun _ x -> f x) xs
 
 val foreachM : forall 'a 'rv 'vars 'e.
   list 'a -> 'vars -> ('a -> 'vars -> monad 'rv 'vars 'e) -> monad 'rv 'vars 'e*)
-Fixpoint foreachM {a rv Vars e} (l : list a) (vars : Vars) (body : a -> Vars -> monad rv Vars e) : monad rv Vars e :=
+Fixpoint foreachM {a Vars e} (l : list a) (vars : Vars) (body : a -> Vars -> monad Vars e) : monad Vars e :=
 match l with
 | [] => returnm vars
 | (x :: xs) =>
@@ -104,7 +110,7 @@ match l with
   foreachE xs vars body
 end.
 
-Fixpoint foreach_ZM_up' {rv e Vars} (from to step off : Z) (n : nat) (* 0 <? step *) (* 0 <=? off *) (vars : Vars) (body : forall (z : Z) (* from <=? z <=? to *), Vars -> monad rv Vars e) {struct n} : monad rv Vars e :=
+Fixpoint foreach_ZM_up' {e Vars} (from to step off : Z) (n : nat) (* 0 <? step *) (* 0 <=? off *) (vars : Vars) (body : forall (z : Z) (* from <=? z <=? to *), Vars -> monad Vars e) {struct n} : monad Vars e :=
   if sumbool_of_bool (from + off <=? to) then
     match n with
     | O => returnm vars
@@ -120,7 +126,7 @@ Fixpoint foreach_ZE_up' {e Vars} (from to step off : Z) (n : nat) (* 0 <? step *
     end
   else inr vars.
 
-Fixpoint foreach_ZM_down' {rv e Vars} (from to step off : Z) (n : nat) (* 0 <? step *) (* off <=? 0 *) (vars : Vars) (body : forall (z : Z) (* to <=? z <=? from *), Vars -> monad rv Vars e) {struct n} : monad rv Vars e :=
+Fixpoint foreach_ZM_down' {e Vars} (from to step off : Z) (n : nat) (* 0 <? step *) (* off <=? 0 *) (vars : Vars) (body : forall (z : Z) (* to <=? z <=? from *), Vars -> monad Vars e) {struct n} : monad Vars e :=
   if sumbool_of_bool (to <=? from + off) then
     match n with
     | O => returnm vars
@@ -136,10 +142,10 @@ Fixpoint foreach_ZE_down' {e Vars} (from to step off : Z) (n : nat) (* 0 <? step
     end
   else inr vars.
 
-Definition foreach_ZM_up {rv e Vars} from to step vars body (* 0 <? step *) :=
-    foreach_ZM_up' (rv := rv) (e := e) (Vars := Vars) from to step 0 (S (Z.abs_nat (from - to))) vars body.
-Definition foreach_ZM_down {rv e Vars} from to step vars body (* 0 <? step *) :=
-    foreach_ZM_down' (rv := rv) (e := e) (Vars := Vars) from to step 0 (S (Z.abs_nat (from - to))) vars body.
+Definition foreach_ZM_up {e Vars} from to step vars body (* 0 <? step *) :=
+    foreach_ZM_up' (e := e) (Vars := Vars) from to step 0 (S (Z.abs_nat (from - to))) vars body.
+Definition foreach_ZM_down {e Vars} from to step vars body (* 0 <? step *) :=
+    foreach_ZM_down' (e := e) (Vars := Vars) from to step 0 (S (Z.abs_nat (from - to))) vars body.
 
 Definition foreach_ZE_up {e Vars} from to step vars body (* 0 <? step *) :=
     foreach_ZE_up' (e := e) (Vars := Vars) from to step 0 (S (Z.abs_nat (from - to))) vars body.
@@ -148,45 +154,45 @@ Definition foreach_ZE_down {e Vars} from to step vars body (* 0 <? step *) :=
 
 (*declare {isabelle} termination_argument foreachM = automatic*)
 
-Definition genlistM {A RV E} (f : nat -> monad RV A E) (n : nat) : monad RV (list A) E :=
+Definition genlistM {A E} (f : nat -> monad A E) (n : nat) : monad (list A) E :=
   let indices := List.seq 0 n in
   foreachM indices [] (fun n xs => (f n >>= (fun x => returnm (xs ++ [x])))).
 
 (*val and_boolM : forall 'rv 'e. monad 'rv bool 'e -> monad 'rv bool 'e -> monad 'rv bool 'e*)
-Definition and_boolM {rv E} (l : monad rv bool E) (r : monad rv bool E) : monad rv bool E :=
+Definition and_boolM {E} (l : monad bool E) (r : monad bool E) : monad bool E :=
  l >>= (fun l => if l then r else returnm false).
 
 (*val or_boolM : forall 'rv 'e. monad 'rv bool 'e -> monad 'rv bool 'e -> monad 'rv bool 'e*)
-Definition or_boolM {rv E} (l : monad rv bool E) (r : monad rv bool E) : monad rv bool E :=
+Definition or_boolM {E} (l : monad bool E) (r : monad bool E) : monad bool E :=
  l >>= (fun l => if l then returnm true else r).
 
 
 (*val bool_of_bitU_fail : forall 'rv 'e. bitU -> monad 'rv bool 'e*)
-Definition bool_of_bitU_fail {rv E} (b : bitU) : monad rv bool E :=
+Definition bool_of_bitU_fail {E} (b : bitU) : monad bool E :=
 match b with
   | B0 => returnm false
   | B1 => returnm true
   | BU => Fail "bool_of_bitU"
 end.
 
-Definition bool_of_bitU_nondet {rv E} (b : bitU) : monad rv bool E :=
+Definition bool_of_bitU_nondet {E} (b : bitU) : monad bool E :=
 match b with
   | B0 => returnm false
   | B1 => returnm true
   | BU => choose_bool "bool_of_bitU"
 end.
 
-Definition bools_of_bits_nondet {rv E} (bits : list bitU) : monad rv (list bool) E :=
+Definition bools_of_bits_nondet {E} (bits : list bitU) : monad (list bool) E :=
   foreachM bits []
     (fun b bools =>
       bool_of_bitU_nondet b >>= fun b => 
       returnm (bools ++ [b])).
 
-Definition of_bits_nondet {rv n E} (bits : list bitU) : monad rv (mword n) E :=
+Definition of_bits_nondet {n E} (bits : list bitU) : monad (mword n) E :=
   bools_of_bits_nondet bits >>= fun bs =>
   returnm (of_bools bs).
 
-Definition of_bits_fail {rv n E} (bits : list bitU) : monad rv (mword n) E :=
+Definition of_bits_fail {n E} (bits : list bitU) : monad (mword n) E :=
   maybe_fail "of_bits" (of_bits bits).
 
 (* For termination of recursive functions. *)
@@ -226,32 +232,32 @@ Definition Zwf_guarded (z:Z) : Acc (Zwf 0) z :=
 
 (*val whileM : forall 'rv 'vars 'e. 'vars -> ('vars -> monad 'rv bool 'e) ->
                 ('vars -> monad 'rv 'vars 'e) -> monad 'rv 'vars 'e*)
-Fixpoint whileMT' {RV Vars E} limit (vars : Vars) (cond : Vars -> monad RV bool E) (body : Vars -> monad RV Vars E) (acc : Acc (Zwf 0) limit) : monad RV Vars E.
+Fixpoint whileMT' {Vars E} limit (vars : Vars) (cond : Vars -> monad bool E) (body : Vars -> monad Vars E) (acc : Acc (Zwf 0) limit) : monad Vars E.
 exact (
   if Z_ge_dec limit 0 then
     cond vars >>= fun cond_val =>
     if cond_val then
-      body vars >>= fun vars => whileMT' _ _ _ (limit - 1) vars cond body (_limit_reduces acc ltac:(assumption))
+      body vars >>= fun vars => whileMT' _ _ (limit - 1) vars cond body (_limit_reduces acc ltac:(assumption))
     else returnm vars
   else Fail "Termination limit reached").
 Defined.
 
-Definition whileMT {RV Vars E} (vars : Vars) (measure : Vars -> Z) (cond : Vars -> monad RV bool E) (body : Vars -> monad RV Vars E) : monad RV Vars E :=
+Definition whileMT {Vars E} (vars : Vars) (measure : Vars -> Z) (cond : Vars -> monad bool E) (body : Vars -> monad Vars E) : monad Vars E :=
   let limit := measure vars in
   whileMT' limit vars cond body (Zwf_guarded limit).
 
 (*val untilM : forall 'rv 'vars 'e. 'vars -> ('vars -> monad 'rv bool 'e) ->
                 ('vars -> monad 'rv 'vars 'e) -> monad 'rv 'vars 'e*)
-Fixpoint untilMT' {RV Vars E} limit (vars : Vars) (cond : Vars -> monad RV bool E) (body : Vars -> monad RV Vars E) (acc : Acc (Zwf 0) limit) : monad RV Vars E.
+Fixpoint untilMT' {Vars E} limit (vars : Vars) (cond : Vars -> monad bool E) (body : Vars -> monad Vars E) (acc : Acc (Zwf 0) limit) : monad Vars E.
 exact (
   if Z_ge_dec limit 0 then
     body vars >>= fun vars =>
     cond vars >>= fun cond_val =>
-    if cond_val then returnm vars else untilMT' _ _ _ (limit - 1) vars cond body (_limit_reduces acc ltac:(assumption))
+    if cond_val then returnm vars else untilMT' _ _ (limit - 1) vars cond body (_limit_reduces acc ltac:(assumption))
   else Fail "Termination limit reached").
 Defined.
 
-Definition untilMT {RV Vars E} (vars : Vars) (measure : Vars -> Z) (cond : Vars -> monad RV bool E) (body : Vars -> monad RV Vars E) : monad RV Vars E :=
+Definition untilMT {Vars E} (vars : Vars) (measure : Vars -> Z) (cond : Vars -> monad bool E) (body : Vars -> monad Vars E) : monad Vars E :=
   let limit := measure vars in
   untilMT' limit vars cond body (Zwf_guarded limit).
 
@@ -277,9 +283,9 @@ Definition untilMT {RV Vars E} (vars : Vars) (measure : Vars -> Z) (cond : Vars 
   write_reg r1 r1_v >> write_reg r2 r2_v*)
 
 Section Choose.
-Context {rt : Type -> Type} {E : Type}.
+Context {E : Type}.
 
-Definition choose_from_list {A} (descr : string) (xs : list A) : monad rt A E :=
+Definition choose_from_list {A} (descr : string) (xs : list A) : monad A E :=
   (* Use sufficiently many nondeterministically chosen bits and convert into an
      index into the list *)
   choose_range descr 0 (Z.of_nat (List.length xs) - 1) >>= fun idx =>
@@ -288,7 +294,7 @@ Definition choose_from_list {A} (descr : string) (xs : list A) : monad rt A E :=
     | None => Fail ("choose " ++ descr)
   end.
 
-Definition internal_pick {a} (xs : list a) : monad rt a E :=
+Definition internal_pick {a} (xs : list a) : monad a E :=
   choose_from_list "internal_pick" xs.
 
 End Choose.
@@ -296,21 +302,23 @@ End Choose.
 (* The normal print routines do nothing in Coq so that they don't drag terms and functions into the
    monad.  Here are alternative versions which do, which can be controlled by defining PRINT_EFFECTS
    in Sail. *)
-Definition print_effect {rt E} (s : string) : monad rt unit E :=
+Definition print_effect {E} (s : string) : monad unit E :=
   Print s (Done tt).
 
-Definition print_endline_effect {rt E} (s : string) : monad rt unit E :=
+Definition print_endline_effect {E} (s : string) : monad unit E :=
   print_effect (s ++ "
 ")%string.
 
-Definition print_int_effect {rt E} s i : monad rt unit E :=
+Definition print_int_effect {E} s i : monad unit E :=
   print_endline_effect (s ++ string_of_int i).
 
-Definition print_bits_effect {rt E n} s (w : mword n) : monad rt unit E :=
+Definition print_bits_effect {E n} s (w : mword n) : monad unit E :=
   print_endline_effect (s ++ string_of_bits w).
 
 (* We only have one output stream that we use for both. *)
-Definition prerr_effect {rt E} s := @print_effect rt E s.
-Definition prerr_endline_effect {rt E} s := @print_endline_effect rt E s.
-Definition prerr_int_effect {rt E} s i := @print_int_effect rt E s i.
-Definition prerr_bits_effect {rt E} s i := @print_bits_effect rt E s i.
+Definition prerr_effect {E} s := @print_effect E s.
+Definition prerr_endline_effect {E} s := @print_endline_effect E s.
+Definition prerr_int_effect {E} s i := @print_int_effect E s i.
+Definition prerr_bits_effect {E} s i := @print_bits_effect E s i.
+
+End WithRegisterType.

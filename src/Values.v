@@ -1090,25 +1090,27 @@ Fixpoint reverse_endianness_list (bits : list bitU) :=
 
 (*** Registers *)
 
-Record register_ref (reg_type : Type -> Type) a := {
+Record register_ref {register : Type} {type_of_register : register -> Type} (ty : Type) := {
   name : string;
-  reg : reg_type a;
+  reg : register;
+  to_ty : type_of_register reg -> ty;
+  from_ty : ty -> type_of_register reg;
 }.
-Notation "{[ r 'with' 'name' := e ]}" := ({| name := e; reg := reg r |}).
-Notation "{[ r 'with' 'reg' := e ]}" := ({| name := name r; reg := e |}).
-Arguments name [_ _].
-Arguments reg [_ _].
+Arguments name [_ _ _].
+Arguments reg [_ _ _].
+Arguments to_ty [_ _ _].
+Arguments from_ty [_ _ _].
 
 (* Remember that these inhabitants are not used by well typed Sail
 code, so it doesn't matter that it's not useful. *)
-#[export] Instance dummy_register_ref {T reg_type} `{Inhabited T} `{Inhabited (reg_type T)} : Inhabited (register_ref reg_type T) := {
-  inhabitant := {| name := ""; reg := dummy_value |}
+#[export] Instance dummy_register_ref {register} {type_of_register} `{Inhabited register} : Inhabited (@register_ref register type_of_register (type_of_register dummy_value)) := {
+  inhabitant := {| name := ""; reg := dummy_value; to_ty := fun x => x; from_ty := fun x => x |}
 }.
 
 (* Register accessors: pair of functions for reading and writing register values *)
-Definition register_accessors regstate reg_type : Type :=
-  ((forall T, reg_type T -> regstate -> T) *
-   (forall T, reg_type T -> T -> regstate -> regstate)).
+Definition register_accessors regstate reg_type reg_to_type : Type :=
+  ((forall (r : reg_type), regstate -> reg_to_type r) *
+   (forall (r : reg_type), reg_to_type r -> regstate -> regstate)).
 
 
 (* The choice operations in the monads operate on a small selection of base
