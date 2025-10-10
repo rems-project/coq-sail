@@ -47,7 +47,7 @@ conflicts: [
 ]
 build: [
   ["dune" "subst"] {dev}
-  ["sh" "-c" "sed -s 's/theories bbv/theories Stdlib bbv/' src/dune >src/dune.new"] {coq:version >= "9.0"}
+  ["sh" "-c" "sed 's/theories bbv/theories Stdlib bbv/' src/dune >src/dune.new"] {coq:version >= "9.0"}
   ["mv" "src/dune.new" "src/dune"] {coq:version >= "9.0"}
   [
     "dune"
