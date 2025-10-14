@@ -1,9 +1,12 @@
 Changelog
 =========
 
-master
+0.20
 ----
 * Port to `dune`
+* Rocq 9 compatibility
+* Support for more revent versions of the concurrency interface
+* Simplify some definitions
 
 0.19
 ----
