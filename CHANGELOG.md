@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Development
+-----------
+
+* Add `GenericValue.v` file for conversion to and from toml-like values
+
 0.20.1
 ------
 
