@@ -10,6 +10,7 @@
    Instr_kinds
    Values
    Values_lemmas
+   GenericValue
    String
    Prompt_monad
    Prompt

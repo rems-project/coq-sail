@@ -103,6 +103,12 @@ Instance dummy_result {a : Type} {b : Type} `{Inhabited a} `{Inhabited b} :
   inhabitant := Ok inhabitant
 }.
 
+Definition result_bind {A B E} (f : A -> result B E) (a : result A E) : result B E :=
+  match a with
+  | Ok a => f a
+  | Err e => Err e
+  end.
+
 Definition ii := Z.
 Definition nn := nat.
 
