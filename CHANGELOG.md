@@ -1,6 +1,11 @@
 Changelog
 =========
 
+0.20.1
+------
+
+* Switch to simpler register scheme, matching Sail 0.20.1
+
 0.20
 ----
 * Port to `dune`

@@ -1,7 +1,7 @@
 # This file was originally created by dune, but has been altered to patch the
 # dune files so that it's compatible with some versions of Rocq 8 as well as 9.
 opam-version: "2.0"
-version: "0.20"
+version: "0.20.1"
 synopsis:
   "Support library for Sail, a language for describing the instruction semantics of processors, using stdpp bitvectors"
 description: """
