@@ -339,10 +339,7 @@ lemma nat_of_bits_bl_to_bin[simp]:
 lemma unsigned_bits_of_mword[simp]:
   "unsigned_method BC_bitU_list (bits_of_method BC_mword a) = Some (uint a)"
   by (auto simp: BC_bitU_list_def BC_mword_defs unsigned_of_bits_def unsigned_of_bools_def)
-*)
-Definition mem_bytes_of_word {a} (w : mword a) : list (list bitU) :=
-  List.rev (take_chunks 8 (bits_of w)).
-(*
+
 lemma mem_bytes_of_bits_mem_bytes_of_word[simp]:
   assumes "8 dvd LENGTH('a)"
   shows "mem_bytes_of_bits BC_mword (w :: 'a::len word) = Some (mem_bytes_of_word w)"

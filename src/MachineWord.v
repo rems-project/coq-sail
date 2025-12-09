@@ -73,6 +73,10 @@ Proof.
   intro GE.
   apply Z2Nat.inj_succ; Lia.lia.
 Qed.
+Lemma idx_Z_idx_mul x y : idx_Z (idx_mul x y) = (idx_Z x * idx_Z y)%Z.
+Proof.
+  apply Nat2Z.inj_mul.
+Qed.
 
 Definition word := Word.word.
 Definition zeros n : word n := @Word.wzero n.
@@ -537,6 +541,7 @@ Fixpoint reverse_endian [n] (bits : word n) : word n :=
   | _ => fun bits => bits
   end bits.
 
+Section Strings.
 Import String.
 Import Strings.Ascii.
 
@@ -546,6 +551,24 @@ Local Fixpoint word_to_binary_string_acc [n] (w : Word.word n) (s : string) :=
   | Word.WS b w' => word_to_binary_string_acc w' (String (if b then "1" else "0")%char s)
   end.
 Definition word_to_binary_string [n] (bv : word n) : string := String "0" (String "b" (word_to_binary_string_acc bv "")).
+End Strings.
 
+Local Lemma list_concat_base n : 0 = (n * (List.length (A := word n) [])).
+Proof.
+  rewrite Nat.mul_0_r.
+  reflexivity.
+Qed.
+Local Lemma list_concat_step n l (w : word n) : (n + n * (List.length l)) = (n * (List.length (w :: l))).
+Proof.
+  simpl. Lia.lia.
+Qed.
+
+Definition word_list_concat [n] (l : list (word n)) : word (idx_mul n (nat_idx (List.length l))) :=
+  list_rec (fun l => word (n * (List.length l)))
+    (cast_idx (zeros 0) (list_concat_base _))
+    (fun w _ t => cast_idx (concat w t) (list_concat_step _ _ _)) l.
+
+Definition word_split_list [m] [n] (w : word (idx_mul m n)) : list (word m) :=
+  Nat.recursion List.nil (fun i l => List.cons (slice m w (m * i)) l) n.
 
 End MachineWord.

@@ -75,7 +75,6 @@ Let monad := @monad r rt.
 
 Definition undefined_unit (_:unit) : monad unit E := returnm tt.
 Definition undefined_bool (_:unit) : monad bool E := choose_bool "undefined_bool".
-Definition undefined_bit (_:unit) : monad bitU E := choose_bool "undefined_bit" >>= fun b => returnm (bitU_of_bool b).
 Definition undefined_string (_:unit) : monad string E := choose_string "undefined_string".
 Definition undefined_int (_:unit) : monad Z E := choose_int "undefined_int".
 Definition undefined_nat (_:unit) : monad Z E := choose_nat "undefined_nat".

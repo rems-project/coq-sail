@@ -609,8 +609,7 @@ Qed.
 #[export] Hint Resolve no_throw_mem_builtins_7 : ignore_throw.
 Lemma no_throw_mem_builtins_8 Regs E1 E2 A wk addr sz v t :
   ignore_throw (E2 := E2) (@write_memtS Regs E1 A wk addr sz v t) === write_memtS wk addr sz v t.
-unfold write_memtS. rewrite ignore_throw_option_case_distrib_2.
-destruct (Values.mem_bytes_of_bits v); autorewrite with ignore_throw; auto.
+unfold write_memtS. apply no_throw_mem_builtins_6.
 Qed.
 #[export] Hint Rewrite no_throw_mem_builtins_8 : ignore_throw.
 #[export] Hint Resolve no_throw_mem_builtins_8 : ignore_throw.

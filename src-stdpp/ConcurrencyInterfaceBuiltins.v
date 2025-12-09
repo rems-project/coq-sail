@@ -28,7 +28,6 @@ Definition fail {A E} (msg : string) : monad E A :=
 Definition exit {A E} (_ : unit) : monad E A := fail "exit".
 
 Definition choose_bool {E} (_descr : string) : monad E bool := I.Next (I.Choose ChooseBool) mret.
-Definition choose_bit {E} (_descr : string) : monad E bitU := I.Next (I.Choose ChooseBit) mret.
 Definition choose_int {E} (_descr : string) : monad E Z := I.Next (I.Choose ChooseInt) mret.
 Definition choose_nat {E} (_descr : string) : monad E Z := I.Next (I.Choose ChooseNat) mret.
 Definition choose_real {E} (_descr : string) : monad E R := I.Next (I.Choose ChooseReal) mret.
@@ -36,11 +35,6 @@ Definition choose_string {E} (_descr : string) : monad E string := I.Next (I.Cho
 Definition choose_range {E} (_descr : string) (lo hi : Z) : monad E Z := I.Next (I.Choose (ChooseRange lo hi)) mret.
 Definition choose_bitvector {E} (_descr : string) (n : Z) : monad E (mword n) :=
   I.Next (I.Choose (ChooseBitvector n)) mret.
-(* match n return monad (mword n) E with
- | Zneg _ => returnm (bv_0 0)
- | Z0 => returnm (bv_0 0)
- | Zpos p => I.Next (I.Choose (N.of_nat (Pos.to_nat p))) (fun bv => returnm bv)
- end.*)
 
 Definition assert_exp {E} (exp :bool) msg : monad E unit :=
  if exp then returnm tt else fail msg.
@@ -130,7 +124,6 @@ Section Undef.
 
 Definition undefined_unit {E} (_:unit) : monad E unit := returnm tt.
 Definition undefined_bool {E} (_:unit) : monad E bool := choose_bool "undefined_bool".
-Definition undefined_bit {E} (_:unit) : monad E bitU := choose_bool "undefined_bit" >>= fun b => returnm (bitU_of_bool b).
 Definition undefined_string {E} (_:unit) : monad E string := choose_string "undefined_string".
  Definition undefined_int {E} (_:unit) : monad E Z := choose_int "undefined_int".
 Definition undefined_nat {E} (_:unit) : monad E Z := choose_nat "undefined_nat".

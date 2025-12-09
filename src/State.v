@@ -130,43 +130,7 @@ Definition and_boolS {RV E} (l r : monadS RV bool E) : monadS RV bool E :=
 Definition or_boolS {RV E} (l r : monadS RV bool E) : monadS RV bool E :=
  l >>$= (fun l => if l then returnS true else r).
 
-(*val bool_of_bitU_fail : forall 'rv 'e. bitU -> monadS 'rv bool 'e*)
-Definition bool_of_bitU_fail {RV E} (b : bitU) : monadS RV bool E :=
-match b with
-  | B0 => returnS false
-  | B1 => returnS true
-  | BU => failS "bool_of_bitU"
-end.
-
-(*val bool_of_bitU_nondetS : forall 'rv 'e. bitU -> monadS 'rv bool 'e*)
-Definition bool_of_bitU_nondetS {RV E} (b : bitU) : monadS RV bool E :=
-match b with
-  | B0 => returnS false
-  | B1 => returnS true
-  | BU => nondet_boolS
-end.
-
-(*val bools_of_bits_nondetS : forall 'rv 'e. list bitU -> monadS 'rv (list bool) 'e*)
-Definition bools_of_bits_nondetS {RV E} bits : monadS RV (list bool) E :=
-  foreachS bits []
-    (fun b bools =>
-      bool_of_bitU_nondetS b >>$= (fun b =>
-      returnS (bools ++ [b]))).
-
-(*val of_bits_nondetS : forall 'rv 'a 'e. Bitvector 'a => list bitU -> monadS 'rv 'a 'e*)
-Definition of_bits_nondetS {RV A E} bits : monadS RV (mword A) E :=
-  bools_of_bits_nondetS bits >>$= (fun bs =>
-  returnS (of_bools bs)).
-
-(*val of_bits_failS : forall 'rv 'a 'e. Bitvector 'a => list bitU -> monadS 'rv 'a 'e*)
-Definition of_bits_failS {RV A E} bits : monadS RV (mword A) E :=
- maybe_failS "of_bits" (of_bits bits).
-
-(*val mword_nondetS : forall 'rv 'a 'e. Size 'a => unit -> monadS 'rv (mword 'a) 'e
-let mword_nondetS () =
-  bools_of_bits_nondetS (repeat [BU] (integerFromNat size)) >>$= (fun bs ->
-  returnS (wordFromBitlist bs))
-
+(*
 
 val whileS : forall 'rv 'vars 'e. 'vars -> ('vars -> monadS 'rv bool 'e) ->
                 ('vars -> monadS 'rv 'vars 'e) -> monadS 'rv 'vars 'e

@@ -75,9 +75,8 @@ From Coq Require OrderedTypeEx.
 
 Module NMap := FMapAVL.Make(OrderedTypeEx.N_as_OT).
 
-Definition Memstate : Type := NMap.t memory_byte.
-Definition Tagstate : Type := NMap.t bitU.
-(* type regstate = map string (vector bitU) *)
+Definition Memstate : Type := NMap.t (mword 8).
+Definition Tagstate : Type := NMap.t bool.
 
 (* To avoid infinite sets in this state monad we parametrise on a choice
    operator for (e.g.) undefined values.  For executability, we define a
@@ -97,7 +96,6 @@ Definition choose (cs : ChoiceSource) ty : ChoiceSource * choose_type ty :=
 Definition default_choice_fn ty (_:unit) : unit * choose_type ty :=
   match ty return unit * choose_type ty with
   | ChooseBool        => (tt, false)
-  | ChooseBit         => (tt, BU)
   | ChooseInt         => (tt, 0)
   | ChooseNat         => (tt, 0)
   | ChooseReal        => (tt, R0)
@@ -258,9 +256,9 @@ match v with
 end.
 
 (*val read_tagS : forall 'regs 'a 'e. Bitvector 'a => 'a -> monadS 'regs bitU 'e*)
-Definition read_tagS {Regs A E} (addr : mword A) : monadS Regs bitU E :=
+Definition read_tagS {Regs A E} (addr : mword A) : monadS Regs bool E :=
   let addr := mword_to_N addr in
-  readS (fun s => opt_def B0 (NMap.find addr s.(ss_tagstate))).
+  readS (fun s => opt_def false (NMap.find addr s.(ss_tagstate))).
 
 Fixpoint genlist_acc {A:Type} (f : nat -> A) n acc : list A :=
   match n with
@@ -271,38 +269,32 @@ Definition genlist {A} f n := @genlist_acc A f n [].
 
 
 (* Read bytes from memory and return in little endian order *)
-(*val get_mem_bytes : forall 'regs. nat -> nat -> sequential_state 'regs -> maybe (list memory_byte * bitU)*)
-Definition get_mem_bytes {Regs} addr sz (s : sequential_state Regs) : option (list memory_byte * bitU) :=
+Definition get_mem_bytes {Regs} addr sz (s : sequential_state Regs) : option (list (mword 8) * bool) :=
   let addrs := genlist (fun n => addr + N_of_nat n)%N sz in
   let read_byte s addr := NMap.find addr s.(ss_memstate) in
-  let read_tag s addr := opt_def B0 (NMap.find addr s.(ss_tagstate)) in
+  let read_tag s addr := opt_def false (NMap.find addr s.(ss_tagstate)) in
   option_map
-    (fun mem_val => (mem_val, List.fold_left and_bit (List.map (read_tag s) addrs) B1))
+    (fun mem_val => (mem_val, List.fold_left andb (List.map (read_tag s) addrs) true))
     (just_list (List.map (read_byte s) addrs)).
 
-(*val read_memt_bytesS : forall 'regs 'e. read_kind -> nat -> nat -> monadS 'regs (list memory_byte * bitU) 'e*)
-Definition read_memt_bytesS {Regs E} (_ : read_kind) addr sz : monadS Regs (list memory_byte * bitU) E :=
+Definition read_memt_bytesS {Regs E} (_ : read_kind) addr sz : monadS Regs (list (mword 8) * bool) E :=
   readS (get_mem_bytes addr sz) >>$=
   maybe_failS "read_memS".
 
-(*val read_mem_bytesS : forall 'regs 'e. read_kind -> nat -> nat -> monadS 'regs (list memory_byte) 'e*)
-Definition read_mem_bytesS {Regs E} (rk : read_kind) addr sz : monadS Regs (list memory_byte) E :=
+Definition read_mem_bytesS {Regs E} (rk : read_kind) addr sz : monadS Regs (list (mword 8)) E :=
   read_memt_bytesS rk addr sz >>$= (fun '(bytes, _) =>
   returnS bytes).
 
-(*val read_memtS : forall 'regs 'e 'a 'b. Bitvector 'a, Bitvector 'b => read_kind -> 'a -> integer -> monadS 'regs ('b * bitU) 'e*)
-Definition read_memtS {Regs E A} (rk : read_kind) (a : mword A) sz : monadS Regs (mword (8 * sz) * bitU) E :=
+Definition read_memtS {Regs E A} (rk : read_kind) (a : mword A) sz : monadS Regs (mword (8 * sz) * mword 1) E :=
   let a := mword_to_N a in
   read_memt_bytesS rk a (Z.to_nat sz) >>$= (fun '(bytes, tag) =>
-  maybe_failS "bits_of_mem_bytes" (of_bits (bits_of_mem_bytes bytes)) >>$= (fun mem_val =>
-  returnS (mem_val, tag))).
+  let mem_val := mword_of_bytes bytes in
+  returnS (TypeCasts.autocast mem_val, bit_of_bool tag)).
 
-(*val read_memS : forall 'regs 'e 'a 'b. Bitvector 'a, Bitvector 'b => read_kind -> 'a -> integer -> monadS 'regs 'b 'e*)
 Definition read_memS {Regs E A} rk (a : mword A) sz : monadS Regs (mword (8 * sz)) E :=
   read_memtS rk a sz >>$= (fun '(bytes, _) =>
   returnS bytes).
 
-(*val excl_resultS : forall 'regs 'e. unit -> monadS 'regs bool 'e*)
 Definition excl_resultS {Regs E} : unit -> monadS Regs bool E :=
   (* TODO: This used to be more deterministic, checking a flag in the state
      whether an exclusive load has occurred before.  However, this does not
@@ -311,8 +303,7 @@ Definition excl_resultS {Regs E} : unit -> monadS Regs bool E :=
   fun _ => nondet_boolS.
 
 (* Write little-endian list of bytes to given address *)
-(*val put_mem_bytes : forall 'regs. nat -> nat -> list memory_byte -> bitU -> sequential_state 'regs -> sequential_state 'regs*)
-Definition put_mem_bytes {Regs} addr sz (v : list memory_byte) (tag : bitU) (s : sequential_state Regs) : sequential_state Regs :=
+Definition put_mem_bytes {Regs} addr sz (v : list (mword 8)) (tag : bool) (s : sequential_state Regs) : sequential_state Regs :=
   let addrs := genlist (fun n => addr + N_of_nat n)%N sz in
   let a_v := List.combine addrs v in
   let write_byte mem '(addr, v) := NMap.add addr v mem in
@@ -323,7 +314,7 @@ Definition put_mem_bytes {Regs} addr sz (v : list memory_byte) (tag : bitU) (s :
      ss_output := s.(ss_output);
   |}.
 
-Definition put_tag {Regs} addr (tag : bitU) (s : sequential_state Regs) : sequential_state Regs :=
+Definition put_tag {Regs} addr (tag : bool) (s : sequential_state Regs) : sequential_state Regs :=
   let write_tag mem addr := NMap.add addr tag mem in
   {| ss_regstate := s.(ss_regstate);
      ss_memstate := s.(ss_memstate);
@@ -331,39 +322,32 @@ Definition put_tag {Regs} addr (tag : bitU) (s : sequential_state Regs) : sequen
      ss_output := s.(ss_output);
   |}.
 
-(*val write_memt_bytesS : forall 'regs 'e. write_kind -> nat -> nat -> list memory_byte -> bitU -> monadS 'regs bool 'e*)
-Definition write_memt_bytesS {Regs E} (_ : write_kind) addr sz (v : list memory_byte) (t : bitU) : monadS Regs bool E :=
+Definition write_memt_bytesS {Regs E} (_ : write_kind) addr sz (v : list (mword 8)) (t : bool) : monadS Regs bool E :=
   updateS (put_mem_bytes addr sz v t) >>$
   returnS true.
 
-(*val write_mem_bytesS : forall 'regs 'e. write_kind -> nat -> nat -> list memory_byte -> monadS 'regs bool 'e*)
-Definition write_mem_bytesS {Regs E} wk addr sz (v : list memory_byte) : monadS Regs bool E :=
- write_memt_bytesS wk addr sz v B0.
+Definition write_mem_bytesS {Regs E} wk addr sz (v : list (mword 8)) : monadS Regs bool E :=
+ write_memt_bytesS wk addr sz v false.
 
-(*val write_memtS : forall 'regs 'e 'a 'b. Bitvector 'a, Bitvector 'b =>
-  write_kind -> 'a -> integer -> 'b -> bitU -> monadS 'regs bool 'e*)
-Definition write_memtS {Regs E A} wk (addr : mword A) sz (v : mword (8 * sz)) (t : bitU) : monadS Regs bool E :=
-  match (mword_to_N addr, mem_bytes_of_bits v) with
-    | (addr, Some v) => write_memt_bytesS wk addr (Z.to_nat sz) v t
-    | _ => failS "write_mem"
-  end.
+Definition write_memtS {Regs E A} wk (addr : mword A) sz (v : mword (8 * sz)) (t : mword 1) : monadS Regs bool E :=
+  let addr := mword_to_N addr in
+  let v := bytes_of_mword v in
+  write_memt_bytesS wk addr (Z.to_nat sz) v (bool_of_bit t).
 
-Definition write_tag_rawS {Regs E} (wk:write_kind) (addr : N) (tag : bitU) : monadS Regs bool E :=
+Definition write_tag_rawS {Regs E} (wk:write_kind) (addr : N) (tag : bool) : monadS Regs bool E :=
   updateS (put_tag addr tag) >>$
   returnS true.
 
-Definition write_tagS {Regs E A} (wk:write_kind) (addr : mword A) (tag : bitU) : monadS Regs bool E :=
+Definition write_tagS {Regs E A} (wk:write_kind) (addr : mword A) (tag : bool) : monadS Regs bool E :=
   let addr := mword_to_N addr in
   write_tag_rawS wk addr tag.
 
 Definition write_tag_boolS {Regs E A} (addr : mword A) (tag : bool) : monadS Regs bool E :=
   let addr := mword_to_N addr in
-  write_tag_rawS Write_plain addr (bitU_of_bool tag).
+  write_tag_rawS Write_plain addr tag.
 
-(*val write_memS : forall 'regs 'e 'a 'b. Bitvector 'a, Bitvector 'b =>
-  write_kind -> 'a -> integer -> 'b -> monadS 'regs bool 'e*)
 Definition write_memS {Regs E A} wk (addr : mword A) sz (v : mword (8 * sz)) : monadS Regs bool E :=
- write_memtS wk addr sz v B0.
+ write_memtS wk addr sz v (mword_of_int 0).
 
 Definition read_regS {Regs rt rtype} {register_lookup : Regs -> forall (r : rt), rtype r} {E} (reg : rt) : monadS Regs (rtype reg) E :=
  readS (fun s => register_lookup s.(ss_regstate) reg).

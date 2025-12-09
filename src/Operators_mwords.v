@@ -72,23 +72,17 @@ Local Open Scope Z.
 Definition autocast_m {rv rt e m n} {T : Z -> Type} `{H : Inhabited (T n)} (x : @monad rv rt (T m) e) : @monad rv rt (T n) e :=
   x >>= fun x => returnm (autocast x).
 
-(*
 (* Specialisation of operators to machine words *)
 
-val access_vec_inc : forall 'a. Size 'a => mword 'a -> integer -> bitU*)
-Definition access_vec_inc {a} : mword a -> Z -> bitU := access_mword_inc.
+(* TODO: we only have mwords in Rocq, ought to consolidate these *)
 
-(*val access_vec_dec : forall 'a. Size 'a => mword 'a -> integer -> bitU*)
-Definition access_vec_dec {a} : mword a -> Z -> bitU := access_mword_dec.
+Definition access_vec_inc {a} : mword a -> Z -> mword 1 := access_mword_inc.
 
-(*val update_vec_inc : forall 'a. Size 'a => mword 'a -> integer -> bitU -> mword 'a*)
-(* TODO: probably ought to use a monadic version instead, but using bad default for
-   type compatibility just now *)
-Definition update_vec_inc {a} (w : mword a) i b : mword a :=
- opt_def w (update_mword_inc w i b).
+Definition access_vec_dec {a} : mword a -> Z -> mword 1 := access_mword_dec.
 
-(*val update_vec_dec : forall 'a. Size 'a => mword 'a -> integer -> bitU -> mword 'a*)
-Definition update_vec_dec {a} (w : mword a) i b : mword a := opt_def w (update_mword_dec w i b).
+Definition update_vec_inc {a} (w : mword a) i b : mword a := update_mword_inc w i b.
+
+Definition update_vec_dec {a} (w : mword a) i b : mword a := update_mword_dec w i b.
 
 Definition subrange_vec_dec {n} (v : mword n) m o : mword (m - o + 1) :=
   autocast (to_word_idx (MachineWord.slice (MachineWord.Z_idx (m - o + 1)) (get_word v) (MachineWord.Z_idx o))).
@@ -182,18 +176,18 @@ auto with zarith.
 Qed.
 #[export] Hint Resolve length_list_pos : sail.
 
-Definition bool_of_bit b := match b with B0 => false | B1 => true | BU => dummy false end.
+Local Lemma vec_of_bits_idx (l : list (mword 1)) :
+  MachineWord.idx_Z (MachineWord.idx_mul (MachineWord.Z_idx 1) (MachineWord.nat_idx (length l))) = length_list l.
+Proof.
+  rewrite MachineWord.nat_idx_Z.
+  rewrite MachineWord.idx_Z_idx_mul.
+  rewrite !MachineWord.idx_Z_idx; [|lia|lia].
+  rewrite Z.mul_1_l.
+  reflexivity.
+Qed.
 
-Definition vec_of_bits (l:list bitU) : mword (length_list l) := of_bools (List.map bool_of_bit l).
-(*
-
-val msb : forall 'a. Size 'a => mword 'a -> bitU
-Definition msb := most_significant
-
-val int_of_vec : forall 'a. Size 'a => bool -> mword 'a -> integer
-Definition int_of_vec := int_of_bv
-
-*)
+Definition vec_of_bits (l:list (mword 1)) : mword (length_list l) :=
+  cast_Z (to_word_idx (MachineWord.word_list_concat l)) (vec_of_bits_idx l).
 
 Definition with_word' {n} (P : Type -> Type) : (forall n, MachineWord.word n -> P (MachineWord.word n)) -> mword n -> P (mword n) := fun f w => @with_word n _ (f (MachineWord.Z_idx n)) w.
 Definition word_binop {n} (f : forall n, MachineWord.word n -> MachineWord.word n -> MachineWord.word n) : mword n -> mword n -> mword n := with_word' (fun x => x -> x) f.
@@ -299,7 +293,7 @@ Definition count_leading_zeros {N : Z} (x : mword N) (* N >=? 1 *)
 : Z (* n. (0 <=? n <=? N) *) :=
   foreach_Z_up 0 (N - 1) 1 N
     (fun i r =>
-      (if ((eq_vec (vec_of_bits [access_vec_dec x i]  : mword 1) (vec_of_bits [B1]  : mword 1)))
+      (if ((eq_vec (access_vec_dec x i) (mword_of_int 1)))
        then 
             (Z.sub (Z.sub (length_mword x) i) 1)
        else r))
@@ -308,7 +302,7 @@ Definition count_trailing_zeros {N : Z} (x : mword N) (* N >=? 1 *)
 : Z (* n. (0 <=? n <=? N) *) :=
   foreach_Z_down (N - 1) 0 1 N
     (fun i r =>
-      (if ((eq_vec (vec_of_bits [access_vec_dec x i]  : mword 1) (vec_of_bits [B1]  : mword 1)))
+      (if ((eq_vec (access_vec_dec x i) (mword_of_int 1)))
        then i
        else r))
    .

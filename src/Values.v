@@ -357,124 +357,6 @@ induction l.
     - intros [bad | good]. congruence. apply IHl. assumption.
 Qed.
 
-(*** Bits *)
-Inductive bitU := B0 | B1 | BU.
-
-Scheme Equality for bitU.
-Definition eq_bit := bitU_beq.
-
-#[export] Instance dummy_bitU : Inhabited bitU := {
-  inhabitant := BU
-}.
-
-Definition showBitU b :=
-match b with
-  | B0 => "O"
-  | B1 => "I"
-  | BU => "U"
-end%string.
-
-Definition bitU_char b :=
-match b with
-| B0 => "0"
-| B1 => "1"
-| BU => "?"
-end%char.
-
-(*instance (Show bitU)
-  let show := showBitU
-end*)
-
-Class BitU (a : Type) : Type := {
-  to_bitU : a -> bitU;
-  of_bitU : bitU -> a
-}.
-
-#[export] Instance bitU_BitU : (BitU bitU) := {
-  to_bitU b := b;
-  of_bitU b := b
-}.
-
-Definition bool_of_bitU bu := match bu with
-  | B0 => Some false
-  | B1 => Some true
-  | BU => None
-  end.
-
-Definition bitU_of_bool (b : bool) := if b then B1 else B0.
-
-(*Instance bool_BitU : (BitU bool) := {
-  to_bitU := bitU_of_bool;
-  of_bitU := bool_of_bitU
-}.*)
-
-Definition cast_bit_bool := bool_of_bitU.
-(*
-Definition bit_lifted_of_bitU bu := match bu with
-  | B0 => Bitl_zero
-  | B1 => Bitl_one
-  | BU => Bitl_undef
-  end.
-
-Definition bitU_of_bit := function
-  | Bitc_zero => B0
-  | Bitc_one  => B1
-  end.
-
-Definition bit_of_bitU := function
-  | B0 => Bitc_zero
-  | B1 => Bitc_one
-  | BU => failwith "bit_of_bitU: BU"
-  end.
-
-Definition bitU_of_bit_lifted := function
-  | Bitl_zero => B0
-  | Bitl_one  => B1
-  | Bitl_undef => BU
-  | Bitl_unknown => failwith "bitU_of_bit_lifted Bitl_unknown"
-  end.
-*)
-Definition not_bit b :=
-match b with
-  | B1 => B0
-  | B0 => B1
-  | BU => BU
-  end.
-
-(*val is_one : Z -> bitU*)
-Definition is_one (i : Z) :=
-  if i =? 1 then B1 else B0.
-
-Definition binop_bit op x y :=
-  match (x, y) with
-  | (BU,_) => BU (*Do we want to do this or to respect | of I and & of B0 rules?*)
-  | (_,BU) => BU (*Do we want to do this or to respect | of I and & of B0 rules?*)
-(*  | (x,y) => bitU_of_bool (op (bool_of_bitU x) (bool_of_bitU y))*)
-  | (B0,B0) => bitU_of_bool (op false false)
-  | (B0,B1) => bitU_of_bool (op false  true)
-  | (B1,B0) => bitU_of_bool (op  true false)
-  | (B1,B1) => bitU_of_bool (op  true  true)
-  end.
-
-(*val and_bit : bitU -> bitU -> bitU*)
-Definition and_bit := binop_bit andb.
-
-(*val or_bit : bitU -> bitU -> bitU*)
-Definition or_bit := binop_bit orb.
-
-(*val xor_bit : bitU -> bitU -> bitU*)
-Definition xor_bit := binop_bit xorb.
-
-(*val (&.) : bitU -> bitU -> bitU
-Definition inline (&.) x y := and_bit x y
-
-val (|.) : bitU -> bitU -> bitU
-Definition inline (|.) x y := or_bit x y
-
-val (+.) : bitU -> bitU -> bitU
-Definition inline (+.) x y := xor_bit x y
-*)
-
 (*** Bool lists ***)
 
 (*val bools_of_nat_aux : integer -> natural -> list bool -> list bool*)
@@ -542,105 +424,7 @@ end.
 Definition add_one_bool_ignore_overflow bits :=
   List.rev (add_one_bool_ignore_overflow_aux (List.rev bits)).
 
-(*** Bit lists ***)
-
-(*val bits_of_nat_aux : natural -> list bitU*)
-Fixpoint bits_of_nat_aux n x :=
-  match n,x with
-  | O,_ => []
-  | _,O => []
-  | S n, S _ => (if x mod 2 =? 1 then B1 else B0) :: bits_of_nat_aux n (x / 2)
-  end%nat.
-(**declare {isabelle} termination_argument bits_of_nat_aux = automatic*)
-Definition bits_of_nat n := List.rev (bits_of_nat_aux n n).
-
-(*val nat_of_bits_aux : natural -> list bitU -> natural*)
-Fixpoint nat_of_bits_aux acc bs := match bs with
-  | [] => Some acc
-  | B1 :: bs => nat_of_bits_aux ((2 * acc) + 1) bs
-  | B0 :: bs => nat_of_bits_aux (2 * acc) bs
-  | BU :: bs => None
-end%nat.
-(*declare {isabelle} termination_argument nat_of_bits_aux = automatic*)
-Definition nat_of_bits bits := nat_of_bits_aux 0 bits.
-
-Definition not_bits := List.map not_bit.
-
-Definition binop_bits op bsl bsr :=
-  List.fold_right (fun '(bl, br) acc => binop_bit op bl br :: acc) [] (List.combine bsl bsr).
 (*
-Definition and_bits := binop_bits (&&)
-Definition or_bits := binop_bits (||)
-Definition xor_bits := binop_bits xor
-
-val unsigned_of_bits : list bitU -> Z*)
-Definition unsigned_of_bits bits :=
-match just_list (List.map bool_of_bitU bits) with
-| Some bs => Some (unsigned_of_bools bs)
-| None => None
-end.
-
-(*val signed_of_bits : list bitU -> Z*)
-Definition signed_of_bits bits :=
-  match just_list (List.map bool_of_bitU bits) with
-  | Some bs => Some (signed_of_bools bs)
-  | None => None
-  end.
-
-(*val int_of_bits : bool -> list bitU -> maybe integer*)
-Definition int_of_bits (sign : bool) bs :=
- if sign then signed_of_bits bs else unsigned_of_bits bs.
-
-(*val pad_bitlist : bitU -> list bitU -> Z -> list bitU*)
-Fixpoint pad_bitlist_nat (b : bitU) bits n :=
-match n with
-| O => bits
-| S n' => pad_bitlist_nat b (b :: bits) n'
-end.
-Definition pad_bitlist b bits n := pad_bitlist_nat b bits (Z.to_nat n). (* Negative n will come out as 0 *)
-(*  if n <= 0 then bits else pad_bitlist b (b :: bits) (n - 1).
-declare {isabelle} termination_argument pad_bitlist = automatic*)
-
-Definition ext_bits pad len bits :=
-  let longer := len - (Z.of_nat (List.length bits)) in
-  if longer <? 0 then skipn (Z.abs_nat longer) bits
-  else pad_bitlist pad bits longer.
-
-Definition extz_bits len bits := ext_bits B0 len bits.
-
-Definition exts_bits len bits :=
-  match bits with
-  | b :: _ => ext_bits b len bits
-  | _ => ext_bits B0 len bits
-  end.
-
-Fixpoint add_one_bit_ignore_overflow_aux bits := match bits with
-  | [] => []
-  | B0 :: bits => B1 :: bits
-  | B1 :: bits => B0 :: add_one_bit_ignore_overflow_aux bits
-  | BU :: _ => dummy bits (*failwith "add_one_bit_ignore_overflow: undefined bit"*)
-end.
-(*declare {isabelle} termination_argument add_one_bit_ignore_overflow_aux = automatic*)
-
-Definition add_one_bit_ignore_overflow bits :=
-  rev (add_one_bit_ignore_overflow_aux (rev bits)).
-
-Definition bitlist_of_int n :=
-  let bits_abs := B0 :: bits_of_nat (Z.abs_nat n) in
-  if n >=? 0 then bits_abs
-  else add_one_bit_ignore_overflow (not_bits bits_abs).
-
-Definition bits_of_int len n := exts_bits len (bitlist_of_int n).
-
-(*val arith_op_bits :
-  (integer -> integer -> integer) -> bool -> list bitU -> list bitU -> list bitU*)
-Definition arith_op_bits (op : Z -> Z -> Z) (sign : bool) l r :=
-  match (int_of_bits sign l, int_of_bits sign r) with
-    | (Some li, Some ri) => bits_of_int (length_list l) (op li ri)
-    | (_, _) => repeat [BU] (length_list l)
-  end.
-
-
 Definition char_of_nibble x :=
   match x with
   | (B0, B0, B0, B0) => Some "0"%char
@@ -684,7 +468,7 @@ Definition show_bitlist bs :=
   | Some s => String "0" (String "x" s)
   | None => String "0" (String "b" (binstring_of_bits bs))
   end.
-
+*)
 (*** List operations *)
 (*
 Definition inline (^^) := append_list
@@ -886,58 +670,31 @@ Definition word_to_mword {n} (w : word (Z_idx n)) : mword n :=
 (*val length_mword : forall a. mword a -> Z*)
 Definition length_mword {n} (w : mword n) := n.
 
-Definition access_mword_dec {m} (w : mword m) n := bitU_of_bool (get_bit (get_word w) (Z_idx n)).
+Definition access_mword_dec {m} (w : mword m) n : mword 1 := slice 1 (get_word w) (Z_idx n).
 
-(*val access_mword_inc : forall a. mword a -> Z -> bitU*)
-Definition access_mword_inc {m} (w : mword m) n :=
+Definition access_mword_inc {m} (w : mword m) n : mword 1 :=
   let top := (length_mword w) - 1 in
   access_mword_dec w (top - n).
 
-(*Parameter access_mword : forall {a}, bool -> mword a -> Z -> bitU.*)
 Definition access_mword {a} (is_inc : bool) (w : mword a) n :=
   if is_inc then access_mword_inc w n else access_mword_dec w n.
 
-(*val update_mword_bool_dec : forall 'a. mword 'a -> integer -> bool -> mword 'a*)
 Definition update_mword_bool_dec {a} (w : mword a) n b : mword a :=
   with_word (P := id) (fun w => set_bit w (Z_idx n) b) w.
-Definition update_mword_dec {a} (w : mword a) n b :=
- match bool_of_bitU b with
- | Some bl => Some (update_mword_bool_dec w n bl)
- | None => None
- end.
+Definition update_mword_dec {a} (w : mword a) n (b : mword 1) :=
+  update_slice w (Z_idx n) b.
 
-(*val update_mword_inc : forall a. mword a -> Z -> bitU -> mword a*)
 Definition update_mword_inc {a} (w : mword a) n b :=
   let top := (length_mword w) - 1 in
   update_mword_dec w (top - n) b.
 
-(*Parameter update_mword : forall {a}, bool -> mword a -> Z -> bitU -> mword a.*)
 Definition update_mword {a} (is_inc : bool) (w : mword a) n b :=
   if is_inc then update_mword_inc w n b else update_mword_dec w n b.
 
-(*val int_of_mword : forall 'a. bool -> mword 'a -> integer*)
 Definition int_of_mword {a} (sign : bool) (w : mword a) :=
   if sign then word_to_Z (get_word w) else Z.of_N (word_to_N (get_word w)).
 
-
-(*val mword_of_int : forall a. Size a => Z -> Z -> mword a
-Definition mword_of_int len n :=
-  let w := wordFromInteger n in
-  if (length_mword w = len) then w else failwith "unexpected word length"
-*)
 Definition mword_of_int {len} n : mword len := Z_to_word _ n.
-
-(*
-(* Translating between a type level number (itself n) and an integer *)
-
-Definition size_itself_int x := Z.of_nat (size_itself x)
-
-(* NB: the corresponding sail type is forall n. atom(n) -> itself(n),
-   the actual integer is ignored. *)
-
-val make_the_value : forall n. Z -> itself n
-Definition inline make_the_value x := the_value
-*)
 
 Definition mword_to_N {n} (w : mword n) : N :=
   word_to_N (get_word w).
@@ -965,6 +722,39 @@ Definition eq_vec_dec {n} : forall (x y : mword n), {x = y} + {x <> y} :=
   | Zpos m => @MachineWord.eq_dec _
   | Zneg m => @MachineWord.eq_dec _
   end.
+
+Local Lemma mword_of_bytes_idx (bs : list (mword 8)) :
+  idx_Z (idx_mul (Z_idx 8) (nat_idx (Datatypes.length bs))) = 8 * length_list bs.
+Proof.
+  rewrite idx_Z_idx_mul, nat_idx_Z, !idx_Z_idx.
+  * reflexivity.
+  * apply Z.le_ge. apply Nat2Z.is_nonneg.
+  * lia.
+Qed.
+
+Definition mword_of_bytes (bs : list (mword 8)) : mword (8 * length_list bs) :=
+  cast_Z (to_word_idx (MachineWord.word_list_concat bs)) (mword_of_bytes_idx bs).
+
+Local Lemma bytes_of_mword_idx n : n >= 0 -> Z_idx (8 * n) = idx_mul (Z_idx 8) (Z_idx n).
+Proof.
+  intro.
+  rewrite Z_idx_Z.
+  f_equal.
+  rewrite idx_Z_idx_mul.
+  rewrite !idx_Z_idx; lia.
+Qed.
+
+Definition bytes_of_mword [n] (w : mword (8 * n)) : list (mword 8) :=
+  match Z_ge_lt_dec n 0 with
+  | left p => MachineWord.word_split_list (cast_idx (n := idx_mul (Z_idx 8) (Z_idx n)) w (bytes_of_mword_idx _ p))
+  | right _ => []
+  end.
+
+Definition bit_of_bool (b : bool) : mword 1 :=
+  if b then mword_of_int 0 else mword_of_int 1.
+
+Definition bool_of_bit (b : mword 1) : bool :=
+  MachineWord.get_bit b 0.
 
 End MachineWords.
 
@@ -1001,10 +791,6 @@ match v with
 | None => def
 end.
 
-(*** Bytes and addresses *)
-
-Definition memory_byte := list bitU.
-
 (*val byte_chunks : forall a. list a -> option (list (list a))*)
 Fixpoint byte_chunks {a} (bs : list a) := match bs with
   | [] => Some []
@@ -1015,8 +801,8 @@ Fixpoint byte_chunks {a} (bs : list a) := match bs with
      end
   | _ => None
 end.
-(*declare {isabelle} termination_argument byte_chunks = automatic*)
 
+(*
 Definition bits_of {n} (v : mword n) := List.map bitU_of_bool (mword_to_bools v).
 Definition of_bits {n} v : option (mword n) :=
   match just_list (List.map bool_of_bitU v) with
@@ -1087,7 +873,7 @@ Fixpoint reverse_endianness_list (bits : list bitU) :=
     reverse_endianness_list t ++ firstn 8 bits
   | _ => bits
   end.
-
+*)
 (*** Registers *)
 
 Record register_ref {register : Type} {type_of_register : register -> Type} (ty : Type) := {
@@ -1116,14 +902,13 @@ Definition register_accessors regstate reg_type reg_to_type : Type :=
 (* The choice operations in the monads operate on a small selection of base
    types.  Normally, -undefined_gen is used to construct functions for more
    complex types. *)
-
 Inductive ChooseType : Type :=
-  | ChooseBool | ChooseBit | ChooseInt | ChooseNat | ChooseReal | ChooseString
+  | ChooseBool | ChooseInt | ChooseNat | ChooseReal | ChooseString
   | ChooseRange (lo hi : Z) | ChooseBitvector (n:Z).
 Scheme Equality for ChooseType.
 Definition choose_type ty :=
   match ty with
-  | ChooseBool => bool | ChooseBit => bitU | ChooseInt => Z | ChooseNat => Z
+  | ChooseBool => bool | ChooseInt => Z | ChooseNat => Z
   | ChooseReal => R | ChooseString => string
   | ChooseRange _ _ => Z | ChooseBitvector n => mword n
   end.
@@ -1132,7 +917,6 @@ Definition choose_type ty :=
 Definition choose_prop ty : choose_type ty -> Prop :=
   match ty with
   | ChooseBool
-  | ChooseBit
   | ChooseInt
   | ChooseNat
   | ChooseReal

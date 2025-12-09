@@ -207,3 +207,16 @@ Example reverse_endian_5 :
 compute.
 auto.
 Qed.
+
+Example word_split_list_1 :
+  let l := word_split_list (Z_to_word (8 * 2) 0x1234) in
+  length l = 2%nat /\
+  eqb (nth 0 l (zeros _)) (Z_to_word 8 0x12) = true /\
+  eqb (nth 1 l (zeros _)) (Z_to_word 8 0x34) = true.
+by vm_compute.
+Qed.
+
+Example word_list_concat_1 :
+  eqb (word_list_concat ([Z_to_word 8 0x12; Z_to_word 8 0x34])) (Z_to_word 16 0x1234) = true.
+by reflexivity.
+Qed.

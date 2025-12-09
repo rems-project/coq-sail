@@ -80,8 +80,8 @@ Inductive monad a e :=
   (* Read a number of bytes from memory, returned in little endian order,
      with or without a tag.  The first nat specifies the address, the second
      the number of bytes. *)
-  | Read_mem : read_kind -> N -> nat -> (list memory_byte -> monad a e) -> monad a e
-  | Read_memt : read_kind -> N -> nat -> ((list memory_byte * bitU) -> monad a e) -> monad a e
+  | Read_mem : read_kind -> N -> nat -> (list (mword 8) -> monad a e) -> monad a e
+  | Read_memt : read_kind -> N -> nat -> ((list (mword 8) * bool) -> monad a e) -> monad a e
   (* Tell the system a write is imminent, at the given address and with the
      given size. *)
   | Write_ea : write_kind -> N -> nat -> monad a e -> monad a e
@@ -89,9 +89,9 @@ Inductive monad a e :=
   | Excl_res : (bool -> monad a e) -> monad a e
   (* Request to write a memory value of the given size at the given address,
      with or without a tag. *)
-  | Write_mem : write_kind -> N -> nat -> list memory_byte -> (bool -> monad a e) -> monad a e
-  | Write_memt : write_kind -> N -> nat -> list memory_byte -> bitU -> (bool -> monad a e) -> monad a e
-  | Write_tag : write_kind -> N -> bitU -> (bool -> monad a e) -> monad a e
+  | Write_mem : write_kind -> N -> nat -> list (mword 8) -> (bool -> monad a e) -> monad a e
+  | Write_memt : write_kind -> N -> nat -> list (mword 8) -> bool -> (bool -> monad a e) -> monad a e
+  | Write_tag : write_kind -> N -> bool -> (bool -> monad a e) -> monad a e
   (* Tell the system to dynamically recalculate dependency footprint *)
   | Footprint : monad a e -> monad a e
   (* Request a memory barrier *)
@@ -139,11 +139,11 @@ assumption.
 Qed.
 
 Inductive event :=
-  | E_read_mem : read_kind -> N -> nat -> list memory_byte -> event
-  | E_read_memt : read_kind -> N -> nat -> (list memory_byte * bitU) -> event
-  | E_write_mem : write_kind -> N -> nat -> list memory_byte -> bool -> event
-  | E_write_memt : write_kind -> N -> nat -> list memory_byte -> bitU -> bool -> event
-  | E_write_tag : write_kind -> N -> nat -> bitU -> bool -> event
+  | E_read_mem : read_kind -> N -> nat -> list (mword 8) -> event
+  | E_read_memt : read_kind -> N -> nat -> (list (mword 8) * bool) -> event
+  | E_write_mem : write_kind -> N -> nat -> list (mword 8) -> bool -> event
+  | E_write_memt : write_kind -> N -> nat -> list (mword 8) -> bool -> bool -> event
+  | E_write_tag : write_kind -> N -> nat -> bool -> bool -> event
   | E_write_ea : write_kind -> N -> nat -> event
   | E_excl_res : bool -> event
   | E_barrier : barrier_kind -> event
@@ -206,7 +206,6 @@ Section Choose.
 Context {E : Type}.
 
 Definition choose_bool descr : monad bool E := Choose descr ChooseBool returnm.
-Definition choose_bit descr : monad bitU E := Choose descr ChooseBit returnm.
 Definition choose_int descr : monad Z E := Choose descr ChooseInt returnm.
 Definition choose_nat descr : monad Z E := Choose descr ChooseNat returnm.
 Definition choose_real descr : monad _ E := Choose descr ChooseReal returnm.
@@ -301,30 +300,25 @@ Definition try_catchR {A R E1 E2} (m : monadR A R E1) (h : E1 -> monadR A R E2) 
       | inr e => h e
      end).
 
-(*val read_memt_bytes : forall 'rv 'a 'b 'e. Bitvector 'a, Bitvector 'b => read_kind -> 'a -> integer -> monad 'rv (list memory_byte * bitU) 'e*)
-Definition read_memt_bytes {A E} rk (addr : mword A) sz : monad (list memory_byte * bitU) E :=
+(*val read_memt_bytes : forall 'rv 'a 'b 'e. Bitvector 'a, Bitvector 'b => read_kind -> 'a -> integer -> monad 'rv (list (mword 8) * bool) 'e*)
+Definition read_memt_bytes {A E} rk (addr : mword A) sz : monad (list (mword 8) * bool) E :=
   Read_memt rk (mword_to_N addr) (Z.to_nat sz) returnm.
 
-(*val read_memt : forall 'rv 'a 'b 'e. Bitvector 'a, Bitvector 'b => read_kind -> 'a -> integer -> monad 'rv ('b * bitU) 'e*)
-Definition read_memt {A E} rk (addr : mword A) sz : monad (mword (8 * sz) * bitU) E :=
+(*val read_memt : forall 'rv 'a 'b 'e. Bitvector 'a, Bitvector 'b => read_kind -> 'a -> integer -> monad 'rv ('b * bool) 'e*)
+Definition read_memt {A E} rk (addr : mword A) sz : monad (mword (8 * sz) * mword 1) E :=
   bind
     (read_memt_bytes rk addr sz)
-    (fun '(bytes, tag) =>
-       match of_bits (bits_of_mem_bytes bytes) with
-       | Some v => returnm (v, tag)
-       | None => Fail "bits_of_mem_bytes"
-       end).
+    (fun '(bytes, tag) => returnm (TypeCasts.autocast (mword_of_bytes bytes), bit_of_bool tag)).
 
-(*val read_mem_bytes : forall 'rv 'a 'b 'e. Bitvector 'a, Bitvector 'b => read_kind -> 'a -> integer -> monad 'rv (list memory_byte) 'e*)
-Definition read_mem_bytes {A E} rk (addr : mword A) sz : monad (list memory_byte) E :=
+(*val read_mem_bytes : forall 'rv 'a 'b 'e. Bitvector 'a, Bitvector 'b => read_kind -> 'a -> integer -> monad 'rv (list (mword 8)) 'e*)
+Definition read_mem_bytes {A E} rk (addr : mword A) sz : monad (list (mword 8)) E :=
   Read_mem rk (mword_to_N addr) (Z.to_nat sz) returnm.
 
 (*val read_mem : forall 'rv 'a 'b 'e. Bitvector 'a, Bitvector 'b => read_kind -> 'a -> integer -> monad 'rv 'b 'e*)
 Definition read_mem {A E} rk (addrsz : Z) (addr : mword A) sz : monad (mword (8 * sz)) E :=
   bind
     (read_mem_bytes rk addr sz)
-    (fun bytes =>
-       maybe_fail "bits_of_mem_bytes" (of_bits (bits_of_mem_bytes bytes))).
+    (fun bytes => returnm (TypeCasts.autocast (mword_of_bytes bytes))).
 
 (*val excl_result : forall rv e. unit -> monad rv bool e*)
 Definition excl_result {e} (_:unit) : monad bool e :=
@@ -337,29 +331,25 @@ Definition write_mem_ea {a E} wk (addrsz : Z) (addr: mword a) sz : monad unit E 
 (*val write_mem : forall 'rv 'a 'b 'e. Bitvector 'a, Bitvector 'b =>
   write_kind -> integer -> 'a -> integer -> 'b -> monad 'rv bool 'e*)
 Definition write_mem {a E} wk (addrsz : Z) (addr : mword a) sz (v : mword (8 * sz)) : monad bool E :=
-  match (mem_bytes_of_bits v, mword_to_N addr) with
-    | (Some v, addr) =>
-       Write_mem wk addr (Z.to_nat sz) v returnm
-    | _ => Fail "write_mem"
-  end.
+  let v := bytes_of_mword v in
+  let addr := mword_to_N addr in
+  Write_mem wk addr (Z.to_nat sz) v returnm.
 
 (*val write_memt : forall 'rv 'a 'b 'e. Bitvector 'a, Bitvector 'b =>
-  write_kind -> 'a -> integer -> 'b -> bitU -> monad 'rv bool 'e*)
+  write_kind -> 'a -> integer -> 'b -> bool -> monad 'rv bool 'e*)
 Definition write_memt {a E} wk (addr : mword a) sz (v : mword (8 * sz)) tag : monad bool E :=
-  match (mem_bytes_of_bits v, mword_to_N addr) with
-    | (Some v, addr) =>
-       Write_memt wk addr (Z.to_nat sz) v tag returnm
-    | _ => Fail "write_mem"
-  end.
-
-Definition write_tag {a E} wk (addr : mword a) tag : monad bool E :=
+  let v := bytes_of_mword v in
   let addr := mword_to_N addr in
-       Write_tag wk addr tag returnm.
+  Write_memt wk addr (Z.to_nat sz) v (bool_of_bit tag) returnm.
+
+Definition write_tag {a E} wk (addr : mword a) (tag : mword 1) : monad bool E :=
+  let addr := mword_to_N addr in
+       Write_tag wk addr (bool_of_bit tag) returnm.
 
 (* This alternate version is used in a few places, but should probably disappear *)
 Definition write_tag_bool {a E} (addr : mword a) tag : monad bool E :=
   let addr := mword_to_N addr in
-       Write_tag Write_plain addr (bitU_of_bool tag) returnm.
+       Write_tag Write_plain addr tag returnm.
 
 Definition read_reg {e} (reg : register) : monad (reg_to_type reg) e :=
   let k v := Done v in

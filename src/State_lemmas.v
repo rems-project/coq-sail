@@ -573,7 +573,7 @@ Lemma liftState_read_memt Regs Reg RegType A E rk a sz r :
 unfold read_memt, read_memt_bytes, read_memtS, maybe_failS. simpl.
 apply bindS_cong; auto.
 intros [byte bit].
-destruct (of_bits _); auto.
+auto.
 Qed.
 #[export] Hint Rewrite liftState_read_memt : liftState.
 #[export] Hint Resolve liftState_read_memt : liftState.
@@ -587,8 +587,7 @@ apply bindS_cong; auto.
 intros [ bytes | ]; auto. simpl.
 apply bindS_cong; auto.
 intros [byte bit].
-rewrite bindS_returnS_left. rewrite_liftState.
-destruct (of_bits _); auto.
+rewrite bindS_returnS_left. auto.
 Qed.
 #[export] Hint Rewrite liftState_read_mem : liftState.
 #[export] Hint Resolve liftState_read_mem : liftState.
@@ -603,7 +602,7 @@ Qed.
 Lemma liftState_write_memt Regs Reg RegType A E wk addr sz v t r :
   liftState (Regs := Regs) r (@write_memt Reg RegType A E wk addr sz v t) = write_memtS wk addr sz v t.
 unfold write_memt, write_memtS.
-destruct (Values.mem_bytes_of_bits v); auto.
+auto.
 Qed.
 #[export] Hint Rewrite liftState_write_memt : liftState.
 #[export] Hint Resolve liftState_write_memt : liftState.
@@ -611,7 +610,7 @@ Qed.
 Lemma liftState_write_mem Regs Reg RegType A E wk addrsize addr sz v r :
   liftState (Regs := Regs) r (@write_mem Reg RegType A E wk addrsize addr sz v) = write_memS wk addr sz v.
 unfold write_mem, write_memS, write_memtS.
-destruct (Values.mem_bytes_of_bits v); simpl; auto.
+auto.
 Qed.
 #[export] Hint Rewrite liftState_write_mem : liftState.
 #[export] Hint Resolve liftState_write_mem : liftState.

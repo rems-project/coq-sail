@@ -28,6 +28,7 @@ Parameter idx_S : idx -> idx.
 Parameter idx_add : idx -> idx -> idx.
 Parameter idx_mul : idx -> idx -> idx.
 Axiom Z_idx_S : forall z, (z >= 0)%Z -> Z_idx (Z.succ z) = idx_S (Z_idx z).
+Axiom idx_Z_idx_mul : forall x y, idx_Z (idx_mul x y) = (idx_Z x * idx_Z y)%Z.
 
 (* Now the actual bitvectors. *)
 
@@ -97,4 +98,9 @@ Parameter reverse_endian : forall [n], word n -> word n.
 
 Parameter word_to_binary_string : forall [n], word n -> String.string.
 (*Parameter word_to_hex_string : forall [n], word n -> String.string.*)
+
+(* Little endian list operations *)
+Parameter word_list_concat : forall [n], forall l : list (word n), word (idx_mul n (nat_idx (length l))).
+Parameter word_split_list : forall [m] [n], word (idx_mul m n) -> list (word m).
+
 End MachineWordInterface.

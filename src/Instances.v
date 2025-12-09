@@ -172,9 +172,6 @@ Ltac cmp_record_field x y :=
     split; [congruence | intros Z; destruct H; injection Z; auto]
   ].
 
-#[export] Instance Decidable_eq_bit : forall (x y : bitU), Decidable (x = y) :=
-  Decidable_eq_from_dec bitU_eq_dec.
-
 Ltac unbool_comparisons :=
   repeat match goal with
   | H:@eq bool _ _ -> @ex bool _ |- _ => apply lift_bool_exists in H; destruct H

@@ -66,6 +66,12 @@ Proof.
   apply Z2N.inj_succ; lia.
 Qed.
 
+Lemma idx_Z_idx_mul x y : idx_Z (idx_mul x y) = (idx_Z x * idx_Z y)%Z.
+Proof.
+  unfold idx_Z, idx_mul.
+  apply N2Z.inj_mul.
+Qed.
+
 Definition word := bv.
 
 Definition zeros n : word n := bv_0 n.
@@ -338,5 +344,22 @@ Definition word_to_binary_string [n] (w : word n) : String.string :=
   let bits := word_to_bools w in
   let digits := List.map (fun b : bool => if b then "1" else "0")%string bits in
   String.concat "" digits.
+
+Local Lemma list_concat_base n : 0%N = (n * N.of_nat (List.length (A := word n) []))%N.
+Proof.
+  simpl. lia.
+Qed.
+Local Lemma list_concat_step n l (w : word n) : (n + n * N.of_nat (List.length l))%N = (n * N.of_nat (List.length (w :: l)))%N.
+Proof.
+  simpl. lia.
+Qed.
+
+Definition word_list_concat [n] (l : list (word n)) : word (idx_mul n (nat_idx (List.length l))) :=
+  list_rec (fun l => word (n * N.of_nat (List.length l)))
+    (cast_idx (zeros 0) (list_concat_base _))
+    (fun w _ t => cast_idx (concat w t) (list_concat_step _ _ _)) l.
+
+Definition word_split_list [m] [n] (w : word (idx_mul m n)) : list (word m) :=
+  N.recursion [] (fun i l => bv_extract (m * i) m w :: l) n.
 
 End MachineWord.

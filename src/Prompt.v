@@ -167,34 +167,6 @@ Definition or_boolM {E} (l : monad bool E) (r : monad bool E) : monad bool E :=
  l >>= (fun l => if l then returnm true else r).
 
 
-(*val bool_of_bitU_fail : forall 'rv 'e. bitU -> monad 'rv bool 'e*)
-Definition bool_of_bitU_fail {E} (b : bitU) : monad bool E :=
-match b with
-  | B0 => returnm false
-  | B1 => returnm true
-  | BU => Fail "bool_of_bitU"
-end.
-
-Definition bool_of_bitU_nondet {E} (b : bitU) : monad bool E :=
-match b with
-  | B0 => returnm false
-  | B1 => returnm true
-  | BU => choose_bool "bool_of_bitU"
-end.
-
-Definition bools_of_bits_nondet {E} (bits : list bitU) : monad (list bool) E :=
-  foreachM bits []
-    (fun b bools =>
-      bool_of_bitU_nondet b >>= fun b => 
-      returnm (bools ++ [b])).
-
-Definition of_bits_nondet {n E} (bits : list bitU) : monad (mword n) E :=
-  bools_of_bits_nondet bits >>= fun bs =>
-  returnm (of_bools bs).
-
-Definition of_bits_fail {n E} (bits : list bitU) : monad (mword n) E :=
-  maybe_fail "of_bits" (of_bits bits).
-
 (* For termination of recursive functions. *)
 Definition _limit_reduces {_limit} (_acc:Acc (Zwf 0) _limit) (H : _limit >= 0) : Acc (Zwf 0) (_limit - 1).
 refine (Acc_inv _acc _).

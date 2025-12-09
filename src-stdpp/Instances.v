@@ -102,16 +102,6 @@ Ltac cmp_record_field x y :=
   case (generic_dec x y);
   intro H; [ | right; injection; auto ].
 
-#[export] Instance Decidable_eq_bit : EqDecision bitU := bitU_eq_dec.
-
-#[export] Instance Countable_bitU : Countable bitU.
-refine {|
-  encode x := match x with B0 => 1 | B1 => 2 | BU => 3 end;
-  decode x := match x with 1 => Some B0 | 2 => Some B1 | 3 => Some BU | _ => None end
-|}%positive.
-intros [| |]; reflexivity.
-Defined.
-
 Ltac unbool_comparisons :=
   repeat match goal with
   | H:@eq bool _ _ -> @ex bool _ |- _ => apply lift_bool_exists in H; destruct H
