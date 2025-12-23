@@ -4,7 +4,10 @@ Changelog
 0.20.1
 ------
 
-* Switch to simpler register scheme, matching Sail 0.20.1
+Both changes reflect changes in Sail 0.20.1:
+
+* Switch to simpler register scheme
+* Remove `bitU` in favour of 1-element bitvectors
 
 0.20
 ----
