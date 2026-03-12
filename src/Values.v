@@ -109,6 +109,21 @@ Definition result_bind {A B E} (f : A -> result B E) (a : result A E) : result B
   | Err e => Err e
   end.
 
+Lemma result_bind_inv {A B E} (f : A -> result B E) (a : result A E) (b : B) :
+  result_bind f a = Ok b -> exists a', a = Ok a' /\ f a' = Ok b.
+Proof.
+  intros EQ.
+  destruct a as [a' | err].
+  * exists a'. auto.
+  * simpl in EQ. congruence.
+Qed.
+
+Definition result_bind_pf {A B E} (a : result A E) (f : forall a', a = Ok a' -> result B E) : result B E :=
+  match a with
+  | Ok a => fun f => f a eq_refl
+  | Err e => fun _ => Err e
+  end f.
+
 Definition ii := Z.
 Definition nn := nat.
 
