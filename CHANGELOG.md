@@ -1,8 +1,11 @@
 Changelog
 =========
 
-Development
------------
+Note: We will soon switch to having rocq-sail packages and drop support for
+Coq.
+
+0.20.2
+------
 
 * Add `GenericValue.v` file for conversion to and from toml-like values
 
