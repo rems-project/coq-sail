@@ -1,6 +1,6 @@
-(coq.theory
+(rocq.theory
  (name Sail)
- (package coq-sail)
+; (package rocq-sail)
  (modules
    Inhabited
    MachineWordInterface
@@ -26,9 +26,10 @@
    Real
    Impl_base
  )
- (theories bbv)
- (coqdoc_flags :standard --utf8
-               --coqlib_url https://coq.inria.fr/doc/V8.20.1/stdlib
+ (theories Stdlib bbv)
+ (rocqdoc_flags :standard --utf8
+               --external https://rocq-prover.org/doc/V9.0.0/stdlib/ Stdlib
+               --coqlib_url https://rocq-prover.org/doc/V9.0.0/corelib/
  )
 )
 

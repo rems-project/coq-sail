@@ -1,4 +1,4 @@
-From Coq Require Import ZArith String List.
+From Stdlib Require Import ZArith String List.
 Require Import Inhabited.
 Require Import Values String Instances.
 

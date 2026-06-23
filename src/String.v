@@ -66,7 +66,7 @@
 (*==========================================================================*)
 
 Require Import Values MachineWord.
-From Coq Require Import Strings.Ascii.
+From Stdlib Require Import Strings.Ascii.
 Local Open Scope Z.
 
 Definition string_sub (s : string) (start : Z) (len : Z) : string :=

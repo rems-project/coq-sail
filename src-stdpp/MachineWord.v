@@ -1,6 +1,6 @@
 Require TypeCasts MachineWordInterface.
 From stdpp Require Import base bitvector.definitions list.
-From Coq Require Import ZArith String.
+From Stdlib Require Import ZArith String.
 
 Module MachineWord <: MachineWordInterface.MachineWordInterface.
 
@@ -144,12 +144,6 @@ specialize (bv_signed_in_range _ w ltac:(Lia.lia)).
 unfold bv_half_modulus, bv_modulus, word_to_Z.
 rewrite N2Z.inj_succ.
 rewrite Z.pow_succ_r; auto with zarith.
-
-replace (2 * 2 ^ Z.of_N n / 2)%Z with (2 ^ Z.of_N n)%Z. 2: {
-  rewrite Z.mul_comm.
-  rewrite Z.div_mul; auto.
-}
-trivial.
 Qed.
 
 Definition ones n : word n := Z_to_bv _ (-1).
@@ -161,7 +155,7 @@ Lemma word_to_bools_length : forall [n] (w : word n), List.length (word_to_bools
 intros.
 unfold idx_nat.
 unfold word_to_bools.
-rewrite List.rev_length.
+rewrite List.length_rev.
 (* Renamed in recent stdpp *)
 first [rewrite bv_to_bits_length | rewrite length_bv_to_bits].
 reflexivity.
@@ -189,7 +183,7 @@ Lemma nth_error_rev A (l : list A) i x :
 destruct (lt_dec i (List.length l)) as [H|H].
 * rewrite List.nth_error_nth' with (d := x); auto.
   rewrite List.nth_error_nth' with (d := x). 2: {
-    rewrite List.rev_length.
+    rewrite List.length_rev.
     Lia.lia.
   }
   rewrite List.rev_nth. 2: Lia.lia.
@@ -209,7 +203,7 @@ specialize (bv_to_bits_lookup_Some w (N.to_nat n - i - 1) x).
 rewrite nth_error_lookup.
 intro H.
 rewrite nth_error_rev.
-rewrite List.rev_involutive, List.rev_length.
+rewrite List.rev_involutive, List.length_rev.
 (* Renamed in recent stdpp *)
 first [rewrite bv_to_bits_length | rewrite length_bv_to_bits].
 rewrite H.
@@ -274,13 +268,13 @@ rewrite bv_wrap_small. 2: {
   split; [Lia.lia|].
   unfold bv_modulus.
   specialize (N_of_digits_limit (List.rev l)).
-  rewrite List.rev_length.
+  rewrite List.length_rev.
   Lia.lia.
 }
 rewrite Z.testbit_of_N.
 rewrite nth_error_rev.
 specialize (nth_error_N_of_digits (List.rev l) (List.length l - i - 1) b).
-rewrite List.rev_length.
+rewrite List.length_rev.
 assert (i < Datatypes.length l -> Datatypes.length l - i - 1 < Datatypes.length l) by Lia.lia.
 intuition.
 Qed.

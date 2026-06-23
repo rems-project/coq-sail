@@ -65,15 +65,13 @@
 (*  SUCH DAMAGE.                                                            *)
 (*==========================================================================*)
 
-(* Version of sail_values.lem that uses Lems machine words library *)
-
-(*Require Import Sail_impl_base*)
-From Coq Require Export ZArith String List Sumbool Zeuclid.
-From Coq Require Import Ascii Eqdep_dec Lia.
-From Coq Require BinaryString HexString.
+(* Zeuclid will be removed once the Sail backend stops generating it. *)
+From Stdlib Require Export ZArith String List Sumbool Zeuclid.
+From Stdlib Require Import Ascii Eqdep_dec Lia.
+From Stdlib Require BinaryString HexString.
 Import ListNotations.
-From Coq Require Import Rbase.  (* TODO would like to avoid this in models without reals *)
-From Coq Require Eqdep EqdepFacts Zquot.
+From Stdlib Require Import Rbase.  (* TODO would like to avoid this in models without reals *)
+From Stdlib Require Eqdep EqdepFacts Zquot.
 
 Require Import TypeCasts MachineWord.
 
@@ -131,52 +129,6 @@ Definition nn := nat.
 Definition pow m n := m ^ n.
 
 Definition pow2 n := pow 2 n.
-
-Lemma ZEuclid_div_pos : forall x y, 0 < y -> 0 <= x -> 0 <= ZEuclid.div x y.
-intros.
-unfold ZEuclid.div.
-change 0 with (0 * 0).
-apply Zmult_le_compat.
-3,4: auto with zarith.
-* apply Z.sgn_nonneg. auto with zarith.
-* apply Z_div_pos; auto. apply Z.lt_gt. apply Z.abs_pos. auto with zarith.
-Qed.
-
-Lemma ZEuclid_pos_div : forall x y, 0 < y -> 0 <= ZEuclid.div x y -> 0 <= x.
-intros x y GT.
-  specialize (ZEuclid.div_mod x y);
-  specialize (ZEuclid.mod_always_pos x y);
-  generalize (ZEuclid.modulo x y);
-  generalize (ZEuclid.div x y);
-  intros.
-nia.
-Qed.
-
-Lemma ZEuclid_div_ge : forall x y, y > 0 -> x >= 0 -> x - ZEuclid.div x y >= 0.
-intros.
-unfold ZEuclid.div.
-rewrite Z.sgn_pos. 2: solve [ auto with zarith ].
-rewrite Z.mul_1_l.
-apply Z.le_ge.
-apply Zle_minus_le_0.
-apply Z.div_le_upper_bound.
-* apply Z.abs_pos. auto with zarith.
-* rewrite Z.mul_comm.
-  nia.
-Qed.
-
-Lemma ZEuclid_div_mod0 : forall x y, y <> 0 ->
-  ZEuclid.modulo x y = 0 ->
-  y * ZEuclid.div x y = x.
-intros x y H1 H2.
-rewrite Zplus_0_r_reverse at 1.
-rewrite <- H2.
-symmetry.
-apply ZEuclid.div_mod.
-assumption.
-Qed.
-
-#[export] Hint Resolve ZEuclid_div_pos ZEuclid_pos_div ZEuclid_div_ge ZEuclid_div_mod0 : sail.
 
 Lemma Z_geb_ge n m : (n >=? m) = true <-> n >= m.
 rewrite Z.geb_leb.
@@ -249,7 +201,7 @@ Lemma repeat'_length {a} {xs : list a} {n : nat} : List.length (repeat' xs n) = 
 induction n.
 * reflexivity.
 * simpl.
-  rewrite app_length.
+  rewrite length_app.
   auto with arith.
 Qed.
 Definition repeat {a} (xs : list a) (n : Z) :=
@@ -1164,7 +1116,7 @@ refine (
      @existT _ _ (projT1 v ++ projT1 w) _
   else dummy_value).
 destruct v,w.
-rewrite app_length.
+rewrite length_app.
 rewrite Z2Nat.inj_add; auto with zarith.
 Defined.
 
@@ -1190,7 +1142,7 @@ assert ((0 <= Z.to_nat m < Datatypes.length l)%nat).
   + rewrite <- Nat2Z.id.
     apply Z2Nat.inj_lt; auto with zarith.
 }
-rewrite app_length.
+rewrite length_app.
 rewrite firstn_length_le; only 2:lia.
 cbn -[skipn].
 rewrite skipn_length;
@@ -1235,7 +1187,7 @@ refine (@existT _ _ (List.map f (projT1 v)) _).
 destruct v as [l H].
 cbn.
 unfold length_list.
-rewrite map_length.
+rewrite length_map.
 apply H.
 Defined.
 

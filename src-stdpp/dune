@@ -1,6 +1,6 @@
-(coq.theory
+(rocq.theory
  (name SailStdpp)
- (package coq-sail-stdpp)
+ (package rocq-sail-stdpp)
  (modules
    Inhabited
    MachineWordInterface
@@ -32,15 +32,16 @@
    ConcurrencyInterfaceBuiltinsV2
    ConcurrencyInterfaceV2
  )
- (theories stdpp stdpp.bitvector)
- (coqdoc_flags :standard --utf8
+ (theories Stdlib stdpp stdpp.bitvector)
+ (rocqdoc_flags :standard --utf8
                --external https://plv.mpi-sws.org/coqdoc/stdpp/ stdpp
-               --coqlib_url https://coq.inria.fr/doc/V8.20.1/stdlib
+               --external https://rocq-prover.org/doc/V9.0.0/stdlib/ Stdlib
+               --coqlib_url https://rocq-prover.org/doc/V9.0.0/corelib/
  )
 )
 
 (subdir tests
- (coq.theory
+ (rocq.theory
   (name SailStdpp.tests)
   (modules MachineWordTest)
   (theories stdpp stdpp.bitvector SailStdpp)

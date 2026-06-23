@@ -1,6 +1,6 @@
-From Coq Require Import ZArith.
+From Stdlib Require Import ZArith.
  (* We cannot import String since this would give use the wrong length function. *)
-From Coq Require String.
+From Stdlib Require String.
 
 Module Type MachineWordInterface.
 

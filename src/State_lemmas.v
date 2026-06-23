@@ -67,10 +67,13 @@
 
 Require Import Values Prompt_monad Prompt State_monad State State State_lifting.
 Require Import State_monad_lemmas.
-From Coq Require Import Lia.
+From Stdlib Require Import Lia.
 
 Local Open Scope equiv_scope.
 Local Open Scope Z.
+
+(* This file was written before stdpp restricted the mode of Equivalence. *)
+#[local] Hint Mode Equivalence - - : typeclass_instances.
 
 Lemma seqS_cong A RV E (m1 m1' : monadS RV unit E) (m2 m2' : monadS RV A E) :
   m1 === m1' ->

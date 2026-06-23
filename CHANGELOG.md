@@ -1,8 +1,12 @@
 Changelog
 =========
 
-Note: We will soon switch to having rocq-sail packages and drop support for
-Coq.
+0.20.2-rocq
+-----------
+
+* Change package name to rocq-sail-stdpp
+* Drop BBV version for now (please ask if you would like it to return)
+* Update proofs for stdpp 1.13.0
 
 0.20.2
 ------

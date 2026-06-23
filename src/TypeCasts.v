@@ -1,4 +1,4 @@
-From Coq Require Import ZArith Eqdep_dec.
+From Stdlib Require Import ZArith Eqdep_dec.
 Require Export Inhabited.
 
 Module Z_eq_dec.

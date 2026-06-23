@@ -66,8 +66,8 @@
 (*==========================================================================*)
 
 Require Import State_monad.
-From Coq Require Export Setoid.
-From Coq Require Export Morphisms Equivalence.
+From Stdlib Require Export Setoid.
+From Stdlib Require Export Morphisms Equivalence.
 
 (* Basic results for reasoning about definitions which use the state monad.
 
@@ -91,7 +91,8 @@ Qed.
 #[export] Hint Extern 4 (_ === _) => reflexivity : core.
 #[export] Hint Extern 4 (_ === _) => symmetry : core.
 
-
+(* This file was written before stdpp restricted the mode of Equivalence. *)
+#[local] Hint Mode Equivalence - - : typeclass_instances.
 
 Lemma bindS_ext_cong (*[fundef_cong]:*) {Regs A B E}
   {m1 m2 : monadS Regs A E} {f1 f2 : A -> monadS Regs B E} s cs :

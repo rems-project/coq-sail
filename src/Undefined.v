@@ -66,7 +66,7 @@
 (*==========================================================================*)
 
 Require Import TypeCasts Prompt_monad Prompt Values.
-From Coq Require Import String ZArith.
+From Stdlib Require Import String ZArith.
 Local Open Scope Z.
 
 Section Undef.

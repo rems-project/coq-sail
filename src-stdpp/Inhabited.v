@@ -1,4 +1,4 @@
-From Coq Require Import ZArith String List.
+From Stdlib Require Import ZArith String List.
 From stdpp Require Import base strings.
 
 (* To avoid carrying around proofs that vector sizes are correct everywhere,

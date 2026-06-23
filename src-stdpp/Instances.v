@@ -67,7 +67,7 @@
 
 (* Machinery for typeclass instances, stdpp version *)
 
-From Coq Require Reals.ROrderedType.
+From Stdlib Require Reals.ROrderedType.
 From SailStdpp Require Import Values.
 From stdpp Require Import base countable decidable strings.
 
@@ -206,11 +206,7 @@ refine (fun '(@existT _ _ x p) '(@existT _ _ y q) =>
           | right ne => right _
           end).
 Proof.
-  - subst y.
-    refine (match Peq _ p q with left e' => left _ | right ne => right _ end).
-    * congruence.
-    * contradict ne. apply (Eqdep_dec.inj_pair2_eq_dec _ ET _ _ _ _ ne).
-  - contradict ne. apply (eq_sigT_fst ne).
+  contradict ne. apply (eq_sigT_fst ne).
 Defined.
 
 #[export] Instance Countable_eq_sigT {T} {P : T -> Type} `{EqDecision T} `{forall t, EqDecision (P t)} `{CT : Countable T} `{CPt : forall t, Countable (P t)} : Countable (sigT P).

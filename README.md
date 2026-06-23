@@ -30,21 +30,17 @@ opam with Rocq](https://rocq-prover.org/docs/installing-rocq) for more
 information.  There are two variants which use different bitvector
 libraries:
 
-* The `coq-sail-stdpp` package uses the [stdpp
+* The `rocq-sail-stdpp` package uses the [stdpp
   library's](https://gitlab.mpi-sws.org/iris/stdpp) bitvector package.
-  This is the default, but you can also use the `--coq-lib-style
+  This is the default, but you can also use the `--rocq-lib-style
   stdpp` option with Sail to target this package.
-* The `coq-sail` package depends on the `coq-bbv` package
-  for its implementation of bitvectors.  Use the `--coq-lib-style bbv`
-  option with Sail to target this package.  Note that the new Sail
-  concurrency interface isn't supported when targeting bbv at the
-  moment; please get in touch if you need this.
+* We previously provided a `coq-sail` package that used the `coq-bbv`
+  package for its implementation of bitvectors.  We do not currently
+  package this, so please get in touch if you need this.
 
-It's also possible to build the libraries locally with dune. You need to install
-either `coq-bbv` or `coq-stdpp-bitvector`, and then respectively
-run `dune build @bbv` or `dune build @stdpp`. `dune build` alone will build both
-of them. You can run very bare-bones tests for the stdpp version with
-`dune build @runtest`
+It's also possible to build the library locally with dune. You need to
+install `rocq-stdpp-bitvector`, and then run `dune build`. You can run
+some very bare-bones tests with `dune build @runtest`
 
 Licensing
 =========

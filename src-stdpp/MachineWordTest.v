@@ -1,6 +1,6 @@
 From SailStdpp Require Import MachineWord.
 From stdpp Require Import bitvector.
-From Coq Require Import ZArith.
+From Stdlib Require Import ZArith.
 
 Import MachineWord.
 Open Scope Z.

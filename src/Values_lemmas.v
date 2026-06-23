@@ -66,7 +66,7 @@
 (*==========================================================================*)
 
 Require Import Values.
-From Coq Require Program Program.Wf.
+From Stdlib Require Program Program.Wf.
 
 (*
 

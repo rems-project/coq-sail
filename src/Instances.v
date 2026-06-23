@@ -67,9 +67,9 @@
 
 (* Machinery for typeclass instances, BBV version *)
 
-From Coq Require Export DecidableClass.
-From Coq Require Import List.
-From Coq Require Reals.ROrderedType.
+From Stdlib Require Export DecidableClass.
+From Stdlib Require Import List.
+From Stdlib Require Reals.ROrderedType.
 From Sail Require Import Values.
 
 Import ListNotations.

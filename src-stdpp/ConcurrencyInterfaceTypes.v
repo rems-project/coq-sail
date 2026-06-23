@@ -20,7 +20,7 @@ Defined.
   generic_update up prev := update_enum_type up [("AV_plain", AV_plain); ("AV_exclusive", AV_exclusive); ("AV_atomic_rmw", AV_atomic_rmw)] prev
 }.
 #[export] Instance ToGeneric_Access_variety : ToGeneric Access_variety := {
-  to_generic v := match v with AV_plain => GVString "AV_plain" | AV_exclusive => GVString "AV_exclusive" | AV_atomic_raw => GVString "AV_atomic_raw" end
+  to_generic v := match v with AV_plain => GVString "AV_plain" | AV_exclusive => GVString "AV_exclusive" | AV_atomic_rmw => GVString "AV_atomic_rmw" end
 }.
 
 Inductive Access_strength := AS_normal | AS_rel_or_acq | AS_acq_rcpc.

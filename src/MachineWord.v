@@ -1,9 +1,9 @@
 From Sail Require Import TypeCasts.
 From Sail Require MachineWordInterface.
 From bbv Require Word.
-From Coq Require Arith.
-From Coq Require Import ZArith NArith.
-From Coq Require Lia String Strings.Ascii.
+From Stdlib Require Arith.
+From Stdlib Require Import ZArith NArith.
+From Stdlib Require Lia String Strings.Ascii.
 
 Module MachineWord <: MachineWordInterface.MachineWordInterface.
 
@@ -323,7 +323,7 @@ match l with
 | b::t => Word.WS b (bools_to_word_rev t)
 end%list.
 Definition bools_to_word l : word (length l) :=
-  cast_nat (bools_to_word_rev (List.rev l)) (List.rev_length l).
+  cast_nat (bools_to_word_rev (List.rev l)) (List.length_rev l).
 
 Lemma get_bit_cast_word m n (w : word m) (E : m = n) i :
   get_bit (cast_nat w E) i = get_bit w i.
@@ -348,7 +348,7 @@ Lemma nth_error_rev A (l : list A) i x :
 destruct (lt_dec i (length l)) as [H|H].
 * rewrite List.nth_error_nth' with (d := x); auto.
   rewrite List.nth_error_nth' with (d := x). 2: {
-    rewrite List.rev_length.
+    rewrite List.length_rev.
     Lia.lia.
   }
   rewrite List.rev_nth. 2: Lia.lia.
@@ -367,7 +367,7 @@ rewrite get_bit_cast_word.
 rewrite nth_error_rev.
 rewrite bools_to_word_rev_get_bit.
 intuition auto.
-rewrite List.rev_length.
+rewrite List.length_rev.
 Lia.lia.
 Qed.
 

@@ -66,7 +66,7 @@
 (*==========================================================================*)
 
 Require Import TypeCasts Values Instances Prompt_monad Prompt MachineWord.
-From Coq Require Import ZArith Lia Eqdep_dec.
+From Stdlib Require Import ZArith Lia Eqdep_dec.
 Local Open Scope Z.
 
 Definition autocast_m {rv rt e m n} {T : Z -> Type} `{H : Inhabited (T n)} (x : @monad rv rt (T m) e) : @monad rv rt (T n) e :=

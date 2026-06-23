@@ -65,8 +65,11 @@
 (*  SUCH DAMAGE.                                                            *)
 (*==========================================================================*)
 
-From Coq Require Import String ZArith Setoid Morphisms Equivalence Lia.
+From Stdlib Require Import String ZArith Setoid Morphisms Equivalence Lia.
 Require Import Values State_monad Prompt State State_monad_lemmas State_lemmas.
+
+(* This file was written before stdpp restricted the mode of Equivalence. *)
+#[local] Hint Mode Equivalence - - : typeclass_instances.
 
 (*adhoc_overloading
   Monad_Syntax.bind State_monad.bindS*)
