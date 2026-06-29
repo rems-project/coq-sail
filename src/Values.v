@@ -137,38 +137,7 @@ split.
 * intro. apply Z.ge_le in H. apply Z.leb_le. assumption.
 Qed.
 
-
-(*
-Definition inline lt := (<)
-Definition inline gt := (>)
-Definition inline lteq := (<=)
-Definition inline gteq := (>=)
-
-val eq : forall a. Eq a => a -> a -> bool
-Definition inline eq l r := (l = r)
-
-val neq : forall a. Eq a => a -> a -> bool*)
 Definition neq l r := (negb (l =? r)). (* Z only *)
-
-(*let add_int l r := integerAdd l r
-Definition add_signed l r := integerAdd l r
-Definition sub_int l r := integerMinus l r
-Definition mult_int l r := integerMult l r
-Definition div_int l r := integerDiv l r
-Definition div_nat l r := natDiv l r
-Definition power_int_nat l r := integerPow l r
-Definition power_int_int l r := integerPow l (Z.to_nat r)
-Definition negate_int i := integerNegate i
-Definition min_int l r := integerMin l r
-Definition max_int l r := integerMax l r
-
-Definition add_real l r := realAdd l r
-Definition sub_real l r := realMinus l r
-Definition mult_real l r := realMult l r
-Definition div_real l r := realDiv l r
-Definition negate_real r := realNegate r
-Definition abs_real r := realAbs r
-Definition power_real b e := realPowInteger b e*)
 
 Definition print_endline (_ : string) : unit := tt.
 Definition print (_ : string) : unit := tt.
@@ -181,17 +150,11 @@ Definition putchar (_ : Z) : unit := tt.
 Definition shl_int := Z.shiftl.
 Definition shr_int := Z.shiftr.
 
-(*
-Definition or_bool l r := (l || r)
-Definition and_bool l r := (l && r)
-Definition xor_bool l r := xor l r
-*)
 Definition append_list {A:Type} (l : list A) r := l ++ r.
 Definition length_list {A:Type} (xs : list A) := Z.of_nat (List.length xs).
 Definition take_list {A:Type} n (xs : list A) := firstn (Z.to_nat n) xs.
 Definition drop_list {A:Type} n (xs : list A) := skipn (Z.to_nat n) xs.
-(*
-val repeat : forall a. list a -> Z -> list a*)
+
 Fixpoint repeat' {a} (xs : list a) n :=
   match n with
   | O => []
@@ -228,52 +191,9 @@ destruct n.
   auto with zarith.
 Qed.
 
-(*declare {isabelle} termination_argument repeat = automatic
-
-Definition duplicate_to_list bit length := repeat [bit] length
-
-Fixpoint replace bs (n : Z) b' := match bs with
-  | [] => []
-  | b :: bs =>
-     if n = 0 then b' :: bs
-              else b :: replace bs (n - 1) b'
-  end
-declare {isabelle} termination_argument replace = automatic
-
-Definition upper n := n
-
-(* Modulus operation corresponding to quot below -- result
-   has sign of dividend. *)
-Definition hardware_mod (a: Z) (b:Z) : Z :=
-  let m := (abs a) mod (abs b) in
-  if a < 0 then ~m else m
-
-(* There are different possible answers for integer divide regarding
-rounding behaviour on negative operands. Positive operands always
-round down so derive the one we want (trucation towards zero) from
-that *)
-Definition hardware_quot (a:Z) (b:Z) : Z :=
-  let q := (abs a) / (abs b) in
-  if ((a<0) = (b<0)) then
-    q  (* same sign -- result positive *)
-  else
-    ~q (* different sign -- result negative *)
-
-Definition max_64u := (integerPow 2 64) - 1
-Definition max_64  := (integerPow 2 63) - 1
-Definition min_64  := 0 - (integerPow 2 63)
-Definition max_32u := (4294967295 : Z)
-Definition max_32  := (2147483647 : Z)
-Definition min_32  := (0 - 2147483648 : Z)
-Definition max_8   := (127 : Z)
-Definition min_8   := (0 - 128 : Z)
-Definition max_5   := (31 : Z)
-Definition min_5   := (0 - 32 : Z)
-*)
 
 (* just_list takes a list of maybes and returns Some xs if all elements have
    a value, and None if one of the elements is None. *)
-(*val just_list : forall a. list (option a) -> option (list a)*)
 Fixpoint just_list {A} (l : list (option A)) := match l with
   | [] => Some []
   | (x :: xs) =>
@@ -282,11 +202,6 @@ Fixpoint just_list {A} (l : list (option A)) := match l with
       | (_, _) => None
     end
   end.
-(*declare {isabelle} termination_argument just_list = automatic
-
-lemma just_list_spec:
-  ((forall xs. (just_list xs = None) <-> List.elem None xs) &&
-   (forall xs es. (just_list xs = Some es) <-> (xs = List.map Some es)))*)
 
 Lemma just_list_length {A} : forall (l : list (option A)) (l' : list A),
   Some l' = just_list l -> List.length l = List.length l'.
@@ -332,30 +247,23 @@ Qed.
 
 (*** Bool lists ***)
 
-(*val bools_of_nat_aux : integer -> natural -> list bool -> list bool*)
 Fixpoint bools_of_nat_aux len (x : nat) (acc : list bool) : list bool :=
   match len with
   | O => acc
   | S len' => bools_of_nat_aux len' (x / 2) ((if x mod 2 =? 1 then true else false) :: acc)
   end %nat.
-  (*else (if x mod 2 = 1 then true else false) :: bools_of_nat_aux (x / 2)*)
-(*declare {isabelle} termination_argument bools_of_nat_aux = automatic*)
-Definition bools_of_nat len n := bools_of_nat_aux (Z.to_nat len) n [] (*List.reverse (bools_of_nat_aux n)*).
+Definition bools_of_nat len n := bools_of_nat_aux (Z.to_nat len) n [].
 
-(*val nat_of_bools_aux : natural -> list bool -> natural*)
 Fixpoint nat_of_bools_aux (acc : nat) (bs : list bool) : nat :=
   match bs with
   | [] => acc
   | true :: bs => nat_of_bools_aux ((2 * acc) + 1) bs
   | false :: bs => nat_of_bools_aux (2 * acc) bs
 end.
-(*declare {isabelle; hol} termination_argument nat_of_bools_aux = automatic*)
 Definition nat_of_bools bs := nat_of_bools_aux 0 bs.
 
-(*val unsigned_of_bools : list bool -> integer*)
 Definition unsigned_of_bools bs := Z.of_nat (nat_of_bools bs).
 
-(*val signed_of_bools : list bool -> integer*)
 Definition signed_of_bools bs :=
   match bs with
     | true :: _  => 0 - (1 + (unsigned_of_bools (List.map negb bs)))
@@ -363,16 +271,13 @@ Definition signed_of_bools bs :=
     | [] => 0 (* Treat empty list as all zeros *)
   end.
 
-(*val int_of_bools : bool -> list bool -> integer*)
 Definition int_of_bools (sign : bool) bs := if sign then signed_of_bools bs else unsigned_of_bools bs.
 
-(*val pad_list : forall 'a. 'a -> list 'a -> integer -> list 'a*)
 Fixpoint pad_list_nat {a} (x : a) (xs : list a) n :=
   match n with
   | O => xs
   | S n' => pad_list_nat x (x :: xs) n'
   end.
-(*declare {isabelle} termination_argument pad_list = automatic*)
 Definition pad_list {a} x xs n := @pad_list_nat a x xs (Z.to_nat n).
 
 Definition ext_list {a} pad len (xs : list a) :=
@@ -380,7 +285,6 @@ Definition ext_list {a} pad len (xs : list a) :=
   if longer <? 0 then skipn (Z.abs_nat (longer)) xs
   else pad_list pad xs longer.
 
-(*let extz_bools len bs = ext_list false len bs*)
 Definition exts_bools len bs :=
   match bs with
     | true :: _ => ext_list true len bs
@@ -392,89 +296,35 @@ Fixpoint add_one_bool_ignore_overflow_aux bits := match bits with
   | false :: bits => true :: bits
   | true :: bits => false :: add_one_bool_ignore_overflow_aux bits
 end.
-(*declare {isabelle; hol} termination_argument add_one_bool_ignore_overflow_aux = automatic*)
 
 Definition add_one_bool_ignore_overflow bits :=
   List.rev (add_one_bool_ignore_overflow_aux (List.rev bits)).
 
-(*
-Definition char_of_nibble x :=
-  match x with
-  | (B0, B0, B0, B0) => Some "0"%char
-  | (B0, B0, B0, B1) => Some "1"%char
-  | (B0, B0, B1, B0) => Some "2"%char
-  | (B0, B0, B1, B1) => Some "3"%char
-  | (B0, B1, B0, B0) => Some "4"%char
-  | (B0, B1, B0, B1) => Some "5"%char
-  | (B0, B1, B1, B0) => Some "6"%char
-  | (B0, B1, B1, B1) => Some "7"%char
-  | (B1, B0, B0, B0) => Some "8"%char
-  | (B1, B0, B0, B1) => Some "9"%char
-  | (B1, B0, B1, B0) => Some "A"%char
-  | (B1, B0, B1, B1) => Some "B"%char
-  | (B1, B1, B0, B0) => Some "C"%char
-  | (B1, B1, B0, B1) => Some "D"%char
-  | (B1, B1, B1, B0) => Some "E"%char
-  | (B1, B1, B1, B1) => Some "F"%char
-  | _ => None
-  end.
-
-Fixpoint hexstring_of_bits bs := match bs with
-  | b1 :: b2 :: b3 :: b4 :: bs =>
-     let n := char_of_nibble (b1, b2, b3, b4) in
-     let s := hexstring_of_bits bs in
-     match (n, s) with
-     | (Some n, Some s) => Some (String n s)
-     | _ => None
-     end
-  | [] => Some EmptyString
-  | _ => None
-  end%string.
-
-Fixpoint binstring_of_bits bs := match bs with
-  | b :: bs => String (bitU_char b) (binstring_of_bits bs)
-  | [] => EmptyString
-  end.
-
-Definition show_bitlist bs :=
-  match hexstring_of_bits bs with
-  | Some s => String "0" (String "x" s)
-  | None => String "0" (String "b" (binstring_of_bits bs))
-  end.
-*)
 (*** List operations *)
-(*
-Definition inline (^^) := append_list
 
-val subrange_list_inc : forall a. list a -> Z -> Z -> list a*)
 Definition subrange_list_inc {A} (xs : list A) i j :=
   let toJ := firstn (Z.to_nat j + 1) xs in
   let fromItoJ := skipn (Z.to_nat i) toJ in
   fromItoJ.
 
-(*val subrange_list_dec : forall a. list a -> Z -> Z -> list a*)
 Definition subrange_list_dec {A} (xs : list A) i j :=
   let top := (length_list xs) - 1 in
   subrange_list_inc xs (top - i) (top - j).
 
-(*val subrange_list : forall a. bool -> list a -> Z -> Z -> list a*)
 Definition subrange_list {A} (is_inc : bool) (xs : list A) i j :=
  if is_inc then subrange_list_inc xs i j else subrange_list_dec xs i j.
 
 Definition splitAt {A} n (l : list A) := (firstn n l, skipn n l).
 
-(*val update_subrange_list_inc : forall a. list a -> Z -> Z -> list a -> list a*)
 Definition update_subrange_list_inc {A} (xs : list A) i j xs' :=
   let (toJ,suffix) := splitAt (Z.to_nat j + 1) xs in
   let (prefix,_fromItoJ) := splitAt (Z.to_nat i) toJ in
   prefix ++ xs' ++ suffix.
 
-(*val update_subrange_list_dec : forall a. list a -> Z -> Z -> list a -> list a*)
 Definition update_subrange_list_dec {A} (xs : list A) i j xs' :=
   let top := (length_list xs) - 1 in
   update_subrange_list_inc xs (top - i) (top - j) xs'.
 
-(*val update_subrange_list : forall a. bool -> list a -> Z -> Z -> list a -> list a*)
 Definition update_subrange_list {A} (is_inc : bool) (xs : list A) i j xs' :=
   if is_inc then update_subrange_list_inc xs i j xs' else update_subrange_list_dec xs i j xs'.
 
@@ -512,49 +362,35 @@ Qed.
 
 Close Scope nat.
 
-(*val access_list_inc : forall a. list a -> Z -> a*)
 Definition access_list_inc {A} (xs : list A) `{Inhabited A} (n : Z) : A :=
   if n <? 0 then dummy_value else nth (Z.to_nat n) xs dummy_value.
 
-(*val access_list_dec : forall a. list a -> Z -> a*)
 Definition access_list_dec {A} (xs : list A) n `{Inhabited A} : A :=
   let top := (length_list xs) - 1 in
   access_list_inc xs (top - n).
 
-(*val access_list : forall a. bool -> list a -> Z -> a*)
 Definition access_list {A} (is_inc : bool) (xs : list A) n `{Inhabited A} :=
   if is_inc then access_list_inc xs n else access_list_dec xs n.
 
 Definition access_list_opt_inc {A} (xs : list A) n := nth_error xs (Z.to_nat n).
 
-(*val access_list_dec : forall a. list a -> Z -> a*)
 Definition access_list_opt_dec {A} (xs : list A) n :=
   let top := (length_list xs) - 1 in
   access_list_opt_inc xs (top - n).
 
-(*val access_list : forall a. bool -> list a -> Z -> a*)
 Definition access_list_opt {A} (is_inc : bool) (xs : list A) n :=
   if is_inc then access_list_opt_inc xs n else access_list_opt_dec xs n.
 
 Definition list_update {A} (xs : list A) n x := firstn n xs ++ x :: skipn (S n) xs.
 
-(*val update_list_inc : forall a. list a -> Z -> a -> list a*)
 Definition update_list_inc {A} (xs : list A) n x := list_update xs (Z.to_nat n) x.
 
-(*val update_list_dec : forall a. list a -> Z -> a -> list a*)
 Definition update_list_dec {A} (xs : list A) n x :=
   let top := (length_list xs) - 1 in
   update_list_inc xs (top - n) x.
 
-(*val update_list : forall a. bool -> list a -> Z -> a -> list a*)
 Definition update_list {A} (is_inc : bool) (xs : list A) n x :=
   if is_inc then update_list_inc xs n x else update_list_dec xs n x.
-
-(*Definition extract_only_element := function
-  | [] => failwith "extract_only_element called for empty list"
-  | [e] => e
-  | _ => failwith "extract_only_element called for list with more elements"
-end*)
 
 (*** Machine words *)
 
@@ -640,7 +476,6 @@ Qed.
 Definition word_to_mword {n} (w : word (Z_idx n)) : mword n :=
   to_word w.
 
-(*val length_mword : forall a. mword a -> Z*)
 Definition length_mword {n} (w : mword n) := n.
 
 Definition access_mword_dec {m} (w : mword m) n : mword 1 := slice 1 (get_word w) (Z_idx n).
@@ -764,8 +599,7 @@ match v with
 | None => def
 end.
 
-(*val byte_chunks : forall a. list a -> option (list (list a))*)
-Fixpoint byte_chunks {a} (bs : list a) := match bs with
+Fixpoint byte_chunks {a} (bs : list a) : option (list (list a)) := match bs with
   | [] => Some []
   | a::b::c::d::e::f::g::h::rest =>
      match byte_chunks rest with
@@ -775,78 +609,6 @@ Fixpoint byte_chunks {a} (bs : list a) := match bs with
   | _ => None
 end.
 
-(*
-Definition bits_of {n} (v : mword n) := List.map bitU_of_bool (mword_to_bools v).
-Definition of_bits {n} v : option (mword n) :=
-  match just_list (List.map bool_of_bitU v) with
-  | Some bl =>
-    match Z.eq_dec (length_list bl) n with
-    | left H => Some (cast_Z (bools_to_mword bl) H)
-    | right _ => None
-    end
-  | None => None
-  end.
-Definition of_bools {n} v : mword n := autocast (bools_to_mword v).
-
-(*val bytes_of_bits : forall a. Bitvector a => a -> option (list memory_byte)*)
-Definition bytes_of_bits {n} (bs : mword n) := byte_chunks (bits_of bs).
-
-(*val bits_of_bytes : forall a. Bitvector a => list memory_byte -> a*)
-Definition bits_of_bytes (bs : list memory_byte) : list bitU := List.concat (List.map (List.map to_bitU) bs).
-
-Definition mem_bytes_of_bits {n} (bs : mword n) := option_map (@rev (list bitU)) (bytes_of_bits bs).
-Definition bits_of_mem_bytes (bs : list memory_byte) := bits_of_bytes (List.rev bs).
-
-(*val bitv_of_byte_lifteds : list Sail_impl_base.byte_lifted -> list bitU
-Definition bitv_of_byte_lifteds v :=
-  foldl (fun x (Byte_lifted y) => x ++ (List.map bitU_of_bit_lifted y)) [] v
-
-val bitv_of_bytes : list Sail_impl_base.byte -> list bitU
-Definition bitv_of_bytes v :=
-  foldl (fun x (Byte y) => x ++ (List.map bitU_of_bit y)) [] v
-
-val byte_lifteds_of_bitv : list bitU -> list byte_lifted
-Definition byte_lifteds_of_bitv bits :=
-  let bits := List.map bit_lifted_of_bitU bits in
-  byte_lifteds_of_bit_lifteds bits
-
-val bytes_of_bitv : list bitU -> list byte
-Definition bytes_of_bitv bits :=
-  let bits := List.map bit_of_bitU bits in
-  bytes_of_bits bits
-
-val bit_lifteds_of_bitUs : list bitU -> list bit_lifted
-Definition bit_lifteds_of_bitUs bits := List.map bit_lifted_of_bitU bits
-
-val bit_lifteds_of_bitv : list bitU -> list bit_lifted
-Definition bit_lifteds_of_bitv v := bit_lifteds_of_bitUs v
-
-
-val address_lifted_of_bitv : list bitU -> address_lifted
-Definition address_lifted_of_bitv v :=
-  let byte_lifteds := byte_lifteds_of_bitv v in
-  let maybe_address_integer :=
-    match (maybe_all (List.map byte_of_byte_lifted byte_lifteds)) with
-    | Some bs => Some (integer_of_byte_list bs)
-    | _ => None
-    end in
-  Address_lifted byte_lifteds maybe_address_integer
-
-val bitv_of_address_lifted : address_lifted -> list bitU
-Definition bitv_of_address_lifted (Address_lifted bs _) := bitv_of_byte_lifteds bs
-
-val address_of_bitv : list bitU -> address
-Definition address_of_bitv v :=
-  let bytes := bytes_of_bitv v in
-  address_of_byte_list bytes*)
-
-Fixpoint reverse_endianness_list (bits : list bitU) :=
-  match bits with
-  | _ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: t =>
-    reverse_endianness_list t ++ firstn 8 bits
-  | _ => bits
-  end.
-*)
 (*** Registers *)
 
 Record register_ref {register : Type} {type_of_register : register -> Type} (ty : Type) := {
@@ -906,17 +668,12 @@ Definition choose_prop ty : choose_type ty -> Prop :=
 destruct ty; simpl; constructor; apply inhabitant.
 Defined.
 
-(*val foreach : forall a vars.
-  (list a) -> vars -> (a -> vars -> vars) -> vars*)
 Fixpoint foreach {a Vars} (l : list a) (vars : Vars) (body : a -> Vars -> Vars) : Vars :=
 match l with
 | [] => vars
 | (x :: xs) => foreach xs (body x vars) body
 end.
 
-(*declare {isabelle} termination_argument foreach = automatic
-
-val index_list : Z -> Z -> Z -> list Z*)
 Fixpoint index_list' from to step n :=
   if orb (andb (step >? 0) (from <=? to)) (andb (step <? 0) (to <=? from)) then
     match n with
@@ -964,92 +721,9 @@ Definition foreach_Z_up {Vars} from to step vars body (* 0 <? step *) :=
 Definition foreach_Z_down {Vars} from to step vars body (* 0 <? step *) :=
     foreach_Z_down' (Vars := Vars) from to step 0 (S (Z.abs_nat (from - to))) vars body.
 
-(*val while : forall vars. vars -> (vars -> bool) -> (vars -> vars) -> vars
-Fixpoint while vars cond body :=
-  if cond vars then while (body vars) cond body else vars
+(* We do not give combinators for while and until here because they do not necessarily
+   terminate; instead they are provided alongside the monad. *)
 
-val until : forall vars. vars -> (vars -> bool) -> (vars -> vars) -> vars
-Fixpoint until vars cond body :=
-  let vars := body vars in
-  if cond vars then vars else until (body vars) cond body
-
-
-Definition assert' b msg_opt :=
-  let msg := match msg_opt with
-  | Some msg => msg
-  | None  => "unspecified error"
-  end in
-  if b then () else failwith msg
-
-(* convert numbers unsafely to naturals *)
-
-class (ToNatural a) val toNatural : a -> natural end
-(* eta-expanded for Isabelle output, otherwise it breaks *)
-instance (ToNatural Z) let toNatural := (fun n => naturalFromInteger n) end
-instance (ToNatural int)     let toNatural := (fun n => naturalFromInt n)     end
-instance (ToNatural nat)     let toNatural := (fun n => naturalFromNat n)     end
-instance (ToNatural natural) let toNatural := (fun n => n)                    end
-
-Definition toNaturalFiveTup (n1,n2,n3,n4,n5) :=
-  (toNatural n1,
-   toNatural n2,
-   toNatural n3,
-   toNatural n4,
-   toNatural n5)
-
-(* Let the following types be generated by Sail per spec, using either bitlists
-   or machine words as bitvector representation *)
-(*type regfp :=
-  | RFull of (string)
-  | RSlice of (string * Z * Z)
-  | RSliceBit of (string * Z)
-  | RField of (string * string)
-
-type niafp :=
-  | NIAFP_successor
-  | NIAFP_concrete_address of vector bitU
-  | NIAFP_indirect_address
-
-(* only for MIPS *)
-type diafp :=
-  | DIAFP_none
-  | DIAFP_concrete of vector bitU
-  | DIAFP_reg of regfp
-
-Definition regfp_to_reg (reg_info : string -> option string -> (nat * nat * direction * (nat * nat))) := function
-  | RFull name =>
-     let (start,length,direction,_) := reg_info name None in
-     Reg name start length direction
-  | RSlice (name,i,j) =>
-     let i = Z.to_nat i in
-     let j = Z.to_nat j in
-     let (start,length,direction,_) = reg_info name None in
-     let slice = external_slice direction start (i,j) in
-     Reg_slice name start direction slice
-  | RSliceBit (name,i) =>
-     let i = Z.to_nat i in
-     let (start,length,direction,_) = reg_info name None in
-     let slice = external_slice direction start (i,i) in
-     Reg_slice name start direction slice
-  | RField (name,field_name) =>
-     let (start,length,direction,span) = reg_info name (Some field_name) in
-     let slice = external_slice direction start span in
-     Reg_field name start direction field_name slice
-end
-
-Definition niafp_to_nia reginfo = function
-  | NIAFP_successor => NIA_successor
-  | NIAFP_concrete_address v => NIA_concrete_address (address_of_bitv v)
-  | NIAFP_indirect_address => NIA_indirect_address
-end
-
-Definition diafp_to_dia reginfo = function
-  | DIAFP_none => DIA_none
-  | DIAFP_concrete v => DIA_concrete_address (address_of_bitv v)
-  | DIAFP_reg r => DIA_register (regfp_to_reg reginfo r)
-end
-*)
-*)
 
 (* TODO: make all Sail model preludes use the Z definitions directly, preferably by having them in the standard library *)
 Definition min_atom (a : Z) (b : Z) : Z := Z.min a b.
