@@ -85,22 +85,20 @@ Definition update_vec_inc {a} (w : mword a) i b : mword a := update_mword_inc w 
 Definition update_vec_dec {a} (w : mword a) i b : mword a := update_mword_dec w i b.
 
 Definition subrange_vec_dec {n} (v : mword n) m o : mword (m - o + 1) :=
-  autocast (to_word_idx (MachineWord.slice (MachineWord.Z_idx (m - o + 1)) (get_word v) (MachineWord.Z_idx o))).
+  autocast (to_word_idx (MachineWord.slice (MachineWord.Z_idx (m - o + 1)) v (MachineWord.Z_idx o))).
 
 Definition subrange_vec_inc {n} (v : mword n) m o : mword (o - m + 1) := autocast (subrange_vec_dec v (n-1-m) (n-1-o)).
 
 Definition update_subrange_vec_dec {n} (v : mword n) m o (w : mword (m - (o - 1))) : mword n :=
-  autocast (to_word_idx (MachineWord.update_slice (get_word v) (MachineWord.Z_idx o) (get_word w))).
+  autocast (to_word_idx (MachineWord.update_slice v (MachineWord.Z_idx o) w)).
 
 Definition update_subrange_vec_inc {n} (v : mword n) m o (w : mword (o - (m - 1))) : mword n := update_subrange_vec_dec v (n-1-m) (n-1-o) (autocast w).
 
-(*val extz_vec : forall 'a 'b. Size 'a, Size 'b => integer -> mword 'a -> mword 'b*)
 Definition extz_vec {a b} (n : Z) (v : mword a) : mword b :=
-  to_word (MachineWord.zero_extend (MachineWord.Z_idx b) (get_word v)).
+  MachineWord.zero_extend (MachineWord.Z_idx b) v.
 
-(*val exts_vec : forall 'a 'b. Size 'a, Size 'b => integer -> mword 'a -> mword 'b*)
 Definition exts_vec {a b} (n : Z) (v : mword a) : mword b :=
-  to_word (MachineWord.sign_extend (MachineWord.Z_idx b) (get_word v)).
+  MachineWord.sign_extend (MachineWord.Z_idx b) v.
 
 Definition zero_extend {a} (v : mword a) (n : Z) : mword n := extz_vec n v.
 
@@ -114,14 +112,14 @@ Definition zeros (n : Z) : mword n :=
   end.
 
 Definition slice {n} (v : mword n) i len : mword len :=
-  to_word (MachineWord.slice (MachineWord.Z_idx len) (get_word v) (MachineWord.Z_idx i)).
+  MachineWord.slice (MachineWord.Z_idx len) v (MachineWord.Z_idx i).
 
 Definition vector_truncate {n} (v : mword n) (m : Z) : mword m := slice v 0 m.
 Definition vector_truncateLSB {n} (v : mword n) (m : Z) : mword m := slice v (n - m) m.
 
 (*val concat_vec : forall 'a 'b 'c. Size 'a, Size 'b, Size 'c => mword 'a -> mword 'b -> mword 'c*)
 Definition concat_vec {a b} (w : mword a) (v : mword b) : mword (a + b) :=
- autocast (to_word_idx (MachineWord.concat (get_word w) (get_word v))).
+ autocast (to_word_idx (MachineWord.concat w v)).
 
 (*val cons_vec : forall 'a 'b 'c. Size 'a, Size 'b => bitU -> mword 'a -> mword 'b*)
 (*Definition cons_vec {a b} : bitU -> mword a -> mword b := cons_bv.*)
@@ -135,7 +133,7 @@ Definition cast_unit_vec := cast_unit_bv
 val vec_of_bit : forall 'a. Size 'a => integer -> bitU -> mword 'a
 Definition vec_of_bit := bv_of_bit*)
 
-Definition uint {a} (x : mword a) : Z := Z.of_N (MachineWord.word_to_N (get_word x)).
+Definition uint {a} (x : mword a) : Z := Z.of_N (MachineWord.word_to_N x).
 
 (* Demonstrate that uint has the range expected by the Sail type. *)
 Lemma uint_range {a} (x : mword a) : a >= 0 -> 0 <= uint x <= 2 ^ a - 1.
@@ -154,20 +152,24 @@ split.
   apply MachineWord.word_to_N_range.
 Qed.
 
-Definition sint {a} (x : mword a) : Z := MachineWord.word_to_Z (get_word x).
+Definition sint {a} (x : mword a) : Z := MachineWord.word_to_Z x.
 
 (* Demonstrate that sint has the range expected by the Sail type. *)
 Lemma sint_range {a} (x : mword a) : a > 0 -> -(2^(a-1)) <= sint x <= 2 ^ (a-1) - 1.
-intro a_gt_0.
-unfold sint.
-assert (LELT: forall x y, x <= y - 1 <-> x < y) by lia.
-rewrite LELT.
-set (n := a - 1).
-generalize (get_word x).
-rewrite <- (MachineWord.idx_Z_idx n); [ | lia].
-replace a with (Z.succ n) by lia.
-rewrite MachineWord.Z_idx_S; [ | lia].
-apply MachineWord.word_to_Z_range.
+Proof.
+  intro a_gt_0.
+  revert x.
+  unfold mword, sint.
+  replace a with (Z.succ (a - 1)) by lia.
+  rewrite MachineWord.Z_idx_S; [ | lia].
+  intro x.
+  replace (Z.succ (a - 1) - 1) with (a - 1) by lia.
+  rewrite <- (MachineWord.idx_Z_idx (a - 1)) at 1 4 by lia.
+
+  assert (LELT: forall x y, x <= y - 1 <-> x < y) by lia.
+  rewrite LELT.
+
+  apply MachineWord.word_to_Z_range.
 Qed.
 
 Lemma length_list_pos : forall {A} {l:list A}, 0 <= Z.of_nat (List.length l).
@@ -189,9 +191,8 @@ Qed.
 Definition vec_of_bits (l:list (mword 1)) : mword (length_list l) :=
   cast_Z (to_word_idx (MachineWord.word_list_concat l)) (vec_of_bits_idx l).
 
-Definition with_word' {n} (P : Type -> Type) : (forall n, MachineWord.word n -> P (MachineWord.word n)) -> mword n -> P (mword n) := fun f w => @with_word n _ (f (MachineWord.Z_idx n)) w.
-Definition word_binop {n} (f : forall n, MachineWord.word n -> MachineWord.word n -> MachineWord.word n) : mword n -> mword n -> mword n := with_word' (fun x => x -> x) f.
-Definition word_unop {n} (f : forall n, MachineWord.word n -> MachineWord.word n) : mword n -> mword n := with_word' (fun x => x) f.
+Definition word_binop {n} (f : forall n, MachineWord.word n -> MachineWord.word n -> MachineWord.word n) : mword n -> mword n -> mword n := f (MachineWord.Z_idx n).
+Definition word_unop {n} (f : forall n, MachineWord.word n -> MachineWord.word n) : mword n -> mword n := f (MachineWord.Z_idx n).
 
 
 Definition and_vec {n} : mword n -> mword n -> mword n := word_binop MachineWord.and.
@@ -211,25 +212,23 @@ Definition add_vec_int   {a} (l : mword a) (r : Z) : mword a := add_vec l (mword
 Definition sub_vec_int   {a} (l : mword a) (r : Z) : mword a := sub_vec l (mword_of_int r).
 
 (* TODO: check/redefine behaviour on out-of-range n *)
-Definition shiftl       {a} (v : mword a) n : mword a := with_word (P := id) (fun w => MachineWord.logical_shift_left w (MachineWord.Z_idx n)) v.
-Definition shiftr       {a} (v : mword a) n : mword a := with_word (P := id) (fun w => MachineWord.logical_shift_right w (MachineWord.Z_idx n)) v.
-Definition arith_shiftr {a} (v : mword a) n : mword a := with_word (P := id) (fun w => MachineWord.arith_shift_right w (MachineWord.Z_idx n)) v.
+Definition shiftl       {a} (v : mword a) n : mword a := MachineWord.logical_shift_left v (MachineWord.Z_idx n).
+Definition shiftr       {a} (v : mword a) n : mword a := MachineWord.logical_shift_right v (MachineWord.Z_idx n).
+Definition arith_shiftr {a} (v : mword a) n : mword a := MachineWord.arith_shift_right v (MachineWord.Z_idx n).
 
 Definition replicate_bits {a} (w : mword a) (n : Z) : mword (a * n) :=
  if sumbool_of_bool (n >=? 0) then
-   autocast (to_word_idx (MachineWord.replicate (Z.to_nat n) (get_word w)))
+   autocast (to_word_idx (MachineWord.replicate (Z.to_nat n) w))
  else dummy_value.
 
-Definition eq_vec  {n} (x : mword n) (y : mword n) : bool := MachineWord.eqb (get_word x) (get_word y).
+Definition eq_vec  {n} (x : mword n) (y : mword n) : bool := MachineWord.eqb x y.
 Definition neq_vec {n} (x : mword n) (y : mword n) : bool := negb (eq_vec x y).
 
 Lemma eq_vec_true_iff {n} (v w : mword n) :
   eq_vec v w = true <-> v = w.
-unfold eq_vec.
-rewrite MachineWord.eqb_true_iff.
-split.
-* apply get_word_inj.
-* intros []. reflexivity.
+Proof.
+  unfold eq_vec.
+  apply MachineWord.eqb_true_iff.
 Qed.
 
 Lemma eq_vec_false_iff {n} (v w : mword n) :
@@ -238,7 +237,7 @@ specialize (eq_vec_true_iff v w).
 destruct (eq_vec v w); intuition congruence.
 Qed.
 
-Definition reverse_endianness {n} (bits : mword n) := with_word (P := id) (MachineWord.reverse_endian (n:=_)) bits.
+Definition reverse_endianness {n} (bits : mword n) := MachineWord.reverse_endian bits.
 
 Definition bools_of_int len n :=
   let w := MachineWord.Z_to_word (MachineWord.Z_idx len) n in
@@ -284,7 +283,7 @@ Lemma slice_is_ok m (v : mword m) lo len
 unfold slice, subrange_vec_dec.
 replace (lo + len - 1 - lo + 1) with len by lia.
 rewrite autocast_refl.
-apply to_word_to_word_nat.
+apply to_word_idx_cast.
 lia.
 Qed.
 

@@ -122,10 +122,8 @@ Definition result_bind_pf {A B E} (a : result A E) (f : forall a', a = Ok a' -> 
   | Err e => fun _ => Err e
   end f.
 
-Definition ii := Z.
-Definition nn := nat.
+(*** Basic pure functions *)
 
-(*val pow : Z -> Z -> Z*)
 Definition pow m n := m ^ n.
 
 Definition pow2 n := pow 2 n.
@@ -154,6 +152,14 @@ Definition append_list {A:Type} (l : list A) r := l ++ r.
 Definition length_list {A:Type} (xs : list A) := Z.of_nat (List.length xs).
 Definition take_list {A:Type} n (xs : list A) := firstn (Z.to_nat n) xs.
 Definition drop_list {A:Type} n (xs : list A) := skipn (Z.to_nat n) xs.
+
+(* TODO: make all Sail model preludes use the Z definitions directly,
+   preferably by having them in the standard library (currently
+   waiting only on sail-cheri-riscv and cheriot-sail to update their
+   base risc-v models). *)
+Definition min_atom (a : Z) (b : Z) : Z := Z.min a b.
+Definition max_atom (a : Z) (b : Z) : Z := Z.max a b.
+
 
 Fixpoint repeat' {a} (xs : list a) n :=
   match n with
@@ -411,35 +417,12 @@ Definition mword (n : Z) := word (Z_idx n).
   end
 }.
 
-(* TODO: keep or drop? *)
-Definition get_word {n} : mword n -> word (Z_idx n) := fun x => x.
-
-Lemma get_word_inj {n} (w v : mword n) : get_word w = get_word v -> w = v.
-unfold get_word; auto.
-Qed.
-
-Definition with_word {n} {P : Type -> Type} : (word (Z_idx n) -> P (word (Z_idx n))) -> mword n -> P (mword n) :=
-  fun f w => f w.
-
-Definition to_word {n} : word (Z_idx n) -> mword n := fun w => w.
-
 Definition to_word_idx {n} (w : word n) : mword (idx_Z n) :=
-  to_word (cast_idx w (Z_idx_Z n)).
+  (cast_idx w (Z_idx_Z n)).
 
-(* Establish the relationship between to_word and to_word_nat, starting with some
+(* Show that to_word_idx doesn't really change the bitvector, starting with some
    reasoning using dependent equality, but ultimately finishing with a directly
    usably plain equality result. *)
-
-Lemma to_word_eq_dep m n (w : MachineWord.word (Z_idx m)) (v : MachineWord.word (Z_idx n)) :
-  m > 0 ->
-  n > 0 ->
-  EqdepFacts.eq_dep Z (fun n => MachineWord.word (Z_idx n)) m w n v ->
-  EqdepFacts.eq_dep Z mword _ (to_word w) _ (to_word v).
-intros M N EQ.
-destruct m,n; try lia.
-inversion EQ. subst.
-constructor.
-Qed.
 
 Lemma cast_idx_eq_dep T m n o (x : T m) (y : T n) EQ : EqdepFacts.eq_dep _ _ _ x _ y -> EqdepFacts.eq_dep _ _ _ x o (cast_idx y EQ).
 intros.
@@ -460,25 +443,23 @@ subst.
 constructor.
 Qed.
 
-Lemma to_word_to_word_nat n (w : MachineWord.word (Z_idx n)) :
+Lemma to_word_idx_cast n (w : mword n) :
   n > 0 ->
-  to_word w = autocast (to_word_idx w).
-intros.
-apply Eqdep_dec.eq_dep_eq_dec; auto using Z.eq_dec.
-eapply EqdepFacts.eq_dep_trans. 2: apply autocast_eq_dep. 2: (apply idx_Z_idx; lia).
-unfold to_word_idx.
-apply to_word_eq_dep; [assumption | rewrite idx_Z_idx; lia | ].
-apply Z_idx_eq_dep; [ assumption | rewrite idx_Z_idx; lia | ].
-apply cast_idx_eq_dep.
-constructor.
+  w = autocast (to_word_idx w).
+Proof.
+  intros.
+  change (word (Z_idx n)) with (mword n).
+  apply Eqdep_dec.eq_dep_eq_dec; auto using Z.eq_dec.
+  eapply EqdepFacts.eq_dep_trans. 2: apply autocast_eq_dep. 2: (apply idx_Z_idx; lia).
+  unfold to_word_idx.
+  apply Z_idx_eq_dep; [ assumption | rewrite idx_Z_idx; lia | ].
+  apply cast_idx_eq_dep.
+  constructor.
 Qed.
-
-Definition word_to_mword {n} (w : word (Z_idx n)) : mword n :=
-  to_word w.
 
 Definition length_mword {n} (w : mword n) := n.
 
-Definition access_mword_dec {m} (w : mword m) n : mword 1 := slice 1 (get_word w) (Z_idx n).
+Definition access_mword_dec {m} (w : mword m) n : mword 1 := slice 1 w (Z_idx n).
 
 Definition access_mword_inc {m} (w : mword m) n : mword 1 :=
   let top := (length_mword w) - 1 in
@@ -488,7 +469,7 @@ Definition access_mword {a} (is_inc : bool) (w : mword a) n :=
   if is_inc then access_mword_inc w n else access_mword_dec w n.
 
 Definition update_mword_bool_dec {a} (w : mword a) n b : mword a :=
-  with_word (P := id) (fun w => set_bit w (Z_idx n) b) w.
+  set_bit w (Z_idx n) b.
 Definition update_mword_dec {a} (w : mword a) n (b : mword 1) :=
   update_slice w (Z_idx n) b.
 
@@ -500,12 +481,11 @@ Definition update_mword {a} (is_inc : bool) (w : mword a) n b :=
   if is_inc then update_mword_inc w n b else update_mword_dec w n b.
 
 Definition int_of_mword {a} (sign : bool) (w : mword a) :=
-  if sign then word_to_Z (get_word w) else Z.of_N (word_to_N (get_word w)).
+  if sign then word_to_Z w else Z.of_N (word_to_N w).
 
 Definition mword_of_int {len} n : mword len := Z_to_word _ n.
 
-Definition mword_to_N {n} (w : mword n) : N :=
-  word_to_N (get_word w).
+Definition mword_to_N {n} (w : mword n) : N := word_to_N w.
 
 Lemma word_to_N_cast_idx {m n w} {E : m = n} :
   word_to_N (cast_idx w E) = word_to_N w.
@@ -521,7 +501,7 @@ rewrite cast_Z_refl.
 reflexivity.
 Qed.
 
-Definition mword_to_bools {n} (w : mword n) : list bool := word_to_bools (get_word w).
+Definition mword_to_bools {n} (w : mword n) : list bool := word_to_bools w.
 Definition bools_to_mword (l : list bool) : mword (length_list l) := cast_idx (bools_to_word l) (nat_idx_Z _).
 
 Definition eq_vec_dec {n} : forall (x y : mword n), {x = y} + {x <> y} :=
@@ -668,6 +648,8 @@ Definition choose_prop ty : choose_type ty -> Prop :=
 destruct ty; simpl; constructor; apply inhabitant.
 Defined.
 
+(*** Loop combinators *)
+
 Fixpoint foreach {a Vars} (l : list a) (vars : Vars) (body : a -> Vars -> Vars) : Vars :=
 match l with
 | [] => vars
@@ -723,12 +705,6 @@ Definition foreach_Z_down {Vars} from to step vars body (* 0 <? step *) :=
 
 (* We do not give combinators for while and until here because they do not necessarily
    terminate; instead they are provided alongside the monad. *)
-
-
-(* TODO: make all Sail model preludes use the Z definitions directly, preferably by having them in the standard library *)
-Definition min_atom (a : Z) (b : Z) : Z := Z.min a b.
-Definition max_atom (a : Z) (b : Z) : Z := Z.max a b.
-
 
 (*** Generic vectors *)
 

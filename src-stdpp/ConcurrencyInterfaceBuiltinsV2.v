@@ -378,7 +378,7 @@ Definition branch_announce {e} sz (addr : mword sz) : monad e unit :=
   I.Next (I.BranchAnnounce sz addr) I.Ret.
 
 Definition instr_announce {e sz} (opcode : mword sz) : monad e unit :=
-  I.Next (I.InstrAnnounce (bv_to_bvn (get_word opcode))) I.Ret.
+  I.Next (I.InstrAnnounce (bv_to_bvn opcode)) I.Ret.
 
 Definition cycle_count {e} (_ : unit) : monad e unit := I.Next I.CycleCount I.Ret.
 Definition get_cycle_count {e} (_ : unit) : monad e Z := I.Next I.GetCycleCount I.Ret.

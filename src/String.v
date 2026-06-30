@@ -307,7 +307,7 @@ Definition string_of_bits {n} (w : mword n) : string :=
     let s := hex_string_of_int "" true (int_of_mword false w) in
     String "0" (String "x" (pad0 (Z.to_nat (Z.div n 4) - String.length s) s))
   else
-    binary_string_of_word (get_word w).
+    binary_string_of_word w.
 
 (* Some aliases for compatibility. *)
 Definition dec_str := string_of_int.
