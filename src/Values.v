@@ -65,7 +65,7 @@
 (*  SUCH DAMAGE.                                                            *)
 (*==========================================================================*)
 
-(* Zeuclid will be removed once the Sail backend stops generating it. *)
+(* Zeuclid will be removed once the Sail backend stops generating it.  The replacement definition is below. *)
 From Stdlib Require Export ZArith String List Sumbool Zeuclid.
 From Stdlib Require Import Ascii Eqdep_dec Lia.
 From Stdlib Require BinaryString HexString.
@@ -159,6 +159,28 @@ Definition drop_list {A:Type} n (xs : list A) := skipn (Z.to_nat n) xs.
    base risc-v models). *)
 Definition min_atom (a : Z) (b : Z) : Z := Z.min a b.
 Definition max_atom (a : Z) (b : Z) : Z := Z.max a b.
+
+(* Rocq stdlib has deprecated Euclidean convention division because it
+   is rarely used, but it is included in the Sail standard library, so
+   we include it here with some trivial rewrites. *)
+Definition e_modulo a b := Z.modulo a (Z.abs b).
+Definition e_div a b := (Z.sgn b) * (Z.div a (Z.abs b)).
+
+Lemma e_modulo_pos a b : b > 0 -> e_modulo a b = Z.modulo a b.
+Proof.
+  intro H.
+  unfold e_modulo.
+  rewrite Z.abs_eq by lia.
+  reflexivity.
+Qed.
+
+Lemma e_div_pos a b : b > 0 -> e_div a b = Z.div a b.
+Proof.
+  intro H.
+  unfold e_div.
+  rewrite Z.abs_eq, Z.sgn_pos by lia.
+  lia.
+Qed.
 
 
 Fixpoint repeat' {a} (xs : list a) n :=
