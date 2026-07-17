@@ -261,10 +261,10 @@ destruct (vec_eq_dec _ x y); simpl; split; congruence.
 Defined.
 
 #[export] Instance Decidable_eq_sigT {T} {P : T -> Type} `{ET : forall x y : T, Decidable (x = y)} `{Peq : forall t (x y : P t), Decidable (x = y)} : forall x y : sigT P, Decidable (x = y).
-refine (fun '(@existT _ _ x p) '(@existT _ _ y q) => {|
+Proof.
+  refine (fun '(@existT _ _ x p) '(@existT _ _ y q) => {|
           Decidable_witness := match generic_dec x y with left e => proj1_sig (bool_of_sumbool (generic_dec (eq_rect x _ p y e) q)) | right _ => false end
  |}).
-Proof.
   destruct (generic_dec x y) as [e | ne].
   - subst.
     simpl.
