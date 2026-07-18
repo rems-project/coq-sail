@@ -2,14 +2,15 @@ From Stdlib Require Import ZArith Eqdep_dec.
 Require Export Inhabited.
 
 Module Z_eq_dec.
-Definition U := Z.
-Definition eq_dec := Z.eq_dec.
+  Definition U := Z.
+  Definition eq_dec := Z.eq_dec.
 End Z_eq_dec.
 Module ZEqdep := DecidableEqDep (Z_eq_dec).
 
 (* Opaque identity for bad unchecked operations. *)
 Definition dummy {T:Type} (t:T) : T.
-exact t.
+Proof.
+  exact t.
 Qed.
 
 (* Version that uses a typeclass rather than a default. *)
@@ -30,74 +31,82 @@ Fixpoint cast_nat {T : nat -> Type} {m n : nat} : T m -> m = n -> T n :=
   end.
 
 Lemma cast_nat_refl n T (x : T n) (e : n = n) : cast_nat x e = x.
-revert T x e.
-induction n.
-- reflexivity.
-- intros.
-  simpl.
-  apply IHn with (T := fun m => T (S m)).
+Proof.
+  revert T x e.
+  induction n.
+  - reflexivity.
+  - intros.
+    simpl.
+    apply IHn with (T := fun m => T (S m)).
 Qed.
 
 Fixpoint cast_positive (T : positive -> Type) (p q : positive) : T p -> p = q -> T q.
-refine (
-match p, q with
-| xH, xH => fun x _ => x
-| xO p', xO q' => fun x e => cast_positive (fun x => T (xO x)) p' q' x _
-| xI p', xI q' => fun x e => cast_positive (fun x => T (xI x)) p' q' x _
-| _, _ => _
-end); congruence.
+Proof.
+  refine (
+  match p, q with
+  | xH, xH => fun x _ => x
+  | xO p', xO q' => fun x e => cast_positive (fun x => T (xO x)) p' q' x _
+  | xI p', xI q' => fun x e => cast_positive (fun x => T (xI x)) p' q' x _
+  | _, _ => _
+  end); congruence.
 Defined.
 
 Definition cast_N {T : N -> Type} {m n} : forall (x : T m) (eq : m = n), T n.
-refine (match m,n with
-| N0, N0 => fun x _ => x
-| Npos p1, Npos p2 => fun x e => cast_positive (fun p => T (Npos p)) p1 p2 x _
-| _,_ => _
-end); congruence.
+Proof.
+  refine (match m,n with
+  | N0, N0 => fun x _ => x
+  | Npos p1, Npos p2 => fun x e => cast_positive (fun p => T (Npos p)) p1 p2 x _
+  | _,_ => _
+  end); congruence.
 Defined.
 
 Definition cast_Z {T : Z -> Type} {m n} : forall (x : T m) (eq : m = n), T n.
-refine (match m,n with
-| Z0, Z0 => fun x _ => x
-| Zneg p1, Zneg p2 => fun x e => cast_positive (fun p => T (Zneg p)) p1 p2 x _
-| Zpos p1, Zpos p2 => fun x e => cast_positive (fun p => T (Zpos p)) p1 p2 x _
-| _,_ => _
-end); congruence.
+Proof.
+  refine (match m,n with
+  | Z0, Z0 => fun x _ => x
+  | Zneg p1, Zneg p2 => fun x e => cast_positive (fun p => T (Zneg p)) p1 p2 x _
+  | Zpos p1, Zpos p2 => fun x e => cast_positive (fun p => T (Zpos p)) p1 p2 x _
+  | _,_ => _
+  end); congruence.
 Defined.
 
 Lemma cast_positive_refl : forall p T x (e : p = p),
   cast_positive T p p x e = x.
-induction p.
-* intros. simpl. rewrite IHp; auto.
-* intros. simpl. rewrite IHp; auto.
-* reflexivity.
+Proof.
+  induction p.
+  * intros. simpl. rewrite IHp; auto.
+  * intros. simpl. rewrite IHp; auto.
+  * reflexivity.
 Qed.
 
 Lemma cast_N_refl {T : N -> Type} {m} {H:m = m} (x : T m) : cast_N x H = x.
-destruct m.
-* reflexivity.
-* simpl. rewrite cast_positive_refl. reflexivity.
+Proof.
+  destruct m.
+  * reflexivity.
+  * simpl. rewrite cast_positive_refl. reflexivity.
 Qed.
 
 Lemma cast_Z_refl {T : Z -> Type} {m} {H:m = m} (x : T m) : cast_Z x H = x.
-destruct m.
-* reflexivity.
-* simpl. rewrite cast_positive_refl. reflexivity.
-* simpl. rewrite cast_positive_refl. reflexivity.
+Proof.
+  destruct m.
+  * reflexivity.
+  * simpl. rewrite cast_positive_refl. reflexivity.
+  * simpl. rewrite cast_positive_refl. reflexivity.
 Qed.
 
 Definition autocast {T : Z -> Type} {m n} `{Inhabited (T n)} (x : T m) : T n :=
-match Z.eq_dec m n with
-| left eq => cast_Z x eq
-| right _ => dummy_value
-end.
+  match Z.eq_dec m n with
+  | left eq => cast_Z x eq
+  | right _ => dummy_value
+  end.
 #[global] Arguments autocast _ _ & _ _.
 
 Lemma autocast_refl {T} n `{Inhabited (T n)} (x : T n) : autocast x = x.
-unfold autocast.
-apply (decide_left (Z.eq_dec n n)); auto.
-intro.
-apply cast_Z_refl.
+Proof.
+  unfold autocast.
+  apply (decide_left (Z.eq_dec n n)); auto.
+  intro.
+  apply cast_Z_refl.
 Qed.
 
 (* Note that `rewrite` won't automatically open a subgoal for `EQ` because it's
@@ -105,18 +114,20 @@ Qed.
    better to avoid using this in favour of autocast_refl or autocast_eq_dep, which
    don't need to mention the equality proof in the result. *)
 Lemma autocast_eq {T m n} `{Inhabited (T n)} (x : T m) : forall EQ : m = n, autocast x = cast_Z x EQ.
-intros.
-subst.
-rewrite autocast_refl.
-rewrite cast_Z_refl.
-reflexivity.
+Proof.
+  intros.
+  subst.
+  rewrite autocast_refl.
+  rewrite cast_Z_refl.
+  reflexivity.
 Qed.
 
 Lemma autocast_eq_dep T m n `{Inhabited (T n)} x : m = n -> EqdepFacts.eq_dep Z T m x n (autocast x).
-intro EQ.
-subst.
-rewrite autocast_refl.
-constructor.
+Proof.
+  intro EQ.
+  subst.
+  rewrite autocast_refl.
+  constructor.
 Qed.
 
 End TypeCasts.

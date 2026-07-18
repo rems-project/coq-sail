@@ -137,19 +137,20 @@ Definition uint {a} (x : mword a) : Z := Z.of_N (MachineWord.word_to_N x).
 
 (* Demonstrate that uint has the range expected by the Sail type. *)
 Lemma uint_range {a} (x : mword a) : a >= 0 -> 0 <= uint x <= 2 ^ a - 1.
-intro a_ge_0.
-split.
-* apply N2Z.is_nonneg.
-* unfold uint.
-  assert (LELT: forall x y, x <= y - 1 <-> x < y) by lia.
-  rewrite LELT.
-  replace (2 ^ a) with (Z.of_N (2 ^ (Z.to_N a))). 2: {
-    rewrite N2Z.inj_pow.
-    rewrite Z2N.id; auto with zarith.
-  }
-  apply N2Z.inj_lt.
-  rewrite <- (MachineWord.idx_N_Z_idx a).
-  apply MachineWord.word_to_N_range.
+Proof.
+  intro a_ge_0.
+  split.
+  * apply N2Z.is_nonneg.
+  * unfold uint.
+    assert (LELT: forall x y, x <= y - 1 <-> x < y) by lia.
+    rewrite LELT.
+    replace (2 ^ a) with (Z.of_N (2 ^ (Z.to_N a))). 2: {
+      rewrite N2Z.inj_pow.
+      rewrite Z2N.id; auto with zarith.
+    }
+    apply N2Z.inj_lt.
+    rewrite <- (MachineWord.idx_N_Z_idx a).
+    apply MachineWord.word_to_N_range.
 Qed.
 
 Definition sint {a} (x : mword a) : Z := MachineWord.word_to_Z x.
@@ -173,8 +174,9 @@ Proof.
 Qed.
 
 Lemma length_list_pos : forall {A} {l:list A}, 0 <= Z.of_nat (List.length l).
-unfold length_list.
-auto with zarith.
+Proof.
+  unfold length_list.
+  auto with zarith.
 Qed.
 #[export] Hint Resolve length_list_pos : sail.
 
@@ -233,8 +235,9 @@ Qed.
 
 Lemma eq_vec_false_iff {n} (v w : mword n) :
   eq_vec v w = false <-> v <> w.
-specialize (eq_vec_true_iff v w).
-destruct (eq_vec v w); intuition congruence.
+Proof.
+  specialize (eq_vec_true_iff v w).
+  destruct (eq_vec v w); intuition congruence.
 Qed.
 
 Definition reverse_endianness {n} (bits : mword n) := MachineWord.reverse_endian bits.
@@ -260,7 +263,8 @@ Definition get_slice_int len n lo : mword len :=
   end.
 
 Lemma get_slice_int_eta len n lo : get_slice_int len n lo = get_slice_int' len n lo.
-destruct n; reflexivity.
+Proof.
+  destruct n; reflexivity.
 Qed.
 
 Definition set_slice n m (v : mword n) x (w : mword m) : mword n :=
@@ -280,11 +284,12 @@ Definition set_slice_int len n lo (v : mword len) : Z :=
 Lemma slice_is_ok m (v : mword m) lo len
                   (H1 : 0 <= lo) (H2 : 0 < len) (H3: lo + len < m) :
   slice v lo len = autocast (subrange_vec_dec v (lo + len - 1) lo).
-unfold slice, subrange_vec_dec.
-replace (lo + len - 1 - lo + 1) with len by lia.
-rewrite autocast_refl.
-apply to_word_idx_cast.
-lia.
+Proof.
+  unfold slice, subrange_vec_dec.
+  replace (lo + len - 1 - lo + 1) with len by lia.
+  rewrite autocast_refl.
+  apply to_word_idx_cast.
+  lia.
 Qed.
 
 Import ListNotations.

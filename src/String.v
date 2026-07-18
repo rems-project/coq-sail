@@ -90,78 +90,78 @@ Definition string_append := String.append.
 
 Local Open Scope char_scope.
 Local Definition hex_char (c : Ascii.ascii) : option Z :=
-match c with
-| "0" => Some 0
-| "1" => Some 1
-| "2" => Some 2
-| "3" => Some 3
-| "4" => Some 4
-| "5" => Some 5
-| "6" => Some 6
-| "7" => Some 7
-| "8" => Some 8
-| "9" => Some 9
-| "a" | "A" => Some 10
-| "b" | "B" => Some 11
-| "c" | "C" => Some 12
-| "d" | "D" => Some 13
-| "e" | "E" => Some 14
-| "f" | "F" => Some 15
-| _ => None
-end.
+  match c with
+  | "0" => Some 0
+  | "1" => Some 1
+  | "2" => Some 2
+  | "3" => Some 3
+  | "4" => Some 4
+  | "5" => Some 5
+  | "6" => Some 6
+  | "7" => Some 7
+  | "8" => Some 8
+  | "9" => Some 9
+  | "a" | "A" => Some 10
+  | "b" | "B" => Some 11
+  | "c" | "C" => Some 12
+  | "d" | "D" => Some 13
+  | "e" | "E" => Some 14
+  | "f" | "F" => Some 15
+  | _ => None
+  end.
 Local Close Scope char_scope.
 Local Fixpoint more_digits (s : string) (base : Z) (acc : Z) (len : nat) : Z * nat :=
-match s with
-| EmptyString => (acc, len)
-| String "_" t => more_digits t base acc (S len)
-| String h t =>
-  match hex_char h with
-  | None => (acc, len)
-  | Some i => 
-    if i <? base
-    then more_digits t base (base * acc + i) (S len)
-    else (acc, len)
-  end
-end.
+  match s with
+  | EmptyString => (acc, len)
+  | String "_" t => more_digits t base acc (S len)
+  | String h t =>
+    match hex_char h with
+    | None => (acc, len)
+    | Some i => 
+      if i <? base
+      then more_digits t base (base * acc + i) (S len)
+      else (acc, len)
+    end
+  end.
 Local Definition int_of (s : string) (base : Z) (len : nat) : option (Z * Z) :=
-match s with
-| EmptyString => None
-| String h t =>
-  match hex_char h with
-  | None => None
-  | Some i =>
-    if i <? base
-    then
-    let (i, len') := more_digits t base i (S len) in
-    Some (i, Z.of_nat len')
-    else None
-  end
-end.
+  match s with
+  | EmptyString => None
+  | String h t =>
+    match hex_char h with
+    | None => None
+    | Some i =>
+      if i <? base
+      then
+      let (i, len') := more_digits t base i (S len) in
+      Some (i, Z.of_nat len')
+      else None
+    end
+  end.
 
 (* I've stuck closely to OCaml's int_of_string, because that's what's currently
    used elsewhere. *)
 
 Definition maybe_int_of_prefix (s : string) : option (Z * Z) :=
-match s with
-| EmptyString => None
-| String "0" (String ("x"|"X") t) => int_of t 16 2
-| String "0" (String ("o"|"O") t) => int_of t 8 2
-| String "0" (String ("b"|"B") t) => int_of t 2 2
-| String "0" (String "u" t) => int_of t 10 2
-| String "-" t =>
-  match int_of t 10 1 with
-  | None => None
-  | Some (i,len) => Some (-i,len)
-  end
-| _ => int_of s 10 0
-end.
+  match s with
+  | EmptyString => None
+  | String "0" (String ("x"|"X") t) => int_of t 16 2
+  | String "0" (String ("o"|"O") t) => int_of t 8 2
+  | String "0" (String ("b"|"B") t) => int_of t 2 2
+  | String "0" (String "u" t) => int_of t 10 2
+  | String "-" t =>
+    match int_of t 10 1 with
+    | None => None
+    | Some (i,len) => Some (-i,len)
+    end
+  | _ => int_of s 10 0
+  end.
 
 Definition maybe_int_of_string (s : string) : option Z :=
-match maybe_int_of_prefix s with
-| None => None
-| Some (i,len) =>
-  if len =? string_length s then Some i else None
-end.
+  match maybe_int_of_prefix s with
+  | None => None
+  | Some (i,len) =>
+    if len =? string_length s then Some i else None
+  end.
 
 Fixpoint n_leading_spaces (s:string) : nat :=
   match s with
@@ -256,42 +256,42 @@ Definition hex_bits_64_matches_prefix s := hex_bits_n_matches_prefix 64 s.
 
 Local Definition zero : N := Ascii.N_of_ascii "0".
 Local Fixpoint string_of_N (limit : nat) (n : N) (acc : string) : string :=
-match limit with
-| O => acc
-| S limit' =>
-  let (d,m) := N.div_eucl n 10 in
-  let acc := String (Ascii.ascii_of_N (m + zero)) acc in
-  if N.ltb 0 d then string_of_N limit' d acc else acc
-end.
+  match limit with
+  | O => acc
+  | S limit' =>
+    let (d,m) := N.div_eucl n 10 in
+    let acc := String (Ascii.ascii_of_N (m + zero)) acc in
+    if N.ltb 0 d then string_of_N limit' d acc else acc
+  end.
 Local Fixpoint pos_limit p :=
-match p with
-| xH => S O
-| xI p | xO p => S (pos_limit p)
-end.
+  match p with
+  | xH => S O
+  | xI p | xO p => S (pos_limit p)
+  end.
 Definition string_of_int (z : Z) : string :=
-match z with
-| Z0 => "0"
-| Zpos p => string_of_N (pos_limit p) (Npos p) ""
-| Zneg p => String "-" (string_of_N (pos_limit p) (Npos p) "")
-end.
+  match z with
+  | Z0 => "0"
+  | Zpos p => string_of_N (pos_limit p) (Npos p) ""
+  | Zneg p => String "-" (string_of_N (pos_limit p) (Npos p) "")
+  end.
 
 Local Definition asciia : N := Ascii.N_of_ascii "a".
 Local Definition asciiA : N := Ascii.N_of_ascii "A".
 Local Fixpoint hex_string_of_N (upper : bool) (limit : nat) (n : N) (acc : string) : string :=
-match limit with
-| O => acc
-| S limit' =>
-  let (d,m) := N.div_eucl n 16 in
-  let digit := if 10 <=? m then m - 10 + (if upper then asciiA else asciia) else m + zero in
-  let acc := String (Ascii.ascii_of_N digit) acc in
-  if N.ltb 0 d then hex_string_of_N upper limit' d acc else acc
-end%N.
+  match limit with
+  | O => acc
+  | S limit' =>
+    let (d,m) := N.div_eucl n 16 in
+    let digit := if 10 <=? m then m - 10 + (if upper then asciiA else asciia) else m + zero in
+    let acc := String (Ascii.ascii_of_N digit) acc in
+    if N.ltb 0 d then hex_string_of_N upper limit' d acc else acc
+  end%N.
 Local Definition hex_string_of_int (prefix : string) (upper : bool) (z : Z) : string :=
-match z with
-| Z0 => append prefix "0"
-| Zpos p => append prefix (hex_string_of_N upper (pos_limit p) (Npos p) "")
-| Zneg p => String "-" (append prefix (hex_string_of_N upper (pos_limit p) (Npos p) ""))
-end.
+  match z with
+  | Z0 => append prefix "0"
+  | Zpos p => append prefix (hex_string_of_N upper (pos_limit p) (Npos p) "")
+  | Zneg p => String "-" (append prefix (hex_string_of_N upper (pos_limit p) (Npos p) ""))
+  end.
 
 Definition decimal_string_of_bits {n} (bv : mword n) : string := string_of_int (int_of_mword false bv).
 

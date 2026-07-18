@@ -37,9 +37,9 @@ Definition choose_bitvector {E} (_descr : string) (n : Z) : monad E (mword n) :=
   I.Next (I.Choose (ChooseBitvector n)) mret.
 
 Definition assert_exp {E} (exp :bool) msg : monad E unit :=
- if exp then returnm tt else fail msg.
+  if exp then returnm tt else fail msg.
 Definition assert_exp' {E} (exp :bool) msg : monad E (exp = true) :=
- if exp return monad E (exp = true) then returnm eq_refl else fail msg.
+  if exp return monad E (exp = true) then returnm eq_refl else fail msg.
 
 Definition throw {A E} (e : E) : monad E A := I.Next (I.ExtraOutcome e) mret.
 
@@ -95,7 +95,7 @@ Definition pure_early_return {A} (v : A + A) : A :=
 
 (* Lift to monad with early return by wrapping exceptions *)
 Definition liftR {A R E} (m : monad E A) : monadR R E A :=
- try_catch m (fun e => throw (inr e)).
+  try_catch m (fun e => throw (inr e)).
 
 Definition pure_early_return_embed {A R E} (v : R + A) : monadR R E A :=
   match v with
@@ -148,28 +148,28 @@ Definition read_reg_ref {a e} (ref : @register_ref A.reg A.reg_type a) : monad e
 Definition reg_deref {a e} := @read_reg_ref a e.
 
 Definition write_reg {e} (reg : A.reg) (v : A.reg_type reg) : monad e unit :=
- I.Next (I.RegWrite reg None v) I.Ret.
+  I.Next (I.RegWrite reg None v) I.Ret.
 
 Definition write_reg_ref {a e} (ref : @register_ref A.reg A.reg_type a) (v : a) : monad e unit :=
- I.Next (I.RegWrite ref.(reg) None (ref.(from_ty) v)) I.Ret.
+  I.Next (I.RegWrite ref.(reg) None (ref.(from_ty) v)) I.Ret.
 
 (* ---- Prompt *)
 
 Fixpoint foreachM {a e Vars} (l : list a) (vars : Vars) (body : a -> Vars -> monad e Vars) : monad e Vars :=
-match l with
-| [] => returnm vars
-| (x :: xs) =>
-  body x vars >>= fun vars =>
-  foreachM xs vars body
-end.
+  match l with
+  | [] => returnm vars
+  | (x :: xs) =>
+    body x vars >>= fun vars =>
+    foreachM xs vars body
+  end.
 
 Fixpoint foreachE {a Vars e} (l : list a) (vars : Vars) (body : a -> Vars -> e + Vars) : e + Vars :=
-match l with
-| [] => inr vars
-| (x :: xs) =>
-  body x vars >>$= fun vars =>
-  foreachE xs vars body
-end.
+  match l with
+  | [] => inr vars
+  | (x :: xs) =>
+    body x vars >>$= fun vars =>
+    foreachE xs vars body
+  end.
 
 Fixpoint foreach_ZM_up' {E Vars} (from to step : Z) (n : nat) (vars : Vars) (body : forall (z : Z), Vars -> monad E Vars) {struct n} : monad E Vars :=
   if from <=? to then
@@ -277,10 +277,11 @@ Definition or_boolM {E} (l : monad E bool) (r : monad E bool) : monad E bool :=
 
 (* For termination of recursive functions. *)
 Definition _limit_reduces {_limit} (_acc:Acc (Zwf 0) _limit) (H : _limit >= 0) : Acc (Zwf 0) (_limit - 1).
-refine (Acc_inv _acc _).
-unbool_comparisons.
-red.
-Lia.lia.
+Proof.
+  refine (Acc_inv _acc _).
+  unbool_comparisons.
+  red.
+  Lia.lia.
 Defined.
 
 (* A version of well-foundedness of measures with a guard to ensure that
@@ -289,13 +290,13 @@ Defined.
      https://sympa.inria.fr/sympa/arc/coq-club/2007-07/msg00014.html *)
 
 Fixpoint pos_guard_wf {A:Type} {R:A -> A -> Prop} (p:positive) : well_founded R -> well_founded R :=
- match p with
- | xH => fun wfR x => Acc_intro x (fun y _ => wfR y)
- | xO p' => fun wfR x => let F := pos_guard_wf p' in Acc_intro x (fun y _ => F (F 
-wfR) y)
- | xI p' => fun wfR x => let F := pos_guard_wf p' in Acc_intro x (fun y _ => F (F 
-wfR) y)
- end.
+  match p with
+  | xH => fun wfR x => Acc_intro x (fun y _ => wfR y)
+  | xO p' => fun wfR x => let F := pos_guard_wf p' in Acc_intro x (fun y _ => F (F 
+ wfR) y)
+  | xI p' => fun wfR x => let F := pos_guard_wf p' in Acc_intro x (fun y _ => F (F 
+ wfR) y)
+  end.
 
 Definition Zwf_guarded (z:Z) : Acc (Zwf 0) z :=
   Acc_intro _ (fun y H => match z with
@@ -304,30 +305,24 @@ Definition Zwf_guarded (z:Z) : Acc (Zwf 0) z :=
   | Z0 => Zwf_well_founded _ _
   end).
 
-(*val whileM : forall 'rv 'vars 'e. 'vars -> ('vars -> monad 'rv bool 'e) ->
-                ('vars -> monad 'rv 'vars 'e) -> monad 'rv 'vars 'e*)
-Fixpoint whileMT' {E Vars} limit (vars : Vars) (cond : Vars -> monad E bool) (body : Vars -> monad E Vars) (acc : Acc (Zwf 0) limit) : monad E Vars.
-exact (
+Fixpoint whileMT' {E Vars} limit (vars : Vars) (cond : Vars -> monad E bool) (body : Vars -> monad E Vars) (acc : Acc (Zwf 0) limit) : monad E Vars :=
   if Z_ge_dec limit 0 then
     cond vars >>= fun cond_val =>
     if cond_val then
-      body vars >>= fun vars => whileMT' _ _ (limit - 1) vars cond body (_limit_reduces acc ltac:(assumption))
+      body vars >>= fun vars => whileMT' (limit - 1) vars cond body (_limit_reduces acc ltac:(assumption))
     else returnm vars
-  else fail "Termination limit reached").
-Defined.
+  else fail "Termination limit reached".
 
 Definition whileMT {E Vars} (vars : Vars) (measure : Vars -> Z) (cond : Vars -> monad E bool) (body : Vars -> monad E Vars) : monad E Vars :=
   let limit := measure vars in
   whileMT' limit vars cond body (Zwf_guarded limit).
 
-Fixpoint untilMT' {E Vars} limit (vars : Vars) (cond : Vars -> monad E bool) (body : Vars -> monad E Vars) (acc : Acc (Zwf 0) limit) : monad E Vars.
-exact (
+Fixpoint untilMT' {E Vars} limit (vars : Vars) (cond : Vars -> monad E bool) (body : Vars -> monad E Vars) (acc : Acc (Zwf 0) limit) : monad E Vars :=
   if Z_ge_dec limit 0 then
     body vars >>= fun vars =>
     cond vars >>= fun cond_val =>
-    if cond_val then returnm vars else untilMT' _ _ (limit - 1) vars cond body (_limit_reduces acc ltac:(assumption))
-  else fail "Termination limit reached").
-Defined.
+    if cond_val then returnm vars else untilMT' (limit - 1) vars cond body (_limit_reduces acc ltac:(assumption))
+  else fail "Termination limit reached".
 
 Definition untilMT {E Vars} (vars : Vars) (measure : Vars -> Z) (cond : Vars -> monad E bool) (body : Vars -> monad E Vars) : monad E Vars :=
   let limit := measure vars in
@@ -382,68 +377,70 @@ Definition cycle_count {e} (_ : unit) : monad e unit := I.Next I.CycleCount I.Re
 Definition get_cycle_count {e} (_ : unit) : monad e Z := I.Next I.GetCycleCount I.Ret.
 
 Definition sail_mem_read {e n} (req : Mem_read_request n (Z.of_N A.va_size) A.pa A.translation A.arch_ak) : monad e (result (mword (8 * n) * option bool) A.abort).
-refine (
-  let n' := Z.to_N n in
-  let va : option (bv A.va_size) :=
-    match req.(Mem_read_request_va) with
-    | None => None
-    | Some va =>
-        Some (match A.va_size as x return mword (Z.of_N x) -> bv x with
-        | N0 => fun y => y
-        | Npos _ => fun y => cast_N y _
-        end va)
-    end
-  in
-  let req' := I.ReadReq.make n' req.(Mem_read_request_pa) req.(Mem_read_request_access_kind) va req.(Mem_read_request_translation) req.(Mem_read_request_tag) in
-  let k r :=
-    match r with
-    | inl (x,y) =>
-        let x' := cast_N (m := 8 * Z.to_N n) (n := (Z.to_N (8 * n))) x _ in
-        I.Ret (Ok (x', y))
-    | inr abort => I.Ret (Err abort)
-    end
-  in
-  I.Next (I.MemRead n' req') k
-).
-clear; abstract Lia.lia.
-Unshelve.
-reflexivity.
+Proof.
+  refine (
+    let n' := Z.to_N n in
+    let va : option (bv A.va_size) :=
+      match req.(Mem_read_request_va) with
+      | None => None
+      | Some va =>
+          Some (match A.va_size as x return mword (Z.of_N x) -> bv x with
+          | N0 => fun y => y
+          | Npos _ => fun y => cast_N y _
+          end va)
+      end
+    in
+    let req' := I.ReadReq.make n' req.(Mem_read_request_pa) req.(Mem_read_request_access_kind) va req.(Mem_read_request_translation) req.(Mem_read_request_tag) in
+    let k r :=
+      match r with
+      | inl (x,y) =>
+          let x' := cast_N (m := 8 * Z.to_N n) (n := (Z.to_N (8 * n))) x _ in
+          I.Ret (Ok (x', y))
+      | inr abort => I.Ret (Err abort)
+      end
+    in
+    I.Next (I.MemRead n' req') k
+  ).
+  clear; abstract Lia.lia.
+  Unshelve.
+  reflexivity.
 Defined.
 
 Definition sail_mem_write {e n} (req : Mem_write_request n (Z.of_N A.va_size) A.pa A.translation A.arch_ak) : monad e (result (option bool) A.abort).
-refine (
-  let n' := Z.to_N n in
-  match req.(Mem_write_request_value) with
-  | None => I.Ret (Ok None) (* TODO: ought to support tag-only writes *)
-  | Some value =>
-      let va : option (bv A.va_size) :=
-        match req.(Mem_write_request_va) with
-        | None => None
-        | Some va =>
-            Some (match A.va_size as x return mword (Z.of_N x) -> bv x with
-                  | N0 => fun y => y
-                  | Npos _ => fun y => cast_N y _
-                  end va)
-        end
-      in
-      let value := cast_N value _ in
-      let pa := req.(Mem_write_request_pa) in
-      let tag := req.(Mem_write_request_tag) in
-      let access_kind := req.(Mem_write_request_access_kind) in
-      let translation := req.(Mem_write_request_translation) in
-      let req' := I.WriteReq.make n' pa access_kind value va translation tag in
-      let k x :=
-        match x with
-        | inl y => I.Ret (Ok y)
-        | inr y => I.Ret (Err y)
-        end
-      in
-      I.Next (I.MemWrite n' req') k
-  end
-).
-clear; abstract (unfold MachineWord.MachineWord.Z_idx; Lia.lia).
-Unshelve.
-reflexivity.
+Proof.
+  refine (
+    let n' := Z.to_N n in
+    match req.(Mem_write_request_value) with
+    | None => I.Ret (Ok None) (* TODO: ought to support tag-only writes *)
+    | Some value =>
+        let va : option (bv A.va_size) :=
+          match req.(Mem_write_request_va) with
+          | None => None
+          | Some va =>
+              Some (match A.va_size as x return mword (Z.of_N x) -> bv x with
+                    | N0 => fun y => y
+                    | Npos _ => fun y => cast_N y _
+                    end va)
+          end
+        in
+        let value := cast_N value _ in
+        let pa := req.(Mem_write_request_pa) in
+        let tag := req.(Mem_write_request_tag) in
+        let access_kind := req.(Mem_write_request_access_kind) in
+        let translation := req.(Mem_write_request_translation) in
+        let req' := I.WriteReq.make n' pa access_kind value va translation tag in
+        let k x :=
+          match x with
+          | inl y => I.Ret (Ok y)
+          | inr y => I.Ret (Err y)
+          end
+        in
+        I.Next (I.MemWrite n' req') k
+    end
+  ).
+  clear; abstract (unfold MachineWord.MachineWord.Z_idx; Lia.lia).
+  Unshelve.
+  reflexivity.
 Defined.
 
 Definition sail_sys_reg_read {a e} (id : A.sys_reg_id) (r : @register_ref A.reg A.reg_type a) : monad e a :=

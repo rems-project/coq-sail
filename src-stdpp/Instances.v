@@ -186,12 +186,12 @@ Ltac unbool_comparisons_goal :=
    vec_eq_dec (fun x y => generic_dec x y).
 
 #[export] Instance Countable_vec {n} `{Countable T} : Countable (vec T n).
-refine {|
-  encode v := encode (projT1 v);
-  decode p := l ← decode p;
-              vec_of_list n l
-|}.
 Proof.
+  refine {|
+    encode v := encode (projT1 v);
+    decode p := l ← decode p;
+                vec_of_list n l
+  |}.
   abstract
     (intros [l pf];
     rewrite decode_encode;
@@ -200,21 +200,21 @@ Proof.
 Defined.
 
 #[export] Instance Decidable_eq_sigT {T} {P : T -> Type} `{ET : EqDecision T} `{Peq : forall t, EqDecision (P t)} : EqDecision (sigT P).
-refine (fun '(@existT _ _ x p) '(@existT _ _ y q) =>
-          match decide (x = y) with
-          | left e => _
-          | right ne => right _
-          end).
 Proof.
+  refine (fun '(@existT _ _ x p) '(@existT _ _ y q) =>
+            match decide (x = y) with
+            | left e => _
+            | right ne => right _
+            end).
   contradict ne. apply (eq_sigT_fst ne).
 Defined.
 
 #[export] Instance Countable_eq_sigT {T} {P : T -> Type} `{EqDecision T} `{forall t, EqDecision (P t)} `{CT : Countable T} `{CPt : forall t, Countable (P t)} : Countable (sigT P).
-refine {|
-  encode x := encode (projT1 x, encode (projT2 x));
-  decode p := match decode p with Some (t, q) => match decode q with Some v => Some (@existT _ _ t v) | None => None end | None => None end
-|}.
 Proof.
+  refine {|
+    encode x := encode (projT1 x, encode (projT2 x));
+    decode p := match decode p with Some (t, q) => match decode q with Some v => Some (@existT _ _ t v) | None => None end | None => None end
+  |}.
   intros [t v].
   rewrite !decode_encode.
   reflexivity.
@@ -227,10 +227,10 @@ Defined.
 #[export] Instance Decidable_eq_mword {n} : EqDecision (mword n) := eq_vec_dec.
 
 #[export] Instance Countable_mword {n} : Countable (mword n).
-refine {|
-  encode := match n with Zpos _ => encode | _ => encode end;
-  decode p := match n return option (mword n) with Zpos _ => decode p | _ => decode p end;
-|}.
 Proof.
+  refine {|
+    encode := match n with Zpos _ => encode | _ => encode end;
+    decode p := match n return option (mword n) with Zpos _ => decode p | _ => decode p end;
+  |}.
   abstract (destruct n; apply decode_encode).
 Defined.

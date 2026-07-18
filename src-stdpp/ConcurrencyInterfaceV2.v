@@ -1,5 +1,5 @@
 From Stdlib Require Import Strings.String.
-From stdpp Require Import bitvector.definitions countable pretty.
+From stdpp Require Import bitvector.definitions bitvector.tactics countable pretty.
 
 (* For choice outcomes *)
 Require Import Values.

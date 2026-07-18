@@ -37,9 +37,9 @@ Definition choose_bitvector {E} (_descr : string) (n : Z) : monad E (mword n) :=
   I.Next (I.Choose (ChooseBitvector n)) mret.
 
 Definition assert_exp {E} (exp :bool) msg : monad E unit :=
- if exp then returnm tt else fail msg.
+  if exp then returnm tt else fail msg.
 Definition assert_exp' {E} (exp :bool) msg : monad E (exp = true) :=
- if exp return monad E (exp = true) then returnm eq_refl else fail msg.
+  if exp return monad E (exp = true) then returnm eq_refl else fail msg.
 
 Definition throw {A E} (e : E) : monad E A := I.Next (I.ExtraOutcome e) mret.
 
@@ -96,7 +96,7 @@ Definition pure_early_return {A} (v : A + A) : A :=
 
 (* Lift to monad with early return by wrapping exceptions *)
 Definition liftR {A R E} (m : monad E A) : monadR R E A :=
- try_catch m (fun e => throw (inr e)).
+  try_catch m (fun e => throw (inr e)).
 
 Definition pure_early_return_embed {A R E} (v : R + A) : monadR R E A :=
   match v with
@@ -151,28 +151,28 @@ Definition read_reg_ref {a e} (ref : @register_ref A.reg A.reg_type a) : monad e
 Definition reg_deref {a e} := @read_reg_ref a e.
 
 Definition write_reg {e} (reg : A.reg) (v : A.reg_type reg) : monad e unit :=
- I.Next (I.RegWrite reg None v) I.Ret.
+  I.Next (I.RegWrite reg None v) I.Ret.
 
 Definition write_reg_ref {a e} (ref : @register_ref A.reg A.reg_type a) (v : a) : monad e unit :=
- I.Next (I.RegWrite ref.(reg) None (ref.(from_ty) v)) I.Ret.
+  I.Next (I.RegWrite ref.(reg) None (ref.(from_ty) v)) I.Ret.
 
 (* ---- Prompt *)
 
 Fixpoint foreachM {a e Vars} (l : list a) (vars : Vars) (body : a -> Vars -> monad e Vars) : monad e Vars :=
-match l with
-| [] => returnm vars
-| (x :: xs) =>
-  body x vars >>= fun vars =>
-  foreachM xs vars body
-end.
+  match l with
+  | [] => returnm vars
+  | (x :: xs) =>
+    body x vars >>= fun vars =>
+    foreachM xs vars body
+  end.
 
 Fixpoint foreachE {a Vars e} (l : list a) (vars : Vars) (body : a -> Vars -> e + Vars) : e + Vars :=
-match l with
-| [] => inr vars
-| (x :: xs) =>
-  body x vars >>$= fun vars =>
-  foreachE xs vars body
-end.
+  match l with
+  | [] => inr vars
+  | (x :: xs) =>
+    body x vars >>$= fun vars =>
+    foreachE xs vars body
+  end.
 
 Fixpoint foreach_ZM_up' {E Vars} (from to step : Z) (n : nat) (vars : Vars) (body : forall (z : Z), Vars -> monad E Vars) {struct n} : monad E Vars :=
   if from <=? to then
@@ -279,10 +279,11 @@ Definition or_boolM {E} (l : monad E bool) (r : monad E bool) : monad E bool :=
 
 (* For termination of recursive functions. *)
 Definition _limit_reduces {_limit} (_acc:Acc (Zwf 0) _limit) (H : _limit >= 0) : Acc (Zwf 0) (_limit - 1).
-refine (Acc_inv _acc _).
-unbool_comparisons.
-red.
-Lia.lia.
+Proof.
+  refine (Acc_inv _acc _).
+  unbool_comparisons.
+  red.
+  Lia.lia.
 Defined.
 
 (* A version of well-foundedness of measures with a guard to ensure that
@@ -291,13 +292,13 @@ Defined.
      https://sympa.inria.fr/sympa/arc/coq-club/2007-07/msg00014.html *)
 
 Fixpoint pos_guard_wf {A:Type} {R:A -> A -> Prop} (p:positive) : well_founded R -> well_founded R :=
- match p with
- | xH => fun wfR x => Acc_intro x (fun y _ => wfR y)
- | xO p' => fun wfR x => let F := pos_guard_wf p' in Acc_intro x (fun y _ => F (F 
-wfR) y)
- | xI p' => fun wfR x => let F := pos_guard_wf p' in Acc_intro x (fun y _ => F (F 
-wfR) y)
- end.
+  match p with
+  | xH => fun wfR x => Acc_intro x (fun y _ => wfR y)
+  | xO p' => fun wfR x => let F := pos_guard_wf p' in Acc_intro x (fun y _ => F (F 
+ wfR) y)
+  | xI p' => fun wfR x => let F := pos_guard_wf p' in Acc_intro x (fun y _ => F (F 
+ wfR) y)
+  end.
 
 Definition Zwf_guarded (z:Z) : Acc (Zwf 0) z :=
   Acc_intro _ (fun y H => match z with
@@ -306,30 +307,24 @@ Definition Zwf_guarded (z:Z) : Acc (Zwf 0) z :=
   | Z0 => Zwf_well_founded _ _
   end).
 
-(*val whileM : forall 'rv 'vars 'e. 'vars -> ('vars -> monad 'rv bool 'e) ->
-                ('vars -> monad 'rv 'vars 'e) -> monad 'rv 'vars 'e*)
-Fixpoint whileMT' {E Vars} limit (vars : Vars) (cond : Vars -> monad E bool) (body : Vars -> monad E Vars) (acc : Acc (Zwf 0) limit) : monad E Vars.
-exact (
+Fixpoint whileMT' {E Vars} limit (vars : Vars) (cond : Vars -> monad E bool) (body : Vars -> monad E Vars) (acc : Acc (Zwf 0) limit) : monad E Vars :=
   if Z_ge_dec limit 0 then
     cond vars >>= fun cond_val =>
     if cond_val then
-      body vars >>= fun vars => whileMT' _ _ (limit - 1) vars cond body (_limit_reduces acc ltac:(assumption))
+      body vars >>= fun vars => whileMT' (limit - 1) vars cond body (_limit_reduces acc ltac:(assumption))
     else returnm vars
-  else fail "Termination limit reached").
-Defined.
+  else fail "Termination limit reached".
 
 Definition whileMT {E Vars} (vars : Vars) (measure : Vars -> Z) (cond : Vars -> monad E bool) (body : Vars -> monad E Vars) : monad E Vars :=
   let limit := measure vars in
   whileMT' limit vars cond body (Zwf_guarded limit).
 
-Fixpoint untilMT' {E Vars} limit (vars : Vars) (cond : Vars -> monad E bool) (body : Vars -> monad E Vars) (acc : Acc (Zwf 0) limit) : monad E Vars.
-exact (
+Fixpoint untilMT' {E Vars} limit (vars : Vars) (cond : Vars -> monad E bool) (body : Vars -> monad E Vars) (acc : Acc (Zwf 0) limit) : monad E Vars :=
   if Z_ge_dec limit 0 then
     body vars >>= fun vars =>
     cond vars >>= fun cond_val =>
-    if cond_val then returnm vars else untilMT' _ _ (limit - 1) vars cond body (_limit_reduces acc ltac:(assumption))
-  else fail "Termination limit reached").
-Defined.
+    if cond_val then returnm vars else untilMT' (limit - 1) vars cond body (_limit_reduces acc ltac:(assumption))
+  else fail "Termination limit reached".
 
 Definition untilMT {E Vars} (vars : Vars) (measure : Vars -> Z) (cond : Vars -> monad E bool) (body : Vars -> monad E Vars) : monad E Vars :=
   let limit := measure vars in
@@ -405,14 +400,15 @@ Definition sail_mem_read {e n nt} (req : Mem_request n nt (Z.of_N A.addr_size) A
   I.Next (I.MemRead req') k.
 
 Definition bv_of_bytes {n} (v : vec (bv 8) n) : bv (8 * Z.to_N n).
-refine (
-  cast_N (list_rec (fun l => bv (8 * N.of_nat (length l))) (bv_0 0) (fun v _ t => bv_concat _ v t) (projT1 v)) _
-).
-destruct v as [l H].
-simpl.
-rewrite H.
-rewrite Z_nat_N.
-reflexivity.
+Proof.
+  refine (
+    cast_N (list_rec (fun l => bv (8 * N.of_nat (length l))) (bv_0 0) (fun v _ t => bv_concat _ v t) (projT1 v)) _
+  ).
+  destruct v as [l H].
+  simpl.
+  rewrite H.
+  rewrite Z_nat_N.
+  reflexivity.
 Defined.
 
 Local Lemma bv_of_bools_size n (v : vec bool n) : MachineWord.nat_idx (length (projT1 v)) = Z.to_N n.

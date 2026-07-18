@@ -169,16 +169,18 @@ Definition or_boolM {E} (l : monad bool E) (r : monad bool E) : monad bool E :=
 
 (* For termination of recursive functions. *)
 Definition _limit_reduces {_limit} (_acc:Acc (Zwf 0) _limit) (H : _limit >= 0) : Acc (Zwf 0) (_limit - 1).
-refine (Acc_inv _acc _).
-unbool_comparisons.
-red.
-lia.
+Proof.
+  refine (Acc_inv _acc _).
+  unbool_comparisons.
+  red.
+  lia.
 Defined.
 
-Definition _limit_reduces_bool {_limit} (_acc:Acc (Zwf 0) _limit) (H: _limit >=? 0 = true) : Acc (Zwf 0) (_limit - 1).
-refine (_limit_reduces _acc _).
-apply Z.geb_ge.
-assumption.
+Definition _limit_reduces_bool {_limit} (_acc:Acc (Zwf 0) _limit) (H: (_limit >=? 0) = true) : Acc (Zwf 0) (_limit - 1).
+Proof.
+  refine (_limit_reduces _acc _).
+  apply Z.geb_ge.
+  assumption.
 Defined.
 
 (* A version of well-foundedness of measures with a guard to ensure that
@@ -202,57 +204,28 @@ Definition Zwf_guarded (z:Z) : Acc (Zwf 0) z :=
   | Z0 => Zwf_well_founded _ _
   end).
 
-(*val whileM : forall 'rv 'vars 'e. 'vars -> ('vars -> monad 'rv bool 'e) ->
-                ('vars -> monad 'rv 'vars 'e) -> monad 'rv 'vars 'e*)
-Fixpoint whileMT' {Vars E} limit (vars : Vars) (cond : Vars -> monad bool E) (body : Vars -> monad Vars E) (acc : Acc (Zwf 0) limit) : monad Vars E.
-exact (
+Fixpoint whileMT' {Vars E} limit (vars : Vars) (cond : Vars -> monad bool E) (body : Vars -> monad Vars E) (acc : Acc (Zwf 0) limit) : monad Vars E :=
   if Z_ge_dec limit 0 then
     cond vars >>= fun cond_val =>
     if cond_val then
-      body vars >>= fun vars => whileMT' _ _ (limit - 1) vars cond body (_limit_reduces acc ltac:(assumption))
+      body vars >>= fun vars => whileMT' (limit - 1) vars cond body (_limit_reduces acc ltac:(assumption))
     else returnm vars
-  else Fail "Termination limit reached").
-Defined.
+  else Fail "Termination limit reached".
 
 Definition whileMT {Vars E} (vars : Vars) (measure : Vars -> Z) (cond : Vars -> monad bool E) (body : Vars -> monad Vars E) : monad Vars E :=
   let limit := measure vars in
   whileMT' limit vars cond body (Zwf_guarded limit).
 
-(*val untilM : forall 'rv 'vars 'e. 'vars -> ('vars -> monad 'rv bool 'e) ->
-                ('vars -> monad 'rv 'vars 'e) -> monad 'rv 'vars 'e*)
-Fixpoint untilMT' {Vars E} limit (vars : Vars) (cond : Vars -> monad bool E) (body : Vars -> monad Vars E) (acc : Acc (Zwf 0) limit) : monad Vars E.
-exact (
+Fixpoint untilMT' {Vars E} limit (vars : Vars) (cond : Vars -> monad bool E) (body : Vars -> monad Vars E) (acc : Acc (Zwf 0) limit) : monad Vars E :=
   if Z_ge_dec limit 0 then
     body vars >>= fun vars =>
     cond vars >>= fun cond_val =>
-    if cond_val then returnm vars else untilMT' _ _ (limit - 1) vars cond body (_limit_reduces acc ltac:(assumption))
-  else Fail "Termination limit reached").
-Defined.
+    if cond_val then returnm vars else untilMT' (limit - 1) vars cond body (_limit_reduces acc ltac:(assumption))
+  else Fail "Termination limit reached".
 
 Definition untilMT {Vars E} (vars : Vars) (measure : Vars -> Z) (cond : Vars -> monad bool E) (body : Vars -> monad Vars E) : monad Vars E :=
   let limit := measure vars in
   untilMT' limit vars cond body (Zwf_guarded limit).
-
-(*let write_two_regs r1 r2 vec =
-  let is_inc =
-    let is_inc_r1 = is_inc_of_reg r1 in
-    let is_inc_r2 = is_inc_of_reg r2 in
-    let () = ensure (is_inc_r1 = is_inc_r2)
-                    "write_two_regs called with vectors of different direction" in
-    is_inc_r1 in
-
-  let (size_r1 : integer) = size_of_reg r1 in
-  let (start_vec : integer) = get_start vec in
-  let size_vec = length vec in
-  let r1_v =
-    if is_inc
-    then slice vec start_vec (size_r1 - start_vec - 1)
-    else slice vec start_vec (start_vec - size_r1 - 1) in
-  let r2_v =
-    if is_inc
-    then slice vec (size_r1 - start_vec) (size_vec - start_vec)
-    else slice vec (start_vec - size_r1) (start_vec - size_vec) in
-  write_reg r1 r1_v >> write_reg r2 r2_v*)
 
 Section Choose.
 Context {E : Type}.

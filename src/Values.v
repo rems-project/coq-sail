@@ -129,10 +129,11 @@ Definition pow m n := m ^ n.
 Definition pow2 n := pow 2 n.
 
 Lemma Z_geb_ge n m : (n >=? m) = true <-> n >= m.
-rewrite Z.geb_leb.
-split.
-* intro. apply Z.le_ge, Z.leb_le. assumption.
-* intro. apply Z.ge_le in H. apply Z.leb_le. assumption.
+Proof.
+  rewrite Z.geb_leb.
+  split.
+  * intro. apply Z.le_ge, Z.leb_le. assumption.
+  * intro. apply Z.ge_le in H. apply Z.leb_le. assumption.
 Qed.
 
 Definition neq l r := (negb (l =? r)). (* Z only *)
@@ -189,34 +190,39 @@ Fixpoint repeat' {a} (xs : list a) n :=
   | S n => xs ++ repeat' xs n
   end.
 Lemma repeat'_length {a} {xs : list a} {n : nat} : List.length (repeat' xs n) = (n * List.length xs)%nat.
-induction n.
-* reflexivity.
-* simpl.
-  rewrite length_app.
-  auto with arith.
+Proof.
+  induction n.
+  * reflexivity.
+  * simpl.
+    rewrite length_app.
+    auto with arith.
 Qed.
 Definition repeat {a} (xs : list a) (n : Z) :=
   if n <? 0 then []
   else repeat' xs (Z.to_nat n).
+
 Lemma repeat_length {a} {xs : list a} {n : Z} (H : n >= 0) : (List.length (repeat xs n) = (Z.to_nat n) * List.length xs)%nat.
-unfold repeat.
-apply Z.ge_le in H.
-rewrite <- Z.ltb_ge in H.
-rewrite H.
-apply repeat'_length.
+Proof.
+  unfold repeat.
+  apply Z.ge_le in H.
+  rewrite <- Z.ltb_ge in H.
+  rewrite H.
+  apply repeat'_length.
 Qed.
+
 Lemma repeat_length_list {a} {xs : list a} {n : Z} (H : n >= 0) : length_list (repeat xs n) = n * length_list xs.
-unfold length_list, repeat.
-destruct n.
-+ reflexivity. 
-+ simpl (List.length _).
-  rewrite repeat'_length.
-  rewrite Nat2Z.inj_mul.
-  unfold Z.to_nat.
-  rewrite positive_nat_Z.
-  reflexivity.  
-+ exfalso.
-  auto with zarith.
+Proof.
+  unfold length_list, repeat.
+  destruct n.
+  + reflexivity. 
+  + simpl (List.length _).
+    rewrite repeat'_length.
+    rewrite Nat2Z.inj_mul.
+    unfold Z.to_nat.
+    rewrite positive_nat_Z.
+    reflexivity.  
+  + exfalso.
+    auto with zarith.
 Qed.
 
 
@@ -233,44 +239,47 @@ Fixpoint just_list {A} (l : list (option A)) := match l with
 
 Lemma just_list_length {A} : forall (l : list (option A)) (l' : list A),
   Some l' = just_list l -> List.length l = List.length l'.
-induction l.
-* intros.
-  simpl in H.
-  inversion H.
-  reflexivity.
-* intros.
-  destruct a; simplify_eq H.
-  simpl in *.
-  destruct (just_list l); simplify_eq H.
-  intros.
-  subst.
-  simpl.
-  f_equal.
-  apply IHl.
-  reflexivity.
+Proof.
+  induction l.
+  * intros.
+    simpl in H.
+    inversion H.
+    reflexivity.
+  * intros.
+    destruct a; simplify_eq H.
+    simpl in *.
+    destruct (just_list l); simplify_eq H.
+    intros.
+    subst.
+    simpl.
+    f_equal.
+    apply IHl.
+    reflexivity.
 Qed.
 
 Lemma just_list_length_Z {A} : forall (l : list (option A)) l', Some l' = just_list l -> length_list l = length_list l'.
-unfold length_list.
-intros.
-f_equal.
-auto using just_list_length.
+Proof.
+  unfold length_list.
+  intros.
+  f_equal.
+  auto using just_list_length.
 Qed.
 
 Fixpoint member_Z_list (x : Z) (l : list Z) : bool :=
-match l with
-| [] => false
-| h::t => if x =? h then true else member_Z_list x t
-end.
+  match l with
+  | [] => false
+  | h::t => if x =? h then true else member_Z_list x t
+  end.
 
 Lemma member_Z_list_In {x l} : member_Z_list x l = true <-> In x l.
-induction l.
-* simpl. split. congruence. tauto.
-* simpl. destruct (x =? a) eqn:H.
-  + rewrite Z.eqb_eq in H. subst. tauto.
-  + rewrite Z.eqb_neq in H. split.
-    - intro Heq. right. apply IHl. assumption.
-    - intros [bad | good]. congruence. apply IHl. assumption.
+Proof.
+  induction l.
+  * simpl. split. congruence. tauto.
+  * simpl. destruct (x =? a) eqn:H.
+    + rewrite Z.eqb_eq in H. subst. tauto.
+    + rewrite Z.eqb_neq in H. split.
+      - intro Heq. right. apply IHl. assumption.
+      - intros [bad | good]. congruence. apply IHl. assumption.
 Qed.
 
 (*** Bool lists ***)
@@ -358,34 +367,37 @@ Definition update_subrange_list {A} (is_inc : bool) (xs : list A) i j xs' :=
 
 Open Scope nat.
 Fixpoint nth_in_range {A} (n:nat) (l:list A) : n < length l -> A.
-refine 
-  (match n, l with
-  | O, h::_ => fun _ => h
-  | S m, _::t => fun H => nth_in_range A m t _
-  | _,_ => fun H => _
-  end).
-exfalso. inversion H.
-exfalso. inversion H.
-simpl in H. lia.
+Proof.
+  refine 
+    (match n, l with
+    | O, h::_ => fun _ => h
+    | S m, _::t => fun H => nth_in_range A m t _
+    | _,_ => fun H => _
+    end).
+  exfalso. inversion H.
+  exfalso. inversion H.
+  simpl in H. lia.
 Defined.
 
 Lemma nth_in_range_is_nth : forall A n (l : list A) d (H : n < length l),
   nth_in_range n l H = nth n l d.
-intros until d. revert n.
-induction l; intros n H.
-* inversion H.
-* destruct n.
-  + reflexivity.
-  + apply IHl.
+Proof.
+  intros until d. revert n.
+  induction l; intros n H.
+  * inversion H.
+  * destruct n.
+    + reflexivity.
+    + apply IHl.
 Qed.
 
 Lemma nth_Z_nat {A} {n} {xs : list A} :
   (0 <= n)%Z -> (n < length_list xs)%Z -> Z.to_nat n < length xs.
-unfold length_list.
-intros nonneg bounded.
-rewrite Z2Nat.inj_lt in bounded; auto using Zle_0_nat.
-rewrite Nat2Z.id in bounded.
-assumption.
+Proof.
+  unfold length_list.
+  intros nonneg bounded.
+  rewrite Z2Nat.inj_lt in bounded; auto using Zle_0_nat.
+  rewrite Nat2Z.id in bounded.
+  assumption.
 Qed.
 
 Close Scope nat.
@@ -447,22 +459,24 @@ Definition to_word_idx {n} (w : word n) : mword (idx_Z n) :=
    usably plain equality result. *)
 
 Lemma cast_idx_eq_dep T m n o (x : T m) (y : T n) EQ : EqdepFacts.eq_dep _ _ _ x _ y -> EqdepFacts.eq_dep _ _ _ x o (cast_idx y EQ).
-intros.
-subst.
-rewrite cast_idx_refl.
-assumption.
+Proof.
+  intros.
+  subst.
+  rewrite cast_idx_refl.
+  assumption.
 Qed.
 
 Lemma Z_idx_eq_dep T m n (x : T (Z_idx m)) (y : T (Z_idx n)) : m > 0 -> n > 0 -> EqdepFacts.eq_dep idx T _ x _ y -> EqdepFacts.eq_dep Z (fun n => T (Z_idx n)) _ x _ y.
-intros M N EQ.
-assert (m = n). {
-  inversion EQ.
-  apply Z2Nat.inj; auto with zarith.
-}
-subst.
-apply Eqdep.EqdepTheory.eq_dep_eq in EQ.
-subst.
-constructor.
+Proof.
+  intros M N EQ.
+  assert (m = n). {
+    inversion EQ.
+    apply Z2Nat.inj; auto with zarith.
+  }
+  subst.
+  apply Eqdep.EqdepTheory.eq_dep_eq in EQ.
+  subst.
+  constructor.
 Qed.
 
 Lemma to_word_idx_cast n (w : mword n) :
@@ -511,16 +525,18 @@ Definition mword_to_N {n} (w : mword n) : N := word_to_N w.
 
 Lemma word_to_N_cast_idx {m n w} {E : m = n} :
   word_to_N (cast_idx w E) = word_to_N w.
-subst.
-rewrite cast_idx_refl.
-reflexivity.
+Proof.
+  subst.
+  rewrite cast_idx_refl.
+  reflexivity.
 Qed.
 
 Lemma mword_to_N_cast_Z {m n w} {E : m = n} :
   mword_to_N (cast_Z w E) = mword_to_N w.
-subst.
-rewrite cast_Z_refl.
-reflexivity.
+Proof.
+  subst.
+  rewrite cast_Z_refl.
+  reflexivity.
 Qed.
 
 Definition mword_to_bools {n} (w : mword n) : list bool := word_to_bools w.
@@ -573,10 +589,11 @@ End MachineWords.
 Lemma lift_bool_exists (l r : bool) (P : bool -> Prop) :
   (l = r -> exists x, P x) ->
   (exists x, l = r -> P x).
-intro H.
-destruct (Bool.bool_dec l r) as [e | ne].
-* destruct (H e) as [x H']; eauto.
-* exists true; tauto.
+Proof.
+  intro H.
+  destruct (Bool.bool_dec l r) as [e | ne].
+  * destruct (H e) as [x H']; eauto.
+  * exists true; tauto.
 Qed.
 
 Ltac dump_context :=
@@ -588,7 +605,8 @@ Ltac dump_context :=
 #[export] Hint Unfold length_mword : sail.
 
 Lemma unit_comparison_lemma : true = true <-> True.
-intuition.
+Proof.
+  intuition.
 Qed.
 #[export] Hint Resolve unit_comparison_lemma : sail.
 
@@ -596,10 +614,10 @@ Definition neq_atom (x : Z) (y : Z) : bool := negb (Z.eqb x y).
 #[export] Hint Unfold neq_atom : sail.
 
 Definition opt_def {a} (def:a) (v:option a) :=
-match v with
-| Some x => x
-| None => def
-end.
+  match v with
+  | Some x => x
+  | None => def
+  end.
 
 Fixpoint byte_chunks {a} (bs : list a) : option (list (list a)) := match bs with
   | [] => Some []
@@ -667,16 +685,17 @@ Definition choose_prop ty : choose_type ty -> Prop :=
 
 (* NB: this only works because we don't enforce choose_prop here. *)
 #[export] Instance choose_type_inhabited {ty} : Inhabited (choose_type ty).
-destruct ty; simpl; constructor; apply inhabitant.
+Proof.
+  destruct ty; simpl; constructor; apply inhabitant.
 Defined.
 
 (*** Loop combinators *)
 
 Fixpoint foreach {a Vars} (l : list a) (vars : Vars) (body : a -> Vars -> Vars) : Vars :=
-match l with
-| [] => vars
-| (x :: xs) => foreach xs (body x vars) body
-end.
+  match l with
+  | [] => vars
+  | (x :: xs) => foreach xs (body x vars) body
+  end.
 
 Fixpoint index_list' from to step n :=
   if orb (andb (step >? 0) (from <=? to)) (andb (step <? 0) (to <=? from)) then
@@ -740,18 +759,20 @@ Definition vec_access_inc {T n} (v : vec T n) m `{Inhabited T} : T :=
 
 (* "Negative" length vectors are treated as empty, but would normally be a mistake,
    so define an opaque default value for them so that it's obvious when one appears. *)
-Definition dodgy_vec {T:Type} n (NEG: n >=? 0 = false) : vec T n.
-refine (@existT _ _ [] _).
-destruct n; try discriminate.
-reflexivity.
+Definition dodgy_vec {T:Type} n (NEG: (n >=? 0) = false) : vec T n.
+Proof.
+  refine (@existT _ _ [] _).
+  destruct n; try discriminate.
+  reflexivity.
 Qed.
 
-Lemma vec_init_ok {T} {n} {t : T} : n >=? 0 = true -> Datatypes.length (repeat [t] n) = Z.to_nat n.
-intro GE.
-rewrite repeat_length.
-- simpl.
-  apply Nat.mul_1_r.
-- auto with zarith.
+Lemma vec_init_ok {T} {n} {t : T} : (n >=? 0) = true -> Datatypes.length (repeat [t] n) = Z.to_nat n.
+Proof.
+  intro GE.
+  rewrite repeat_length.
+  - simpl.
+    apply Nat.mul_1_r.
+  - auto with zarith.
 Qed.
 
 Definition vector_init {T} (n : Z) (t : T) : vec T n :=
@@ -763,10 +784,10 @@ Definition vector_init {T} (n : Z) (t : T) : vec T n :=
 #[export] Instance dummy_vec {T:Type} `{Inhabited T} n : Inhabited (vec T n) := {| inhabitant := vector_init n inhabitant |}.
 
 Fixpoint list_init {T} n (f : Z -> T) : list T :=
-match n with
-| O => []
-| S m => f (Z.of_nat m) :: list_init m f
-end.
+  match n with
+  | O => []
+  | S m => f (Z.of_nat m) :: list_init m f
+  end.
 
 Lemma list_init_length T n (f : Z -> T) :
   length (list_init n f) = n.
@@ -783,53 +804,57 @@ Definition vec_init_fn {T} n (f : Z -> T) : vec T n :=
   end.
 
 Definition vec_concat {T m n} `{Inhabited T} (v : vec T m) (w : vec T n) : vec T (m + n).
-refine (
-  if sumbool_of_bool ((m >=? 0) && (n >=? 0)) then
-     @existT _ _ (projT1 v ++ projT1 w) _
-  else dummy_value).
-destruct v,w.
-rewrite length_app.
-rewrite Z2Nat.inj_add; auto with zarith.
+Proof.
+  refine (
+    if sumbool_of_bool ((m >=? 0) && (n >=? 0)) then
+       @existT _ _ (projT1 v ++ projT1 w) _
+    else dummy_value).
+  destruct v,w.
+  rewrite length_app.
+  rewrite Z2Nat.inj_add; auto with zarith.
 Defined.
 
 Lemma skipn_length {A n} {l: list A} : (n <= List.length l -> List.length (skipn n l) = List.length l - n)%nat.
-revert l.
-induction n.
-* simpl. auto with arith.
-* intros l H.
-  destruct l.
-  + inversion H.
-  + simpl in H.
-    simpl.
-    rewrite IHn; auto with arith.
+Proof.
+  revert l.
+  induction n.
+  * simpl. auto with arith.
+  * intros l H.
+    destruct l.
+    + inversion H.
+    + simpl in H.
+      simpl.
+      rewrite IHn; auto with arith.
 Qed.
 Lemma update_list_inc_length {T} {l:list T} {m x} : 0 <= m < length_list l -> List.length (update_list_inc l m x) = List.length l.
-unfold update_list_inc, list_update.
-intro H.
-assert ((0 <= Z.to_nat m < Datatypes.length l)%nat).
-{ destruct H as [H1 H2].
-  split.
-  + change 0%nat with (Z.to_nat 0).
-    apply Z2Nat.inj_le; auto with zarith.
-  + rewrite <- Nat2Z.id.
-    apply Z2Nat.inj_lt; auto with zarith.
-}
-rewrite length_app.
-rewrite firstn_length_le; only 2:lia.
-cbn -[skipn].
-rewrite skipn_length;
-lia.
+Proof.
+  unfold update_list_inc, list_update.
+  intro H.
+  assert ((0 <= Z.to_nat m < Datatypes.length l)%nat).
+  { destruct H as [H1 H2].
+    split.
+    + change 0%nat with (Z.to_nat 0).
+      apply Z2Nat.inj_le; auto with zarith.
+    + rewrite <- Nat2Z.id.
+      apply Z2Nat.inj_lt; auto with zarith.
+  }
+  rewrite length_app.
+  rewrite firstn_length_le; only 2:lia.
+  cbn -[skipn].
+  rewrite skipn_length;
+  lia.
 Qed.
 
-Lemma vec_update_dec_lemma {T n} {v : vec T n} {m t} : 0 <=? m <? n = true -> length (update_list_dec (projT1 v) m t) = Z.to_nat n.
-intro.
-unfold update_list_dec.
-destruct v as [v' L].
-rewrite update_list_inc_length.
-+ apply L.
-+ simpl.
-  unfold length_list.
-  lia.
+Lemma vec_update_dec_lemma {T n} {v : vec T n} {m t} : (0 <=? m <? n) = true -> length (update_list_dec (projT1 v) m t) = Z.to_nat n.
+Proof.
+  intro.
+  unfold update_list_dec.
+  destruct v as [v' L].
+  rewrite update_list_inc_length.
+  + apply L.
+  + simpl.
+    unfold length_list.
+    lia.
 Qed.
 
 Definition vec_update_dec {T n} `{Inhabited T} (v : vec T n) (m : Z) (t : T) : vec T n :=
@@ -838,14 +863,15 @@ Definition vec_update_dec {T n} `{Inhabited T} (v : vec T n) (m : Z) (t : T) : v
   | right _ => dummy_value
   end.
 
-Lemma vec_update_inc_lemma {T n} {v : vec T n} {m t} : 0 <=? m <? n = true -> length (update_list_inc (projT1 v) m t) = Z.to_nat n.
-intro e.
-destruct v as [v' L].
-rewrite update_list_inc_length.
-+ apply L.
-+ unfold length_list.
-  simpl.
-  lia.
+Lemma vec_update_inc_lemma {T n} {v : vec T n} {m t} : (0 <=? m <? n) = true -> length (update_list_inc (projT1 v) m t) = Z.to_nat n.
+Proof.
+  intro e.
+  destruct v as [v' L].
+  rewrite update_list_inc_length.
+  + apply L.
+  + unfold length_list.
+    simpl.
+    lia.
 Qed.
 
 Definition vec_update_inc {T n} `{Inhabited T} (v : vec T n) (m : Z) (t : T) : vec T n :=
@@ -855,12 +881,13 @@ Definition vec_update_inc {T n} `{Inhabited T} (v : vec T n) (m : Z) (t : T) : v
   end.
 
 Definition vec_map {S T} (f : S -> T) {n} (v : vec S n) : vec T n.
-refine (@existT _ _ (List.map f (projT1 v)) _).
-destruct v as [l H].
-cbn.
-unfold length_list.
-rewrite length_map.
-apply H.
+Proof.
+  refine (@existT _ _ (List.map f (projT1 v)) _).
+  destruct v as [l H].
+  cbn.
+  unfold length_list.
+  rewrite length_map.
+  apply H.
 Defined.
 
 #[local] Obligation Tactic := idtac.
@@ -870,74 +897,80 @@ Program Definition just_vec {A n} (v : vec (option A) n) : option (vec A n) :=
   | Some v' => Some (@existT _ _ v' _)
   end.
 Next Obligation.
-intros until v.
-simpl.
-intros v' EQ.
-rewrite <- (just_list_length _ _ EQ).
-destruct v.
-assumption.
+  intros until v.
+  simpl.
+  intros v' EQ.
+  rewrite <- (just_list_length _ _ EQ).
+  destruct v.
+  assumption.
 Defined.
 
 Definition list_of_vec {A n} (v : vec A n) : list A := projT1 v.
 
 Definition vec_eq_dec {T n} (D : forall x y : T, {x = y} + {x <> y}) (x y : vec T n) :
   {x = y} + {x <> y}.
-refine (if List.list_eq_dec D (projT1 x) (projT1 y) then left _ else right _).
-* apply eq_sigT_hprop; auto using UIP_nat.
-* contradict n0. rewrite n0. reflexivity.
+Proof.
+  refine (if List.list_eq_dec D (projT1 x) (projT1 y) then left _ else right _).
+  * apply eq_sigT_hprop; auto using UIP_nat.
+  * contradict n0. rewrite n0. reflexivity.
 Defined.
 
 Definition vec_of_list {A} n (l : list A) : option (vec A n).
-refine (
-  match sumbool_of_bool (List.length l =? Z.to_nat n)%nat with
-  | left H => Some (@existT _ _ l _)
-  | right _ => None
-  end
-).
-apply Nat.eqb_eq.
-exact H.
+Proof.
+  refine (
+    match sumbool_of_bool (List.length l =? Z.to_nat n)%nat with
+    | left H => Some (@existT _ _ l _)
+    | right _ => None
+    end
+  ).
+  apply Nat.eqb_eq.
+  exact H.
 Defined.
 
 Lemma vec_of_list_eq {A n l} pf :
   @vec_of_list A n l = Some (@existT _ _ l pf).
-simpl in pf.
-unfold vec_of_list.
-destruct (sumbool_of_bool (Datatypes.length l =? Z.to_nat n)%nat) as [e|e].
-* do 2 f_equal.
-  apply UIP_nat.
-* exfalso.
-  apply Nat.eqb_neq in e.
-  congruence.
+Proof.
+  simpl in pf.
+  unfold vec_of_list.
+  destruct (sumbool_of_bool (Datatypes.length l =? Z.to_nat n)%nat) as [e|e].
+  * do 2 f_equal.
+    apply UIP_nat.
+  * exfalso.
+    apply Nat.eqb_neq in e.
+    congruence.
 Qed.
 
 Definition vec_of_list_len {A} (l : list A) : vec A (length_list l). 
-refine (@existT _ _ l _).
-unfold length_list.
-rewrite Nat2Z.id.
-reflexivity.
+Proof.
+  refine (@existT _ _ l _).
+  unfold length_list.
+  rewrite Nat2Z.id.
+  reflexivity.
 Defined.
 
 Definition map_bind {A B} (f : A -> option B) (a : option A) : option B :=
-match a with
-| Some a' => f a'
-| None => None
-end.
+  match a with
+  | Some a' => f a'
+  | None => None
+  end.
 
 (* Limits for remainders *)
 
 Lemma Z_rem_really_nonneg : forall a b : Z, 0 <= a -> 0 <= Z.rem a b.
-intros.
-destruct (Z.eq_dec b 0).
-+ subst. rewrite Zquot.Zrem_0_r. assumption.
-+ auto using Z.rem_nonneg.
+Proof.
+  intros.
+  destruct (Z.eq_dec b 0).
+  + subst. rewrite Zquot.Zrem_0_r. assumption.
+  + auto using Z.rem_nonneg.
 Qed.
 
 Lemma Z_rem_pow_upper_bound : forall x x0 l,
 0 <= x -> 2 ^ l <= x0 -> x0 <= 2 ^ l -> 0 <= l -> Z.rem x x0 < 2 ^ l.
-intros.
-assert (x0 = 2 ^ l). auto with zarith.
-subst.
-apply Z.rem_bound_pos; auto with zarith.
+Proof.
+  intros.
+  assert (x0 = 2 ^ l). auto with zarith.
+  subst.
+  apply Z.rem_bound_pos; auto with zarith.
 Qed.
 
 #[export] Hint Resolve Z_rem_really_nonneg Z_rem_pow_upper_bound : sail.
@@ -947,7 +980,8 @@ Qed.
 
 Lemma sail_lt_ge (x y : Z) :
   x < y <-> y >= x +1.
-lia.
+Proof.
+  lia.
 Qed.
 #[export] Hint Resolve sail_lt_ge : sail.
 
@@ -962,6 +996,7 @@ Proof.
 Qed.
 Definition decode_encode_eq_dec {T} (f : T -> positive) (g : positive -> option T)
   (H : forall x, g (f x) = Some x) (x y : T) : {x = y} + {x <> y}.
+Proof.
   refine (match Pos.eq_dec (f x) (f y) with
   | left e => left (decode_encode_inj f g H x y e)
   | right ne => right _

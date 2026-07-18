@@ -86,7 +86,7 @@ Definition undefined_bitvector n : monad (mword n) E := choose_bitvector "undefi
 Definition undefined_list {T} `{Inhabited T} (a:T) : monad (list T) E :=
   undefined_nat tt >>= fun n =>
   returnm (repeat (List.cons a List.nil) n).
-  
+
 Definition undefined_vector {T} n `{Inhabited T} (a:T) : monad (vec T n) E := returnm (vector_init n a).
 
 End Undef.

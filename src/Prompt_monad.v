@@ -134,8 +134,9 @@ Arguments Exception [_ _].
 Lemma Choose_injective {A E} s ty (x y : choose_type ty -> monad A E) :
   Choose s ty x = Choose s ty y ->
   x = y.
-intros [=].
-assumption.
+Proof.
+  intros [=].
+  assumption.
 Qed.
 
 Inductive event :=

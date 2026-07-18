@@ -90,17 +90,18 @@ Lemma skipn_length T n (xs : list T) :
   n <> 0%nat ->
   xs <> [] ->
   (List.length (skipn n xs) < List.length xs)%nat.
-revert n.
-induction xs.
-* congruence.
-* destruct n.
-  + congruence.
-  + intros _ _. simpl.
-    destruct xs.
-    - destruct n; simpl; auto.
-    - destruct n; auto.
-      apply Nat.lt_lt_succ_r.
-      apply IHxs; congruence.
+Proof.
+  revert n.
+  induction xs.
+  * congruence.
+  * destruct n.
+    + congruence.
+    + intros _ _. simpl.
+      destruct xs.
+      - destruct n; simpl; auto.
+      - destruct n; auto.
+        apply Nat.lt_lt_succ_r.
+        apply IHxs; congruence.
 Qed.
 
 (* If we're using stdpp bitvectors then it will have changed the default. *)
@@ -112,7 +113,7 @@ Program Fixpoint take_chunks {a} (n : nat) (xs : list a) {measure (List.length x
   | _ => match n with O => [] | _ => (firstn n xs)::take_chunks n (skipn n xs) end
   end.
 Next Obligation.
-apply skipn_length; auto.
+  apply skipn_length; auto.
 Qed.
 
 (*

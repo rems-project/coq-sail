@@ -10,12 +10,12 @@ Inductive Access_variety := AV_plain | AV_exclusive | AV_atomic_rmw.
 Scheme Equality for Access_variety.
 #[export] Instance Decidable_eq_Access_variety : EqDecision Access_variety := Access_variety_eq_dec.
 #[export] Instance dummy_Access_variety : Inhabited Access_variety := { inhabitant := AV_plain }.
-#[export] Instance Countable_Access_variety : Countable Access_variety. refine {|
-  encode x := match x with AV_plain => 1 | AV_exclusive => 2 | AV_atomic_rmw => 3 end%positive;
-  decode x := match x with 1 => Some AV_plain | 2 => Some AV_exclusive | 3 => Some AV_atomic_rmw | _ => None end%positive;
-|}.
-intro x; destruct x; reflexivity.
-Defined.
+#[export] Instance Countable_Access_variety : Countable Access_variety :=
+  {|
+    encode x := match x with AV_plain => 1 | AV_exclusive => 2 | AV_atomic_rmw => 3 end%positive;
+    decode x := match x with 1 => Some AV_plain | 2 => Some AV_exclusive | 3 => Some AV_atomic_rmw | _ => None end%positive;
+    decode_encode := ltac:(intro x; destruct x; reflexivity)
+  |}.
 #[export] Instance GenericUpdate_Access_variety : GenericUpdate Access_variety := {
   generic_update up prev := update_enum_type up [("AV_plain", AV_plain); ("AV_exclusive", AV_exclusive); ("AV_atomic_rmw", AV_atomic_rmw)] prev
 }.
@@ -27,12 +27,12 @@ Inductive Access_strength := AS_normal | AS_rel_or_acq | AS_acq_rcpc.
 Scheme Equality for Access_strength.
 #[export] Instance Decidable_eq_Access_strength : EqDecision Access_strength := Access_strength_eq_dec.
 #[export] Instance dummy_Access_strength : Inhabited Access_strength := { inhabitant := AS_normal }.
-#[export] Instance Countable_Access_strength : Countable Access_strength. refine {|
-  encode x := match x with AS_normal => 1 | AS_rel_or_acq => 2 | AS_acq_rcpc => 3 end%positive;
-  decode x := match x with 1 => Some AS_normal | 2 => Some AS_rel_or_acq | 3 => Some AS_acq_rcpc | _ => None end%positive;
-|}.
-intro x; destruct x; reflexivity.
-Defined.
+#[export] Instance Countable_Access_strength : Countable Access_strength :=
+  {|
+    encode x := match x with AS_normal => 1 | AS_rel_or_acq => 2 | AS_acq_rcpc => 3 end%positive;
+    decode x := match x with 1 => Some AS_normal | 2 => Some AS_rel_or_acq | 3 => Some AS_acq_rcpc | _ => None end%positive;
+    decode_encode := ltac:(intro x; destruct x; reflexivity)
+  |}.
 #[export] Instance GenericUpdate_Access_strength : GenericUpdate Access_strength := {
   generic_update up prev := update_enum_type up [("AS_normal", AS_normal); ("AS_rel_or_acq", AS_rel_or_acq); ("AS_acq_rcpc", AS_acq_rcpc)] prev
 }.
@@ -52,10 +52,11 @@ Notation "{[ r 'with' 'Explicit_access_kind_variety' := e ]}" :=
 Notation "{[ r 'with' 'Explicit_access_kind_strength' := e ]}" :=
   match r with Build_Explicit_access_kind f0 _ => Build_Explicit_access_kind f0 e end.
 #[export] Instance Decidable_eq_Explicit_access_kind : EqDecision Explicit_access_kind.
-intros [x0 x1]; intros [y0 y1].
-cmp_record_field x0 y0.
-cmp_record_field x1 y1.
-left; subst; reflexivity.
+Proof.
+  intros [x0 x1]; intros [y0 y1].
+  cmp_record_field x0 y0.
+  cmp_record_field x1 y1.
+  left; subst; reflexivity.
 Defined.
 #[export]
 Instance dummy_Explicit_access_kind :
@@ -65,13 +66,12 @@ Instance dummy_Explicit_access_kind :
     Explicit_access_kind_variety := inhabitant;
     Explicit_access_kind_strength := inhabitant
 |} }.
-#[export] Instance Countable_Explicit_access_kind : Countable Explicit_access_kind.
-refine {|
-  encode x := encode (Explicit_access_kind_variety x, Explicit_access_kind_strength x);
-  decode x := '(x0, x1) ← decode x; mret (Build_Explicit_access_kind x0 x1);
-|}.
-intros [x0 x1]; rewrite decode_encode; reflexivity.
-Defined.
+#[export] Instance Countable_Explicit_access_kind : Countable Explicit_access_kind :=
+  {|
+    encode x := encode (Explicit_access_kind_variety x, Explicit_access_kind_strength x);
+    decode x := '(x0, x1) ← decode x; mret (Build_Explicit_access_kind x0 x1);
+    decode_encode := ltac:(intros [x0 x1]; rewrite decode_encode; reflexivity)
+  |}.
 Definition update_Explicit_access_kind_field (name : string) (up : generic_value) (prev : Explicit_access_kind) : result Explicit_access_kind string := match name with
 | "variety" => result_bind (fun x => Ok {| Explicit_access_kind_variety := x; Explicit_access_kind_strength := prev.(Explicit_access_kind_strength) |}) (generic_update up prev.(Explicit_access_kind_variety))
 | "strength" => result_bind (fun x => Ok {| Explicit_access_kind_strength := x; Explicit_access_kind_variety := prev.(Explicit_access_kind_variety) |}) (generic_update up prev.(Explicit_access_kind_strength))
@@ -98,15 +98,16 @@ Inductive Access_kind {arch_ak : Type} :=
 Arguments Access_kind : clear implicits.
 #[export]
 Instance Decidable_eq_Access_kind `{EqDecision arch_ak} : EqDecision (Access_kind arch_ak).
-refine (fun x y =>
-  match x,y with
-  | AK_explicit akx, AK_explicit aky => match decide (akx = aky) with left _ => left _ | right _ => right _ end
-  | AK_ifetch tt, AK_ifetch tt => left _
-  | AK_ttw tt, AK_ttw tt => left _
-  | AK_arch akx, AK_arch aky => match decide (akx = aky) with left _ => left _ | right _ => right _ end
-  | _, _ => right _
-  end).
-all: congruence.
+Proof.
+  refine (fun x y =>
+    match x,y with
+    | AK_explicit akx, AK_explicit aky => match decide (akx = aky) with left _ => left _ | right _ => right _ end
+    | AK_ifetch tt, AK_ifetch tt => left _
+    | AK_ttw tt, AK_ttw tt => left _
+    | AK_arch akx, AK_arch aky => match decide (akx = aky) with left _ => left _ | right _ => right _ end
+    | _, _ => right _
+    end).
+  all: congruence.
 Defined.
 #[export]
 Instance dummy_Access_kind {arch_ak : Type} `{Inhabited arch_ak} :
@@ -116,11 +117,12 @@ Instance dummy_Access_kind {arch_ak : Type} `{Inhabited arch_ak} :
 }.
 #[export]
 Instance Countable_Access_kind `{Countable arch_ak} : Countable (Access_kind arch_ak).
-refine {|
-  encode x := encode match x with AK_explicit ak => (1, encode ak) | AK_ifetch u => (2, encode u) | AK_ttw u => (3, encode u) | AK_arch ak => (4, encode ak) end%positive;
-  decode x := match decode x with Some (1, ak) => AK_explicit <$> decode ak | Some (2, u) => AK_ifetch <$> decode u | Some (3, u) => AK_ttw <$> decode u | Some (4, ak) => AK_arch <$> decode ak | _ => None end%positive
-|}.
-intros [x| | |x]; rewrite !decode_encode; reflexivity.
+Proof.
+  refine {|
+    encode x := encode match x with AK_explicit ak => (1, encode ak) | AK_ifetch u => (2, encode u) | AK_ttw u => (3, encode u) | AK_arch ak => (4, encode ak) end%positive;
+    decode x := match decode x with Some (1, ak) => AK_explicit <$> decode ak | Some (2, u) => AK_ifetch <$> decode u | Some (3, u) => AK_ttw <$> decode u | Some (4, ak) => AK_arch <$> decode ak | _ => None end%positive
+  |}.
+  intros [x| | |x]; rewrite !decode_encode; reflexivity.
 Defined.
 #[export]
 Instance GenericUpdate_Access_kind `{GenericUpdate arch_ak} `{Inhabited arch_ak} : GenericUpdate (Access_kind arch_ak) := {

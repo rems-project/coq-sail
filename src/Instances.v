@@ -76,88 +76,103 @@ Import ListNotations.
 
 Definition generic_eq {T:Type} (x y:T) `{Decidable (x = y)} := Decidable_witness.
 Definition generic_neq {T:Type} (x y:T) `{Decidable (x = y)} := negb Decidable_witness.
+
 Lemma generic_eq_true {T} {x y:T} `{Decidable (x = y)} : generic_eq x y = true -> x = y.
-apply Decidable_spec.
+Proof.
+  apply Decidable_spec.
 Qed.
+
 Lemma generic_eq_false {T} {x y:T} `{Decidable (x = y)} : generic_eq x y = false -> x <> y.
-unfold generic_eq.
-intros H1 H2.
-rewrite <- Decidable_spec in H2.
-congruence.
+Proof.
+  unfold generic_eq.
+  intros H1 H2.
+  rewrite <- Decidable_spec in H2.
+  congruence.
 Qed.
+
 Lemma generic_neq_true {T} {x y:T} `{Decidable (x = y)} : generic_neq x y = true -> x <> y.
-unfold generic_neq.
-intros H1 H2.
-rewrite <- Decidable_spec in H2.
-destruct Decidable_witness; simpl in *; 
-congruence.
+Proof.
+  unfold generic_neq.
+  intros H1 H2.
+  rewrite <- Decidable_spec in H2.
+  destruct Decidable_witness; simpl in *; 
+  congruence.
 Qed.
+
 Lemma generic_neq_false {T} {x y:T} `{Decidable (x = y)} : generic_neq x y = false -> x = y.
-unfold generic_neq.
-intro H1.
-rewrite <- Decidable_spec.
-destruct Decidable_witness; simpl in *; 
-congruence.
+Proof.
+  unfold generic_neq.
+  intro H1.
+  rewrite <- Decidable_spec.
+  destruct Decidable_witness; simpl in *; 
+  congruence.
 Qed.
 #[export] Instance Decidable_eq_from_dec {T:Type} (eqdec: forall x y : T, {x = y} + {x <> y}) : 
   forall (x y : T), Decidable (eq x y).
-refine (fun x y => {|
-  Decidable_witness := proj1_sig (bool_of_sumbool (eqdec x y))
-|}).
-destruct (eqdec x y); simpl; split; congruence.
+Proof.
+  refine (fun x y => {|
+    Decidable_witness := proj1_sig (bool_of_sumbool (eqdec x y))
+  |}).
+  destruct (eqdec x y); simpl; split; congruence.
 Defined.
 
 #[export] Instance Decidable_eq_unit : forall (x y : unit), Decidable (x = y).
-refine (fun x y => {| Decidable_witness := true |}).
-destruct x, y; split; auto.
+Proof.
+  refine (fun x y => {| Decidable_witness := true |}).
+  destruct x, y; split; auto.
 Defined.
 
 #[export] Instance Decidable_eq_string : forall (x y : string), Decidable (x = y) :=
   Decidable_eq_from_dec String.string_dec.
 
 #[export] Instance Decidable_eq_pair {A B : Type} `(DA : forall x y : A, Decidable (x = y), DB : forall x y : B, Decidable (x = y)) : forall x y : A*B, Decidable (x = y).
-refine (fun x y =>
-{| Decidable_witness := andb (@Decidable_witness _ (DA (fst x) (fst y)))
-     (@Decidable_witness _ (DB (snd x) (snd y))) |}).
-destruct x as [x1 x2].
-destruct y as [y1 y2].
-simpl.
-destruct (DA x1 y1) as [b1 H1];
-destruct (DB x2 y2) as [b2 H2];
-simpl.
-split.
-* intro H.
-  apply Bool.andb_true_iff in H.
-  destruct H as [H1b H2b].
-  apply H1 in H1b.
-  apply H2 in H2b.
-  congruence.
-* intro. inversion H.
-  subst.
-  apply Bool.andb_true_iff.
-  tauto.
+Proof.
+  refine (fun x y =>
+  {| Decidable_witness := andb (@Decidable_witness _ (DA (fst x) (fst y)))
+       (@Decidable_witness _ (DB (snd x) (snd y))) |}).
+  destruct x as [x1 x2].
+  destruct y as [y1 y2].
+  simpl.
+  destruct (DA x1 y1) as [b1 H1];
+  destruct (DB x2 y2) as [b2 H2];
+  simpl.
+  split.
+  * intro H.
+    apply Bool.andb_true_iff in H.
+    destruct H as [H1b H2b].
+    apply H1 in H1b.
+    apply H2 in H2b.
+    congruence.
+  * intro. inversion H.
+    subst.
+    apply Bool.andb_true_iff.
+    tauto.
 Qed.
 
 #[export] Instance Decidable_eq_option {A : Type} `(D: forall x y : A, Decidable (x = y)) : forall x y : option A, Decidable (x = y).
-refine (fun x y => {| Decidable_witness :=
-  match x with
-  | None => match y with None => true | Some _ => false end
-  | Some x' => match y with None => false | Some y' => (@Decidable_witness _ (D x' y')) end
-  end |}).
-destruct x as [x'|]; destruct y as [y'|].
-- destruct (D x' y') as [b H]; simpl.
-  rewrite H.
-  split; congruence.
-- split; congruence.
-- split; congruence.
-- split; congruence.
+Proof.
+  refine (fun x y => {| Decidable_witness :=
+    match x with
+    | None => match y with None => true | Some _ => false end
+    | Some x' => match y with None => false | Some y' => (@Decidable_witness _ (D x' y')) end
+    end |}).
+  destruct x as [x'|]; destruct y as [y'|].
+  - destruct (D x' y') as [b H]; simpl.
+    rewrite H.
+    split; congruence.
+  - split; congruence.
+  - split; congruence.
+  - split; congruence.
 Defined.
 
 Definition generic_dec {T:Type} (x y:T) `{Decidable (x = y)} : {x = y} + {x <> y}.
-refine ((if Decidable_witness as b return (b = true <-> x = y -> _) then fun H' => left _ else fun H' => right _) Decidable_spec).
-* tauto.
-* rewrite <- H'.
-  congruence.
+Proof.
+  refine ((if Decidable_witness as b return (b = true <-> x = y -> _)
+           then fun H' => left _
+           else fun H' => right _) Decidable_spec).
+  * tauto.
+  * rewrite <- H'.
+    congruence.
 Defined.
 
 #[export] Instance Decidable_eq_list {A : Type} `(D : forall x y : A, Decidable (x = y)) : forall (x y : list A), Decidable (x = y) :=
@@ -254,17 +269,23 @@ Ltac unbool_comparisons_goal :=
 
 #[export] Instance Decidable_eq_vec {T : Type} {n} `(DT : forall x y : T, Decidable (x = y)) :
   forall x y : vec T n, Decidable (x = y).
-refine (fun x y => {|
-  Decidable_witness := proj1_sig (bool_of_sumbool (vec_eq_dec (fun x y => generic_dec x y) x y))
-|}).
-destruct (vec_eq_dec _ x y); simpl; split; congruence.
+Proof.
+  refine (fun x y => {|
+    Decidable_witness := proj1_sig (bool_of_sumbool (vec_eq_dec (fun x y => generic_dec x y) x y))
+  |}).
+  destruct (vec_eq_dec _ x y); simpl; split; congruence.
 Defined.
 
-#[export] Instance Decidable_eq_sigT {T} {P : T -> Type} `{ET : forall x y : T, Decidable (x = y)} `{Peq : forall t (x y : P t), Decidable (x = y)} : forall x y : sigT P, Decidable (x = y).
-refine (fun '(@existT _ _ x p) '(@existT _ _ y q) => {|
-          Decidable_witness := match generic_dec x y with left e => proj1_sig (bool_of_sumbool (generic_dec (eq_rect x _ p y e) q)) | right _ => false end
- |}).
+#[export] Instance Decidable_eq_sigT {T} {P : T -> Type}
+  `{ET : forall x y : T, Decidable (x = y)}
+  `{Peq : forall t (x y : P t), Decidable (x = y)} : forall x y : sigT P, Decidable (x = y).
 Proof.
+  refine (fun '(@existT _ _ x p) '(@existT _ _ y q) => {|
+          Decidable_witness := match generic_dec x y with
+                               | left e => proj1_sig (bool_of_sumbool (generic_dec (eq_rect x _ p y e) q))
+                               | right _ => false
+                               end
+   |}).
   destruct (generic_dec x y) as [e | ne].
   - subst.
     simpl.

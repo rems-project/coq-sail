@@ -22,28 +22,30 @@ Arguments Mem_request : clear implicits.
 Instance Decidable_eq_Mem_request {n : Z} {nt : Z} {addr_size : Z} {addr_space : Type}
   {mem_acc : Type} (*(n >=? 0) && ((nt >=? 0) && (addr_size >? 0))*) `{EqDecision addr_space}
   `{EqDecision mem_acc} : EqDecision (Mem_request n nt addr_size addr_space mem_acc).
-   intros [x0 x1 x2 x3 x4].
-   intros [y0 y1 y2 y3 y4].
+Proof.
+  intros [x0 x1 x2 x3 x4].
+  intros [y0 y1 y2 y3 y4].
   cmp_record_field x0 y0.
   cmp_record_field x1 y1.
   cmp_record_field x2 y2.
   cmp_record_field x3 y3.
   cmp_record_field x4 y4.
-left; subst; reflexivity.
+  left; subst; reflexivity.
 Defined.
 #[export]
 Instance Countable_Mem_request {n : Z} {nt : Z} {addr_size : Z} {addr_space : Type}
   {mem_acc : Type} (*(n >=? 0) && ((nt >=? 0) && (addr_size >? 0))*) `{Countable addr_space}
   `{Countable mem_acc} : Countable (Mem_request n nt addr_size addr_space mem_acc).
-refine {|
-  encode x := encode (Mem_request_access_kind x, Mem_request_address x, Mem_request_address_space x, Mem_request_size x, Mem_request_num_tag x);
-  decode x := '(x0, x1, x2, x3, x4) ← decode x;
-              mret (Build_Mem_request n nt addr_size addr_space mem_acc x0 x1 x2 x3 x4)
-|}.
-abstract (
-  intros [x0 x1 x2 x3 x4];
-  rewrite decode_encode;
-  reflexivity).
+Proof.
+  refine {|
+    encode x := encode (Mem_request_access_kind x, Mem_request_address x, Mem_request_address_space x, Mem_request_size x, Mem_request_num_tag x);
+    decode x := '(x0, x1, x2, x3, x4) ← decode x;
+                mret (Build_Mem_request n nt addr_size addr_space mem_acc x0 x1 x2 x3 x4)
+  |}.
+  abstract (
+    intros [x0 x1 x2 x3 x4];
+    rewrite decode_encode;
+    reflexivity).
 Defined.
 Notation "{[ r 'with' 'Mem_request_access_kind' := e ]}" :=
   match r with Build_Mem_request _ _ _ _ _ _ (_ as f1) (_ as f2) (_ as f3) (_ as f4) =>

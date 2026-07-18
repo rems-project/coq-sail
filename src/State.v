@@ -130,48 +130,25 @@ Definition and_boolS {RV E} (l r : monadS RV bool E) : monadS RV bool E :=
 Definition or_boolS {RV E} (l r : monadS RV bool E) : monadS RV bool E :=
  l >>$= (fun l => if l then returnS true else r).
 
-(*
 
-val whileS : forall 'rv 'vars 'e. 'vars -> ('vars -> monadS 'rv bool 'e) ->
-                ('vars -> monadS 'rv 'vars 'e) -> monadS 'rv 'vars 'e
-let rec whileS vars cond body s =
-  (cond vars >>$= (fun cond_val s' ->
-  if cond_val then
-    (body vars >>$= (fun vars s'' -> whileS vars cond body s'')) s'
-  else returnS vars s')) s
-
-val untilS : forall 'rv 'vars 'e. 'vars -> ('vars -> monadS 'rv bool 'e) ->
-                ('vars -> monadS 'rv 'vars 'e) -> monadS 'rv 'vars 'e
-let rec untilS vars cond body s =
-  (body vars >>$= (fun vars s' ->
-  (cond vars >>$= (fun cond_val s'' ->
-  if cond_val then returnS vars s'' else untilS vars cond body s'')) s')) s
-*)
-
-Fixpoint whileST' {RV Vars E} limit (vars : Vars) (cond : Vars -> monadS RV bool E) (body : Vars -> monadS RV Vars E) (acc : Acc (Zwf 0) limit) : monadS RV Vars E.
-exact (
+Fixpoint whileST' {RV Vars E} limit (vars : Vars) (cond : Vars -> monadS RV bool E) (body : Vars -> monadS RV Vars E) (acc : Acc (Zwf 0) limit) : monadS RV Vars E :=
   if Z_ge_dec limit 0 then
     cond vars >>$= fun cond_val =>
     if cond_val then
-      body vars >>$= fun vars => whileST' _ _ _ (limit - 1) vars cond body (_limit_reduces acc ltac:(assumption))
+      body vars >>$= fun vars => whileST' (limit - 1) vars cond body (_limit_reduces acc ltac:(assumption))
     else returnS vars
-  else failS "Termination limit reached").
-Defined.
+  else failS "Termination limit reached".
 
 Definition whileST {RV Vars E} (vars : Vars) measure (cond : Vars -> monadS RV bool E) (body : Vars -> monadS RV Vars E) : monadS RV Vars E :=
   let limit := measure vars in
   whileST' limit vars cond body (Zwf_guarded limit).
 
-(*val untilM : forall 'rv 'vars 'e. 'vars -> ('vars -> monad 'rv bool 'e) ->
-                ('vars -> monad 'rv 'vars 'e) -> monad 'rv 'vars 'e*)
-Fixpoint untilST' {RV Vars E} limit (vars : Vars) (cond : Vars -> monadS RV bool E) (body : Vars -> monadS RV Vars E) (acc : Acc (Zwf 0) limit) : monadS RV Vars E.
-exact (
+Fixpoint untilST' {RV Vars E} limit (vars : Vars) (cond : Vars -> monadS RV bool E) (body : Vars -> monadS RV Vars E) (acc : Acc (Zwf 0) limit) : monadS RV Vars E :=
   if Z_ge_dec limit 0 then
     body vars >>$= fun vars =>
     cond vars >>$= fun cond_val =>
-    if cond_val then returnS vars else untilST' _ _ _ (limit - 1) vars cond body (_limit_reduces acc ltac:(assumption))
-  else failS "Termination limit reached").
-Defined.
+    if cond_val then returnS vars else untilST' (limit - 1) vars cond body (_limit_reduces acc ltac:(assumption))
+  else failS "Termination limit reached".
 
 Definition untilST {RV Vars E} (vars : Vars) measure (cond : Vars -> monadS RV bool E) (body : Vars -> monadS RV Vars E) : monadS RV Vars E :=
   let limit := measure vars in
