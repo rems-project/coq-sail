@@ -1,6 +1,12 @@
 Changelog
 =========
 
+0.20.3
+------
+
+* Remove reliance on some deprecated parts of Rocq and stdlib
+* Remove some obsolete definitions
+
 0.20.2-rocq
 -----------
 

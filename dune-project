@@ -20,7 +20,7 @@
   "Mark Wassell"
 )
 (maintainers "Sail Devs <cl-sail-dev@lists.cam.ac.uk>")
-(version 0.20.2)
+(version 0.20.3)
 
 ; We've dropped the BBV version of the library for now.
 ;
