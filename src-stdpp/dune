@@ -47,9 +47,22 @@
   (theories stdpp stdpp.bitvector SailStdpp)
  )
  (rule (copy ../MachineWordTest.v MachineWordTest.v))
+ (rule (copy ../ValuesAssumptionsTest.v ValuesAssumptionsTest.v))
+ (rule
+  (target ValuesAssumptionsTest.output)
+  (deps (glob_files ../*.vo))
+  (action
+   (with-stdout-to %{target}
+    (run %{bin:rocq} top -quiet -batch -R .. SailStdpp
+         -l %{dep:ValuesAssumptionsTest.v})))
+ )
+ (rule
+  (alias values-assumptions)
+  (action (diff ../ValuesAssumptionsTest.expected ValuesAssumptionsTest.output))
+ )
  (alias
   (name runtest)
-  (deps (alias all))
+  (deps (alias all) (alias values-assumptions))
  )
 )
 

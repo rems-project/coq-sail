@@ -71,7 +71,7 @@ From Stdlib Require Import Ascii Eqdep_dec Lia.
 From Stdlib Require BinaryString HexString.
 Import ListNotations.
 From Stdlib Require Import Rbase.  (* TODO would like to avoid this in models without reals *)
-From Stdlib Require Eqdep EqdepFacts Zquot.
+From Stdlib Require EqdepFacts Zquot.
 
 Require Import TypeCasts MachineWord.
 
@@ -451,6 +451,15 @@ Definition mword (n : Z) := word (Z_idx n).
   end
 }.
 
+(* Derive decidable equality from the interface rather than the concrete index
+   representation, so dependent equality does not require Eqdep's axiom. *)
+Local Definition idx_eq_dec (m n : idx) : {m = n} + {m <> n}.
+Proof.
+  destruct (Z.eq_dec (idx_Z m) (idx_Z n)) as [E|NE].
+  - left. rewrite (Z_idx_Z m), (Z_idx_Z n), E. reflexivity.
+  - right. intros ->. apply NE. reflexivity.
+Defined.
+
 Definition to_word_idx {n} (w : word n) : mword (idx_Z n) :=
   (cast_idx w (Z_idx_Z n)).
 
@@ -474,7 +483,7 @@ Proof.
     apply Z2Nat.inj; auto with zarith.
   }
   subst.
-  apply Eqdep.EqdepTheory.eq_dep_eq in EQ.
+  apply (Eqdep_dec.eq_dep_eq_dec idx_eq_dec) in EQ.
   subst.
   constructor.
 Qed.
